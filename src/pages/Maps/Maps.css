@@ -1,0 +1,47 @@
+.maps-container {
+    font-family: 'Arial', sans-serif;
+    color: #333;
+    text-align: center;
+    padding: 20px;
+    padding-top: 80px; /* Adjust this value based on the height of your navbar */
+  }
+  
+  .search-container {
+    margin: 20px 0;
+  }
+  
+  .search-container input {
+    padding: 10px;
+    width: 80%;
+    max-width: 500px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    outline: none;
+  }
+  
+  .search-container input:focus {
+    border-color: #6a11cb;
+  }
+  
+  .locations-list {
+    margin-top: 30px;
+  }
+  
+  .location-item {
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 10px 0;
+    padding: 15px;
+    font-size: 1.2rem;
+  }
+  
+  .map-section {
+    margin-top: 50px;
+  }
+  
+  iframe {
+    border-radius: 10px;
+  }
+  
