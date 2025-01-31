@@ -11,10 +11,10 @@ const Home = () => {
             {/* Home Section */}
             <section id="home">
                 <div className="home-content">
-                    <h1>Welcome to Our Platform - KHENT</h1>
+                    <h1>Welcome to Our Platform</h1>
                     <p>
                         Experience seamless services and solutions tailored to meet your needs. Scroll down to learn more
-                        about what we offer.
+                        about what we offer. Working Now!
                     </p>
                 </div>
             </section>
