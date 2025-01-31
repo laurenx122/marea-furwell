@@ -5,12 +5,13 @@ import './Home.css';
 const Home = () => {
 
 
+    //hi 
     return (
         <div className="home-container">
             {/* Home Section */}
             <section id="home">
                 <div className="home-content">
-                    <h1>Welcome to Our Platform</h1>
+                    <h1>Welcome to Our Platform - KHENT</h1>
                     <p>
                         Experience seamless services and solutions tailored to meet your needs. Scroll down to learn more
                         about what we offer.
