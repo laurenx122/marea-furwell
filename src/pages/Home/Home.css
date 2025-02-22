@@ -1,151 +1,196 @@
-@import url('https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=ADLaM+Display&display=swap');
+
 .home-container {
     font-family: 'Albert Sans', sans-serif;
     color: #333;
-    line-height: 1.6;
     margin: 0;
     padding: 0;
-  }
-  
-  section {
-    padding: 50px 20px;
-    text-align: center;
-  }
-  
-  #home {
-    background: linear-gradient(to bottom, #bbb9be, #fcfcfc);
-    color: rgb(2, 2, 2);
-    padding: 100px 20px;
-  }
-  
-  #home h1 {
-    font-size: 3rem;
+}
+
+/* Home Section with the provided background image and color grading */
+#home {
+    background: url('https://rollingrottskennel.com/wp-content/uploads/2020/03/golden.jpg') no-repeat center center/cover;
+    width: 100%;
+    height: 100vh; /* Full viewport height */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Align content to the right */
+    padding: 0 20px;
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.8) contrast(0.7) saturate(1.2) hue-rotate(-10deg); /* Adjusted color grading */
+    position: relative;
+    z-index: 1;
+}
+
+/* Flexbox Layout for Content */
+.home-content {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+    z-index: 2; /* Make sure content appears above background */
+}
+
+.rightSide {
+    width: 55%; /* Controls the width of the right-side text container */
+    text-align: left;
+    padding: 20px;
+    color: white;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+#home h1 {
+    font-family: 'Abril Fatface', serif;
+    font-size: 64px; /* Adjusted font size */
     margin-bottom: 20px;
-  }
-  
-  #home p {
+    font-weight: bold;
+    letter-spacing: 2px; /* Add letter spacing for cleaner text */
+    line-height: 1.2; /* Adjusted line height for spacing */
+    color: #EDBFC6; /* Set font color for "Compassionate Care" */
+}
+
+#home p {
+    font-family: 'ADLaM Display', sans-serif;
+    font-size: 24px; /* Adjusted font size */
+    margin-bottom: 30px;
+    line-height: 1.5; /* Increase line height for better readability */
+    color: #FFFFFF; /* Set font color for the description */
+}
+
+/* Buttons Container */
+/* Buttons Container */
+.buttons-container {
+    display: flex;
+    justify-content: center; /* Center buttons horizontally */
+    gap: 20px;
+    position: absolute; /* Position the buttons relative to the background section */
+    bottom: 20px; /* Adjusted distance from the bottom */
+    left: 50%;
+    transform: translateX(-50%); /* Center the buttons */
+    z-index: 2;
+    flex-wrap: wrap; /* Ensure buttons wrap if there's insufficient space */
+}
+
+
+.service-button {
+    background-color: #f3f4f8;
+    color: #3E6680;
+    border: none;
+    padding: 20px;
     font-size: 1.2rem;
-  }
-  
-  #services {
-    background-color: #f9f9f9;
-  }
-  
-  #services h2 {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background-color 0.3s;
+    width: 200px;
+    border-radius: 0; /* Remove border radius to make it rectangular */
+}
+
+/* Service Button Styles */
+.service-button img {
+    width: 40px; /* Adjust the width as needed */
+    height: 40px; /* Adjust the height as needed */
+    object-fit: contain; /* Ensure the image scales properly without distortion */
+    margin-right: 10px; /* Adjust spacing between image and text */
+}
+
+.service-button:hover {
+    background-color: #e0e4e8;
+}
+
+.button-icon {
+    width: 30px;
+    height: 30px;
+}
+
+/* Location Section */
+#location {
+    background-image: url('https://i.pinimg.com/736x/2e/86/3f/2e863f724bc0b7ab2e74be709b1af78f.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    width: 100%;
+    height: 100vh; /* Full viewport height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertically center the content */
+    align-items: center; /* Horizontally center the content */
+    text-align: center;
+    padding: 0 20px;
+    filter: brightness(0.8) contrast(0.7) saturate(1.2) hue-rotate(-10deg); /* Apply similar color grading */
+}
+
+/* Location Heading */
+#location h2 {
+    font-family: 'Abril Fatface', serif;
     font-size: 2.5rem;
     margin-bottom: 20px;
-  }
-  
-  .services-list {
+    color: #EDBFC6; /* Set font color for "Where pets get the care they deserve" */
+}
+
+#location p {
+    font-family: 'ADLaM Display', sans-serif;
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    color: #FFFFFF; /* Set font color for the description */
+}
+
+/* Search Container */
+.search-container {
     display: flex;
     justify-content: center;
-    gap: 30px;
-    flex-wrap: wrap;
-  }
-  
-  .service-item {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    width: 300px;
-    text-align: left;
-  }
-  
-  .service-item h3 {
-    font-size: 1.5rem;
-    color: #6a11cb;
-  }
-  
-  .service-item p {
-    font-size: 1rem;
-    margin-top: 10px;
-  }
-  
-  #contact {
-    background-color: #f4f4f4;
-  }
-  
-  #contact ul {
-    list-style: none;
-    padding: 0;
-  }
-  
-  #contact li {
-    font-size: 1.1rem;
-    margin: 10px 0;
-  }
-  
-  #location {
-    background-color: #fff;
-  }
-  
-  #location iframe {
-    border: 0;
-    border-radius: 10px;
-  }
-
-  .footer {
-    background-color: #D9D9D9;
-    color: #113B57;
-    padding: 20px;
-    text-align: center;
-    height: 175px;
-}
-.email-link {
-  color: #3E6680; 
-  text-decoration: none; 
-  font-weight: bold;
-}
-
-.email-link:hover {
-  text-decoration: underline;
-}
-.footer-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1000px;
-    margin: 0 auto;
-}
-
-/* Style for Contact Items */
-.contact-item,
-.newsletter-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;  /* Space between icon and text */
-    margin: 5px 0;
-}
-
-.contact-icon {
-    width: 30px;  /* Adjust size as needed */
-    height: 30px;
-    border-radius: 50%;
-}
-
-/* Newsletter Input & Button */
-.newsletter-input {
-    display: flex;
     gap: 10px;
+    align-items: center;
 }
 
-.newsletter-input input {
-    padding: 8px;
-    width: 200px;
+.location-search {
+    padding: 10px;
+    width: 300px;
     border-radius: 30px;
     border: 1px solid #ccc;
 }
 
-.newsletter-input button {
-    padding: 8px 15px;
+.search-button {
+    padding: 10px 20px;
     background-color: #3E6680;
     color: white;
-    border: 1px solid #3CC3DF;
+    border: none;
     border-radius: 30px;
     cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-.newsletter-input button:hover {
-    background-color: #3CC3DF;
+.search-button:hover {
+    background-color: #2a4b61;
+}
+
+/* Prevent horizontal scroll bar */
+body {
+    overflow-x: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    /* Reduce the size of the text and make sure the content is well-aligned */
+    #home h1 {
+        font-size: 32px;
+    }
+
+    #home p {
+        font-size: 16px;
+    }
+
+    .rightSide {
+        width: 80%; /* Reduce the width of text container on smaller screens */
+    }
+
+    .buttons-container {
+        flex-direction: column;
+        gap: 15px; /* Stack buttons vertically on smaller screens */
+    }
 }
