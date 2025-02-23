@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
+/* General Layout */
+.clinic-container {
+    display: flex;
+    height: 100vh;
+    background-color: #d3f0f7;
+    font-family: 'Jua';
+  }
+  
+  /* Sidebar Styling */
+  .sidebar {
+    width: 250px;
+    background-color: #EDBFC6;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+    font-family: 'Jua';
+  }
+  
+  .sidebar h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    
+  }
+  
+  .sidebar button {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    background-color: #fff;
+    border-radius: 5px;
+    text-align: left;
+    transition: 0.3s;
+    font-family: 'Jua';
+  }
+  
+  .sidebar button.active {
+    background-color: #ff8c94;
+    color: #fff;
+    font-weight: bold;
+  }
+  
+  /* Content Area */
+  .content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    margin-top: 60px;
+  }
+  
+  /* Panel Container */
+  .panel-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Table Styling */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  
+  th, td {
+    padding: 10px;
+    border: 1px solid #FF7B7B;
+    text-align: left;
+  }
+  
+  th {
+    background-color: #ffb6c1;
+  }
+  
+  td button {
+    background-color: #ff69b4;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  td button:hover {
+    background-color: #ff1493;
+  }
+  
+  /* Panel Colors */
+  .patients-panel {
+    background-color: #ffe4e6;
+  }
+  
+  .appointments-panel {
+    background-color: #fdf6c2;
+  }
+  
+  .records-panel {
+    background-color: #c2f0d1;
+  }
+  

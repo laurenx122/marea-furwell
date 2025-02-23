@@ -1,8 +1,6 @@
 // Footer.js
 import React from 'react';
-import './Footer.css'; // Import Footer CSS file
-
-// Importing icons (make sure these images are available or use URLs directly)
+import './Footer.css'; 
 import mail from '../../images/mail.png';
 import phone from '../../images/phone.png';
 import notif from '../../images/notif.png';

@@ -12,6 +12,7 @@ import About from './pages/About/About'; // Corrected path
 import Services from './pages/Services/Services'; // Corrected path
 import Appointments from './pages/Appointments/Appointments'; // Corrected path
 import ContactUs from './pages/ContactUs/ContactUs'; // Corrected path
+import ClinicHome from './pages/Clinic/ClinicHome';
 
 function App() {
   return (
@@ -19,13 +20,14 @@ function App() {
       <Navbar /> {/* Navbar at the top */}
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/Login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/maps" element={<Maps />} />
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
         <Route path="/appointments" element={<Appointments />} />
         <Route path="/contact" element={<ContactUs />} />
+        <Route path="/ClinicHome" element={<ClinicHome />} />
       </Routes>
     </Router>
   );
