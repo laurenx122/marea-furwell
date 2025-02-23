@@ -8,21 +8,27 @@
     padding: 0;
 }
 
-/* Home Section with the provided background image and color grading */
 #home {
-    background: url('https://rollingrottskennel.com/wp-content/uploads/2020/03/golden.jpg') no-repeat center center/cover;
+    background: url('https://images.unsplash.com/photo-1608744882201-52a7f7f3dd60?q=80&w=1936&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fA%3D%3D') 
+    no-repeat center center/cover;
+
     width: 100%;
-    height: 100vh; /* Full viewport height */
+    height: 100vh;
     display: flex;
     align-items: center;
-    justify-content: flex-end; /* Align content to the right */
-    padding: 0 20px;
+    justify-content: flex-end;
+    padding: 0 100px;
+    
     background-size: cover;
-    background-position: center;
-    filter: brightness(0.8) contrast(0.7) saturate(1.2) hue-rotate(-10deg); /* Adjusted color grading */
-    position: relative;
-    z-index: 1;
+    background-position: 18% 60%; 
+    
+    /* Ensuring high-quality rendering */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: high-quality;
 }
+
+
+
 
 /* Flexbox Layout for Content */
 .home-content {
@@ -30,78 +36,180 @@
     justify-content: flex-end;
     align-items: center;
     width: 100%;
-    z-index: 2; /* Make sure content appears above background */
+    z-index: 2; 
 }
 
 .rightSide {
-    width: 55%; /* Controls the width of the right-side text container */
+    width: 50%;
+    max-width: 700px; 
     text-align: left;
-    padding: 20px;
+    padding-right: 50px;
     color: white;
-    border-radius: 10px;
+    border-radius: 0px;
     box-sizing: border-box;
+    margin-right: 80px; 
 }
+
 
 #home h1 {
     font-family: 'Abril Fatface', serif;
-    font-size: 64px; /* Adjusted font size */
+    font-size: 3vw; 
     margin-bottom: 20px;
     font-weight: bold;
-    letter-spacing: 2px; /* Add letter spacing for cleaner text */
-    line-height: 1.2; /* Adjusted line height for spacing */
-    color: #EDBFC6; /* Set font color for "Compassionate Care" */
+    letter-spacing: 2px;
+    line-height: 1.2;
+    color: #002a51;
+    text-shadow: 2px 2px 4px rgba(251, 254, 255, 0.6); 
+
+
+    /* Animation */
+    opacity: 0;
+    transform: translateY(-50px); /* Start position */
+    animation: fadeInMoveDown 1.2s ease-out forwards;
 }
+
+
 
 #home p {
     font-family: 'ADLaM Display', sans-serif;
-    font-size: 24px; /* Adjusted font size */
+    font-size: 1rem; 
     margin-bottom: 30px;
-    line-height: 1.5; /* Increase line height for better readability */
-    color: #FFFFFF; /* Set font color for the description */
+    line-height: 1.5; 
+    color: #3E6680;
+
+    /* Animation */
+    opacity: 0;
+    transform: translateY(30px); /* Start position */
+    animation: fadeInMoveUp 1.5s ease-out forwards;
+    animation-delay: 0.5s; /* Delays after the heading appears */
 }
 
-/* Buttons Container */
+/* Keyframe for Heading */
+@keyframes fadeInMoveDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Keyframe for Paragraph */
+@keyframes fadeInMoveUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Text animation - Initially hidden */
+.fade-in {
+    opacity: 0;
+    transform: translateY(50px); /* Starts below its original position */
+    transition: opacity 1s ease-out, transform 1s ease-out;
+}
+
+/* When in view, make it visible */
+.fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* Buttons Container */
 .buttons-container {
     display: flex;
-    justify-content: center; /* Center buttons horizontally */
+    justify-content: center; 
     gap: 20px;
-    position: absolute; /* Position the buttons relative to the background section */
-    bottom: 20px; /* Adjusted distance from the bottom */
+    position: absolute; 
+    top: 95vh; 
     left: 50%;
-    transform: translateX(-50%); /* Center the buttons */
-    z-index: 2;
-    flex-wrap: wrap; /* Ensure buttons wrap if there's insufficient space */
+    transform: translateX(-50%);
+    z-index: 3;
+    flex-wrap: wrap; 
 }
-
 
 .service-button {
     background-color: #f3f4f8;
     color: #3E6680;
     border: none;
-    padding: 20px;
-    font-size: 1.2rem;
+    padding: 15px;
+    font-size: 1rem; 
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     transition: background-color 0.3s;
-    width: 200px;
-    border-radius: 0; /* Remove border radius to make it rectangular */
+    width: 180px;
+    height: 90px; 
+    border-radius: 0; 
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2); 
+
+    /* Animation */
+    opacity: 0;
+    transform: translateY(30px);
+    animation: waveEffect 1.2s ease-out forwards;
 }
 
-/* Service Button Styles */
+/* Adjust Icon Size */
 .service-button img {
-    width: 40px; /* Adjust the width as needed */
-    height: 40px; /* Adjust the height as needed */
-    object-fit: contain; /* Ensure the image scales properly without distortion */
-    margin-right: 10px; /* Adjust spacing between image and text */
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
+    margin-right: 8px;
 }
 
+/* Hover effect */
 .service-button:hover {
     background-color: #e0e4e8;
 }
+
+/* Staggered Delays for Wave Effect */
+.service-button:nth-child(1) {
+    animation-delay: 0.2s;
+}
+.service-button:nth-child(2) {
+    animation-delay: 0.4s;
+}
+.service-button:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+/* Hover effect */
+.service-button:hover {
+    background-color: #e0e4e8;
+}
+
+/* Adjust Icon Size */
+.service-button img {
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
+    margin-right: 8px;
+}
+
+/* Wave Animation */
+@keyframes waveEffect {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+    }
+    50% {
+        opacity: 0.5;
+        transform: translateY(-10px) scale(1.05);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 
 .button-icon {
     width: 30px;
@@ -110,19 +218,19 @@
 
 /* Location Section */
 #location {
-    background-image: url('https://i.pinimg.com/736x/2e/86/3f/2e863f724bc0b7ab2e74be709b1af78f.jpg');
+    background-image: url('https://i.pinimg.com/736x/a2/2b/de/a22bded100a0aac14963f3fe2093e03c.jpg');
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
     width: 100%;
-    height: 100vh; /* Full viewport height */
+    height: 100vh; 
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Vertically center the content */
-    align-items: center; /* Horizontally center the content */
+    justify-content: center; 
+    align-items: center; 
     text-align: center;
     padding: 0 20px;
-    filter: brightness(0.8) contrast(0.7) saturate(1.2) hue-rotate(-10deg); /* Apply similar color grading */
+   
 }
 
 /* Location Heading */
@@ -130,14 +238,14 @@
     font-family: 'Abril Fatface', serif;
     font-size: 2.5rem;
     margin-bottom: 20px;
-    color: #EDBFC6; /* Set font color for "Where pets get the care they deserve" */
+    color: #EDBFC6; 
 }
 
 #location p {
     font-family: 'ADLaM Display', sans-serif;
     font-size: 1.2rem;
     margin-bottom: 30px;
-    color: #FFFFFF; /* Set font color for the description */
+    color: #FFFFFF;
 }
 
 /* Search Container */
@@ -174,23 +282,3 @@ body {
     overflow-x: hidden;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-    /* Reduce the size of the text and make sure the content is well-aligned */
-    #home h1 {
-        font-size: 32px;
-    }
-
-    #home p {
-        font-size: 16px;
-    }
-
-    .rightSide {
-        width: 80%; /* Reduce the width of text container on smaller screens */
-    }
-
-    .buttons-container {
-        flex-direction: column;
-        gap: 15px; /* Stack buttons vertically on smaller screens */
-    }
-}
