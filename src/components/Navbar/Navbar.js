@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import styles from './Navbar.module.css';
 import furwell_logo from '../../images/furwell_logo.png';
 
 const Navbar = () => {
     const [scrollProgress, setScrollProgress] = useState(0);
     const navigate = useNavigate();
+    const location = useLocation(); // Detect route changes
 
     useEffect(() => {
         const handleScroll = () => {
@@ -18,6 +19,10 @@ const Navbar = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    useEffect(() => {
+        setScrollProgress(0);
+    }, [location.pathname]); 
 
     return (
         <>
@@ -52,14 +57,16 @@ const Navbar = () => {
 
                     {/* Right: Login and Signup Buttons */}
                     <div className={styles.rightSection}>
-                        <button onClick={() => navigate('/login')} className={styles.loginButton}>Login</button>
+                        <button onClick={() => navigate('/Login')} className={styles.loginButton}>Login</button>
                         <button onClick={() => navigate('/signup')} className={styles.signupButton}>Sign Up</button>
                     </div>
                 </div>
             </nav>
 
-            {/* Scroll Progress Bar */}
-            <div className={styles.scrollProgressBar} style={{ width: `${scrollProgress}%` }}></div>
+            {/* Scroll Progress Bar (Hidden if progress is 0) */}
+            {scrollProgress > 0 && (
+                <div className={styles.scrollProgressBar} style={{ width: `${scrollProgress}%` }}></div>
+            )}
         </>
     );
 };
