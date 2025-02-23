@@ -1,5 +1,7 @@
+// Home.js
 import React from 'react';
-import './Home.css'; // Ensure the CSS file is imported
+import './Home.css'; 
+import Footer from '../../components/Footer/Footer';
 
 const Home = () => {
     return (
@@ -19,15 +21,15 @@ const Home = () => {
             {/* Buttons Container Positioned below the Text */}
             <div className="buttons-container">
                 <button className="service-button">
-                    <img src="https://images.squarespace-cdn.com/content/v1/65380b4b06f21d6d1e04a97b/eb367c7c-28c0-44ef-b89b-2e4326042bad/RAO_icons-03.png" alt="Services Icon" />
+                    <img src="https://images.squarespace-cdn.com/content/v1/65380b4b06f21d6d1e04a97b/eb367c7c-28c0-44ef-b89b-2e4326042bad/RAO_icons-03.png" />
                     Services
                 </button>
                 <button className="service-button">
-                    <img src="https://cdn-icons-png.freepik.com/256/12641/12641101.png" alt="Find Clinic Icon" />
+                    <img src="https://cdn-icons-png.freepik.com/256/12641/12641101.png" />
                     Find Clinic
                 </button>
                 <button className="service-button">
-                    <img src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQwly9ieoqBhPisnyYoY9619JiA1gFq8nmmwVUTkWlJMOUG4fgX" alt="Set Appointment Icon" />
+                    <img src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQwly9ieoqBhPisnyYoY9619JiA1gFq8nmmwVUTkWlJMOUG4fgX" alt="Set Appointment Icon" className="button-icon" />
                     Set Appointment
                 </button>
             </div>
@@ -41,6 +43,8 @@ const Home = () => {
                     <button className="search-button">Search</button>
                 </div>
             </section>
+
+            <Footer /> {/* Insert Footer component here */}
         </div>
     );
 };

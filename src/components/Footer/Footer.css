@@ -1,0 +1,67 @@
+/* Footer.css */
+.footer {
+    background-color: #D9D9D9;
+    color: #113B57;
+    padding: 20px;
+    text-align: center;
+    height: 175px;
+}
+
+.email-link {
+    color: #3E6680;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.email-link:hover {
+    text-decoration: underline;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Style for Contact Items */
+.contact-item,
+.newsletter-item {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between icon and text */
+    margin: 5px 0;
+}
+
+.contact-icon {
+    width: 30px;  /* Adjust size as needed */
+    height: 30px;
+    border-radius: 50%;
+}
+
+/* Newsletter Input & Button */
+.newsletter-input {
+    display: flex;
+    gap: 10px;
+}
+
+.newsletter-input input {
+    padding: 8px;
+    width: 200px;
+    border-radius: 30px;
+    border: 1px solid #ccc;
+}
+
+.newsletter-input button {
+    padding: 8px 15px;
+    background-color: #3E6680;
+    color: white;
+    border: 1px solid #3CC3DF;
+    border-radius: 30px;
+    cursor: pointer;
+}
+
+.newsletter-input button:hover {
+    background-color: #3CC3DF;
+}
