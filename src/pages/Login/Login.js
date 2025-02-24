@@ -2,6 +2,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css'; 
 import doggo from '../../images/baby_doggy.png';
+import furwell_logo from '../../images/furwell_logo.png';
+import { CiUser , CiUnlock } from "react-icons/ci";
+import { FcGoogle } from "react-icons/fc";
 
 const Login = () => {
   const navigate = useNavigate(); // For navigation
@@ -10,18 +13,20 @@ const Login = () => {
       <div className="login-container">
         <div className="login-box">
           <img src={doggo} alt="Dog" className="dog-img" />
-          <h1 className="logo">FURWELL</h1>
+          <img src={furwell_logo} alt="FurWell Logo" className="logo" />
           <form>
             <div className="input-container">
-              <input type="text" placeholder="Username" required />
+              <CiUser className="icon"/>
+              <input type="text" placeholder="Email / Mobile Number" required />
             </div>
             <div className="input-container">
+              <CiUnlock className="icon"/>
               <input type="password" placeholder="Password" required />
             </div>
             <button className="sign-in-btn">Sign In</button>
           </form>
           <p>or continue with</p>
-          <button className="google-btn">Google</button>
+          <button className="google-btn"><FcGoogle size={24}/> Google</button>
           <p className="signup-text">
             Don't have an account yet? <a href="/signup">Sign Up for Free</a>
           </p>

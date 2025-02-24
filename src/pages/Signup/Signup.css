@@ -1,0 +1,150 @@
+/* Import Font */
+@import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
+
+/* Container */
+.signup-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: url('../../images/loginBG.png') no-repeat center center/cover;
+    position: relative;
+    z-index: 1000;
+}
+
+/* Box */
+.signup-box {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 30px 30px 30px;
+    border-radius: 10px;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    font-family: 'Jua';
+}
+
+/* Header */
+.signup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px;
+}
+
+.signup-head {
+    text-align: left;
+    color: #003366;
+    margin: 8px;
+}
+
+.signup-head h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.signup-head p {
+    font-size: 14px;
+    margin: 5px 0 0;
+}
+
+  /* Logo */
+  .signup-logo {
+    height: 150px; 
+    width: auto;
+  }
+
+/* Input Fields */
+.input-container {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.input-container input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ffffff;
+    border-radius: 5px;
+    outline: none;
+    font-size: 16px;
+}
+
+/* Icons */
+.icon {
+    font-size: 18px;
+    color: #00708c;
+}
+
+/* Name Fields */
+.name-container {
+    display: flex;
+    gap: 15px; 
+    width: 100%;
+    border-radius: 8px;
+}
+
+.name-container input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid #ffffff;
+    border-radius: 5px;
+    outline: none;
+    font-size: 16px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); 
+    background-color: #fff; 
+}
+
+
+/* Country Code */
+.country-code {
+    border: none;
+    background: none;
+    font-size: 16px;
+  }
+
+/* Terms */
+.terms {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.terms input {
+    margin-right: 5px;
+}
+
+.terms a {
+    color: rgb(13, 13, 13);
+    text-decoration: underline;
+}
+
+/* Create Account Button */
+.create-account {
+    background: #61e065;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 18px;
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.create-account:hover {
+    background: #45a049;
+}
+
+.paw-icon {
+    font-size: 20px;
+}
