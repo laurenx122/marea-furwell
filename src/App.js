@@ -13,6 +13,7 @@ import Services from './pages/Services/Services'; // Corrected path
 import Appointments from './pages/Appointments/Appointments'; // Corrected path
 import ContactUs from './pages/ContactUs/ContactUs'; // Corrected path
 import ClinicHome from './pages/Clinic/ClinicHome';
+import PetOwnerHome from './pages/PetOwner/PetOwnerHome';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/appointments" element={<Appointments />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/ClinicHome" element={<ClinicHome />} />
+        <Route path="/PetOwnerHome" element={<PetOwnerHome />} />
       </Routes>
     </Router>
   );
