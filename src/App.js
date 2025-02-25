@@ -19,7 +19,7 @@ function App() {
     <Router>
       <Navbar /> {/* Navbar at the top */}
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/Home" element={<Home />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/maps" element={<Maps />} />
