@@ -36,7 +36,7 @@ const Navbar = () => {
                     {/* Center: Navigation Links */}
                     <ul className={styles.navbarList}>
                         <li className={styles.navbarItem}>
-                            <Link to="/" className={styles.navbarLink}>Home</Link>
+                            <Link to="/Home" className={styles.navbarLink}>Home</Link>
                         </li>
                         <li className={styles.navbarItem}>
                             <Link to="/about" className={styles.navbarLink}>About</Link>
