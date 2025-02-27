@@ -24,7 +24,7 @@ const Login = () => {
       console.log('User logged in:', userCredential.user);
       
       // Navigate to Clinic Home after login
-      navigate('/Home');
+      navigate('/PetOwnerHome');
     } catch (error) {
       setError(error.message);
       alert("Login failed: " + error.message);

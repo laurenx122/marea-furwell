@@ -108,7 +108,21 @@
   background-color: #CDEDF6;
   color: #3E6680;
 }
+.logoutButton {
+  background-color: #3E6680;
+  color: #AEF0FF;
+  padding: 0.5rem 1rem;
+  border: 2px solid #3E6680;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-family: 'Albert Sans', sans-serif;
+}
 
+.logoutButton:hover {
+  background-color: #CDEDF6;
+  color: #3E6680;
+}
 .signupButton {
   background-color: transparent;
   color: #3E6680;
