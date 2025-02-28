@@ -28,7 +28,7 @@ const Login = () => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         console.log("User logged in:", user);
-
+        alert("Login successfully!");
         // Fetch user type from Firestore
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
