@@ -51,6 +51,7 @@ const Signup = () => {
         uid: user.uid,
       });
       alert("Signup successful! 🎉"); 
+      navigate('/Login');
     } catch (error) {
       setError(error.message);
     }

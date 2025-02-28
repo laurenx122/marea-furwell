@@ -1,0 +1,136 @@
+/* General Styles */
+body {
+    font-family: "Poppins", sans-serif;
+    background: linear-gradient(to bottom, #d6f0ff, #ffe8ff);
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Container */
+  .app-container {
+    padding: 20px;
+  }
+  
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+  }
+  
+  .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  /* Navigation */
+  .nav {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .nav-button,
+  .logout-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .nav-button {
+    background: transparent;
+    color: #333;
+  }
+  
+  .nav-button.active {
+    background: #82cfff;
+  }
+  
+  .logout-button {
+    background: #444;
+    color: white;
+  }
+  
+  /* Search Bar */
+  .search-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    margin: 20px 0;
+    margin-top: 100px;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 10px 40px 10px 10px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+  
+  .search-icon {
+    position: absolute;
+    right: 10px;
+    color: gray;
+  }
+  
+  /* Clinic Grid */
+  .clinic-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* Ensures 5 cards per row */
+    gap: 20px; /* Reduce space between cards */
+    justify-content: center; /* Centers the grid */
+    padding: 20px;
+}
+
+.clinic-card {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 25px; /* More padding inside */
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 350px; /* Increase size */
+    height: 250px; /* Increase height */
+}
+
+.clinic-image {
+    width: 100%;
+    height: 150px; /* Increase image size */
+    background-image: url('/public/images/clinicss.png');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.6; /* Slightly clearer */
+    border-radius: 10px;
+    margin-bottom: 15px; /* More space below the image */
+}
+  
+  .clinic-branch {
+    color: blue;
+    font-weight: bold;
+  }
+  @media (max-width: 1200px) {
+    .clinic-grid {
+        grid-template-columns: repeat(4, 1fr); /* 4 per row on medium screens */
+    }
+}
+
+@media (max-width: 900px) {
+    .clinic-grid {
+        grid-template-columns: repeat(3, 1fr); /* 3 per row on smaller screens */
+    }
+}
+
+@media (max-width: 600px) {
+    .clinic-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 per row on mobile */
+    }
+}
+
+@media (max-width: 400px) {
+    .clinic-grid {
+        grid-template-columns: repeat(1, 1fr); /* 1 per row on very small screens */
+    }
+}
