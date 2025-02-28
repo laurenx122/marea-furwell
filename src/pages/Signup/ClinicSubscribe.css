@@ -1,6 +1,12 @@
 /* Import Font */
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
 
+html, body {
+    overflow: hidden;
+    height: 100%;
+}
+
+ 
 /* Container */
 .CS_container {
     display: flex;
