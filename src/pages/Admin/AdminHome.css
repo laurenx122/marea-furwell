@@ -1,52 +1,11 @@
 /* General Styles */
-body {
-    font-family: "Poppins", sans-serif;
-    background: linear-gradient(to bottom, #d6f0ff, #ffe8ff);
-    margin: 0;
-    padding: 0;
-  }
-  
-  /* Container */
-  .app-container {
-    padding: 20px;
-  }
-  
-  /* Header */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-  }
-  
-  .logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-  }
-  
-  /* Navigation */
-  .nav {
-    display: flex;
-    gap: 10px;
-  }
-  
-  .nav-button,
-  .logout-button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 20px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  
-  .nav-button {
-    background: transparent;
-    color: #333;
-  }
-  
-  .nav-button.active {
-    background: #82cfff;
-  }
+html, body {
+  height: 150%;
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(to bottom, #d6f0ff, #ffe8ff);
+  margin: 0;
+  padding: 0;
+}
   
   .logout-button {
     background: #444;
@@ -91,7 +50,7 @@ body {
     border-radius: 12px;
     text-align: center;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    width: 100%;
+    width: 80%;
     max-width: 350px; /* Increase size */
     height: 250px; /* Increase height */
 }
