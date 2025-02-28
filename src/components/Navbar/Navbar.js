@@ -12,6 +12,8 @@ const Navbar = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [firstName, setFirstName] = useState('');
+    const [userDetails, setUserDetails] = useState({ firstName: '', lastName: '', mobile: '' });
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -38,7 +40,7 @@ const Navbar = () => {
           } else {
               setIsLoggedIn(false);
               setIsAdmin(false);
-              setFirstName('');
+              setUserDetails({ firstName: '', lastName: '', mobile: '' });
           }
       });
 
@@ -46,20 +48,23 @@ const Navbar = () => {
   }, []);
 
   const fetchUserDetails = async (uid) => {
-    try {
-        const userDocRef = doc(db, 'users', uid);
-        const userDocSnap = await getDoc(userDocRef);
+      try {
+          const userDocRef = doc(db, 'users', uid);
+          const userDocSnap = await getDoc(userDocRef);
 
-
-        if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            setFirstName(userData.FirstName);
-            setIsAdmin(userData.Type === "Admin"); 
-        }
-    } catch (error) {
-        console.error("Error fetching user details:", error);
-    }
-};
+          if (userDocSnap.exists()) {
+              const userData = userDocSnap.data();
+              setUserDetails({
+                  firstName: userData.FirstName || '',
+                  lastName: userData.LastName || '',
+                  mobile: userData.Mobile || '',
+              });
+              setIsAdmin(userData.Type === "Admin");
+          }
+      } catch (error) {
+          console.error("Error fetching user details:", error);
+      }
+  };
 
 const handleSignOut = async () => {
   try {
@@ -101,16 +106,19 @@ const handleSignOut = async () => {
                                     <Link to="/Home" className={styles.navbarLink}>Home</Link>
                                 </li>
                                 <li className={styles.navbarItem}>
-                                    <Link to="/about" className={styles.navbarLink}>About</Link>
-                                </li>
-                                <li className={styles.navbarItem}>
-                                    <Link to="/services" className={styles.navbarLink}>Services</Link>
-                                </li>
-                                <li className={styles.navbarItem}>
-                                    <Link to="/appointments" className={styles.navbarLink}>Appointments</Link>
-                                </li>
-                                <li className={styles.navbarItem}>
-                                    <Link to="/contact" className={styles.navbarLink}>Contact Us</Link>
+                                  <Link
+                                        to="#"
+                                        className={styles.navbarLink}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            window.scrollTo({
+                                                top: document.documentElement.scrollHeight,
+                                                behavior: "smooth",
+                                            });
+                                        }}
+                                    >
+                                        Contact Us
+                                    </Link>
                                 </li>
                                 <li className={styles.navbarItem}>
                                     <Link to="/maps" className={styles.navbarLink}>Maps</Link>
@@ -119,11 +127,17 @@ const handleSignOut = async () => {
                         )}
                     </ul>
 
-                    {/* Right: Login and Signup Buttons */}
+                    {/* Right: User Info or Login Buttons */}
                     <div className={styles.rightSection}>
                         {isLoggedIn ? (
                             <div className={styles.userMenu}>
-                                <span className={styles.username}> {firstName} </span>
+                                <span 
+                                    className={styles.username} 
+                                    onClick={() => setIsModalOpen(true)}
+                                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                >
+                                    {userDetails.firstName}
+                                </span>
                                 <button onClick={handleSignOut} className={styles.logoutButton}>Sign Out</button>
                             </div>
                         ) : (
@@ -139,6 +153,18 @@ const handleSignOut = async () => {
             {/* Scroll Progress Bar (Hidden if progress is 0) */}
             {scrollProgress > 0 && (
                 <div className={styles.scrollProgressBar} style={{ width: `${scrollProgress}%` }}></div>
+            )}
+                        {/* Modal for User Details */}
+                        {isModalOpen && (
+                        <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
+                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <h2>User Information</h2>
+                        <p><strong>First Name:</strong> {userDetails.firstName}</p>
+                        <p><strong>Last Name:</strong> {userDetails.lastName}</p>
+                        <p><strong>Mobile Number:</strong> {userDetails.mobile}</p>
+                        <button onClick={() => setIsModalOpen(false)} className={styles.closeButton}>Close</button>
+                    </div>
+                </div>
             )}
         </>
     );
