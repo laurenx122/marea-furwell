@@ -4,8 +4,6 @@ import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 import { useNavigate } from 'react-router-dom';
 import './Login.css'; 
-import doggo from '../../images/baby_doggy.png';
-import furwell_logo from '../../images/furwell_logo.png';
 import { CiUser , CiUnlock } from "react-icons/ci";
 import { FcGoogle } from "react-icons/fc";
 
@@ -60,8 +58,8 @@ const Login = () => {
   return (
       <div className="login-container">
         <div className="login-box">
-          <img src={doggo} alt="Dog" className="dog-img" />
-          <img src={furwell_logo} alt="FurWell Logo" className="logo" />
+          <img src='/images/baby_doggy.png' alt="Dog" className="dog-img" />
+          <img src='/images/furwell_logo.png' alt="FurWell Logo" className="logo" />
           <form onSubmit={handleSubmit}>
             <div className="input-container">
               <CiUser className="icon"/>
