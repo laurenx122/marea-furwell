@@ -44,12 +44,8 @@ const Navbar = () => {
                 setUserDetails({ firstName: '', lastName: '', mobile: '' });
             }
         });
-
-
-  const fetchUserDetails = async (uid) => {
-    try {
-        const userDocRef = doc(db, 'users', uid);
-        const userDocSnap = await getDoc(userDocRef);
+        return () => unsubscribe();
+      }, []);
 
     const fetchUserDetails = async (uid) => {
         try {
@@ -175,6 +171,7 @@ const Navbar = () => {
             )}
         </>
     );
-};
+  
+}
 
 export default Navbar;
