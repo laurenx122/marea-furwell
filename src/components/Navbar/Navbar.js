@@ -11,9 +11,9 @@ const Navbar = () => {
     const location = useLocation();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
+
     const [userDetails, setUserDetails] = useState({ firstName: '', lastName: '', mobile: '' });
     const [isModalOpen, setIsModalOpen] = useState(false);
-
 
     useEffect(() => {
         const handleScroll = () => {
@@ -32,6 +32,7 @@ const Navbar = () => {
     }, [location.pathname]);
 
     useEffect(() => {
+
         const auth = getAuth();
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -44,8 +45,11 @@ const Navbar = () => {
             }
         });
 
-        return () => unsubscribe();
-    }, []);
+
+  const fetchUserDetails = async (uid) => {
+    try {
+        const userDocRef = doc(db, 'users', uid);
+        const userDocSnap = await getDoc(userDocRef);
 
     const fetchUserDetails = async (uid) => {
         try {
@@ -75,6 +79,7 @@ const Navbar = () => {
             console.error('Error signing out:', error);
         }
     };
+
 
 
     return (
@@ -130,6 +135,7 @@ const Navbar = () => {
                     <div className={styles.rightSection}>
                         {isLoggedIn ? (
                             <div className={styles.userMenu}>
+
                                 <span 
                                     className={styles.username} 
                                     onClick={() => setIsModalOpen(true)}
@@ -137,6 +143,7 @@ const Navbar = () => {
                                 >
                                     {userDetails.firstName}
                                 </span>
+
                                 <button onClick={handleSignOut} className={styles.logoutButton}>Sign Out</button>
                             </div>
                         ) : (
