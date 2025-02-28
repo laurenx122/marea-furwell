@@ -1,101 +1,227 @@
 .maps-container {
-    font-family: 'Arial', sans-serif;
-    color: #333;
-    text-align: center;
-    padding: 20px;
-    padding-top: 80px; /* Adjust this value based on the height of your navbar */
-  }
-  
-  .search-container {
-    margin: 20px 0;
-  }
-  
-  .search-container input {
-    padding: 10px;
-    width: 80%;
-    max-width: 500px;
-    font-size: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    outline: none;
-  }
-  
-  .search-container input:focus {
-    border-color: #6a11cb;
-  }
-  
-  .locations-list {
-    margin-top: 30px;
-  }
-  
-  .location-item {
-    background: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin: 10px 0;
-    padding: 15px;
-    font-size: 1.2rem;
-  }
-  
-  .map-section {
-    margin-top: 50px;
-  }
-  
-/* search bar and search suggestions */
-  .search-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    justify-content:  center;
-    /* width: 100%;
-    max-width: 400px;
-    margin-bottom: 10px; */
+  font-family: 'Arial', sans-serif;
+  color: #333;
+  text-align: center;
+  padding: 20px;
+  padding-top: 80px; /* Adjust based on the height of your navbar */
+  /* overflow-y: auto;  */
 }
-
+ 
+/* Map and Clinic container - two-column layout */
+.map-clinic-container {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  margin-top: 20px;
+  height: 600px;
+  
+}
+ 
+/* Map section - left side */
+.map-section {
+  flex: 3;
+  position: relative;
+  height: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+ 
+#map {
+  height: 100%;
+  width: 100%;
+}
+ 
+/* Clinic details - right side */
+.clinic-details {
+  flex: 2;
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  height: 100%;
+  text-align: left;
+}
+ 
+.clinic-details h3 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #333;
+  border-bottom: 2px solid #4CAF50;
+  padding-bottom: 10px;
+}
+ 
+.clinic-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+ 
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+ 
+.input-group label {
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #555;
+}
+ 
+.input-group input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+ 
+.input-group input:focus {
+  border-color: #4CAF50;
+  outline: none;
+}
+ 
+.clinic-coordinates {
+  display: flex;
+  justify-content: space-between;
+  background-color: #e9ecef;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+ 
+.update-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 15px;
+  transition: background-color 0.3s;
+}
+ 
+.update-btn:hover {
+  background-color: #45a049;
+}
+ 
+.no-clinic-selected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6c757d;
+}
+ 
+.no-clinic-selected p {
+  font-size: 1.1rem;
+}
+ 
+/* Search Bar Styles */
+.search-container {
+  margin: 0 auto 20px auto;
+  width: 80%;
+  max-width: 1500px;
+  position: relative;
+  display: flex;
+  justify-content: center; 
+  padding-left: 180px;
+}
+ 
 .search-input {
-    width: 100%;
-    padding: 8px 12px;
-    font-size: 16px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    outline: none;
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  outline: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
-
+ 
+.search-input:focus {
+  border-color: #4CAF50;
+}
+ 
 .suggestions-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 250px;
+  overflow-y: auto;
+  justify-content: center; 
+  padding-left: 0;
+  margin-left: 180px;
+  margin-right: 5px;
 }
-
+ 
 .suggestion-item {
-    padding: 10px;
-    cursor: pointer;
-    transition: background-color 0.2s;
+  padding: 12px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-align: left;
+  border-bottom: 1px solid #f0f0f0;
+  
 }
-
+ 
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+ 
 .suggestion-item:hover {
-    background-color: #f0f0f0;
+  background-color: #f0f0f0;
 }
-
+ 
 .add-pin-btn {
-    padding: 5px 10px;
-    border-radius: 8px;
-    border: none;
-    background-color: #4CAF50;
-    color: white;
-    cursor: pointer;
-    margin-bottom: 10px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.add-pin-btn.active {
+  background-color: red;
+  color: white;
+}
+
+ 
 .add-pin-btn:hover {
-    background-color: #45a049;
+  background-color: #45a049;
+}
+ 
+/* Responsive design */
+@media (max-width: 900px) {
+  .map-clinic-container {
+    flex-direction: column;
+    height: auto;
+  }
+ 
+  .map-section {
+    height: 400px;
+    margin-bottom: 20px;
+  }
+ 
+  .clinic-details {
+    height: auto;
+    max-height: 500px;
+  }
 }
