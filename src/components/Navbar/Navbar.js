@@ -50,6 +50,7 @@ const Navbar = () => {
         const userDocRef = doc(db, 'users', uid);
         const userDocSnap = await getDoc(userDocRef);
 
+
         if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
             setFirstName(userData.FirstName);
@@ -141,6 +142,7 @@ const handleSignOut = async () => {
             )}
         </>
     );
-};
+  
+}
 
 export default Navbar;
