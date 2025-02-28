@@ -8,12 +8,10 @@ import { db } from '../../firebase';
 const Navbar = () => {
     const [scrollProgress, setScrollProgress] = useState(0);
     const navigate = useNavigate();
-    const location = useLocation();
+    const location = useLocation(); // Detect route changes
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
-
-    const [userDetails, setUserDetails] = useState({ firstName: '', lastName: '', mobile: '' });
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [firstName, setFirstName] = useState('');
 
     useEffect(() => {
         const handleScroll = () => {
@@ -29,55 +27,51 @@ const Navbar = () => {
 
     useEffect(() => {
         setScrollProgress(0);
-    }, [location.pathname]);
+    }, [location.pathname]); 
 
     useEffect(() => {
+      const auth = getAuth();
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          if (user) {
+              setIsLoggedIn(true);
+              await fetchUserDetails(user.uid);
+          } else {
+              setIsLoggedIn(false);
+              setIsAdmin(false);
+              setFirstName('');
+          }
+      });
 
-        const auth = getAuth();
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                setIsLoggedIn(true);
-                await fetchUserDetails(user.uid);
-            } else {
-                setIsLoggedIn(false);
-                setIsAdmin(false);
-                setUserDetails({ firstName: '', lastName: '', mobile: '' });
-            }
-        });
-        return () => unsubscribe();
-      }, []);
+      return () => unsubscribe();
+  }, []);
 
-    const fetchUserDetails = async (uid) => {
-        try {
-            const userDocRef = doc(db, 'users', uid);
-            const userDocSnap = await getDoc(userDocRef);
+  const fetchUserDetails = async (uid) => {
+    try {
+        const userDocRef = doc(db, 'users', uid);
+        const userDocSnap = await getDoc(userDocRef);
 
-            if (userDocSnap.exists()) {
-                const userData = userDocSnap.data();
-                setUserDetails({
-                    firstName: userData.FirstName || '',
-                    lastName: userData.LastName || '',
-                    mobile: userData.contactNumber || '',
-                });
-                setIsAdmin(userData.Type === "Admin");
-            }
-        } catch (error) {
-            console.error("Error fetching user details:", error);
+
+        if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            setFirstName(userData.FirstName);
+            setIsAdmin(userData.Type === "Admin"); 
         }
-    };
+    } catch (error) {
+        console.error("Error fetching user details:", error);
+    }
+};
 
-    const handleSignOut = async () => {
-        try {
-            await signOut(getAuth());
-            navigate('/Home');
-            alert("Signed out successfully!");
-        } catch (error) {
-            console.error('Error signing out:', error);
-        }
-    };
+const handleSignOut = async () => {
+  try {
+      await signOut(getAuth());
+      navigate('/Home');
+      alert("Signed out successfully!");
+  } catch (error) {
+      console.error('Error signing out:', error);
+  }
+};
 
-
-
+    
     return (
         <>
             <nav className={styles.navbar}>
@@ -86,9 +80,10 @@ const Navbar = () => {
                     <div className={styles.logoContainer}>
                         <img src='/images/furwell_logo.png' alt="FurWell Logo" className={styles.logo} />
                     </div>
+
                     {/* Center: Navigation Links */}
                     <ul className={styles.navbarList}>
-                        {isAdmin ? (
+                    {isAdmin ? (
                             <>
                                 <li className={styles.navbarItem}>
                                     <Link to="/AdminHome" className={styles.navbarLink}>Clinics</Link>
@@ -100,25 +95,22 @@ const Navbar = () => {
                                     <Link to="/AdminSubscription" className={styles.navbarLink}>Subscription</Link>
                                 </li>
                             </>
-                        ) : (
+                        ): (
                             <>
                                 <li className={styles.navbarItem}>
                                     <Link to="/Home" className={styles.navbarLink}>Home</Link>
                                 </li>
                                 <li className={styles.navbarItem}>
-                                <Link
-                                    to="#"
-                                    className={styles.navbarLink}
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        window.scrollTo({
-                                            top: document.documentElement.scrollHeight,
-                                            behavior: "smooth",
-                                        });
-                                    }}
-                                >
-                                    Contact Us
-                                </Link>
+                                    <Link to="/about" className={styles.navbarLink}>About</Link>
+                                </li>
+                                <li className={styles.navbarItem}>
+                                    <Link to="/services" className={styles.navbarLink}>Services</Link>
+                                </li>
+                                <li className={styles.navbarItem}>
+                                    <Link to="/appointments" className={styles.navbarLink}>Appointments</Link>
+                                </li>
+                                <li className={styles.navbarItem}>
+                                    <Link to="/contact" className={styles.navbarLink}>Contact Us</Link>
                                 </li>
                                 <li className={styles.navbarItem}>
                                     <Link to="/maps" className={styles.navbarLink}>Maps</Link>
@@ -127,19 +119,11 @@ const Navbar = () => {
                         )}
                     </ul>
 
-                    {/* Right: User Info or Login Buttons */}
+                    {/* Right: Login and Signup Buttons */}
                     <div className={styles.rightSection}>
                         {isLoggedIn ? (
                             <div className={styles.userMenu}>
-
-                                <span 
-                                    className={styles.username} 
-                                    onClick={() => setIsModalOpen(true)}
-                                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                >
-                                    {userDetails.firstName}
-                                </span>
-
+                                <span className={styles.username}> {firstName} </span>
                                 <button onClick={handleSignOut} className={styles.logoutButton}>Sign Out</button>
                             </div>
                         ) : (
@@ -152,22 +136,9 @@ const Navbar = () => {
                 </div>
             </nav>
 
-            {/* Scroll Progress Bar */}
+            {/* Scroll Progress Bar (Hidden if progress is 0) */}
             {scrollProgress > 0 && (
                 <div className={styles.scrollProgressBar} style={{ width: `${scrollProgress}%` }}></div>
-            )}
-
-            {/* Modal for User Details */}
-            {isModalOpen && (
-                <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
-                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <h2>User Information</h2>
-                        <p><strong>First Name:</strong> {userDetails.firstName}</p>
-                        <p><strong>Last Name:</strong> {userDetails.lastName}</p>
-                        <p><strong>Mobile Number:</strong> {userDetails.mobile}</p>
-                        <button onClick={() => setIsModalOpen(false)} className={styles.closeButton}>Close</button>
-                    </div>
-                </div>
             )}
         </>
     );
