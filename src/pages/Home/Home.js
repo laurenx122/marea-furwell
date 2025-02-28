@@ -60,8 +60,11 @@ const Home = () => {
                         Find Clinic
                     </button>
                     <button className="service-button">
-                        <img src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQwly9ieoqBhPisnyYoY9619JiA1gFq8nmmwVUTkWlJMOUG4fgX" alt="Set Appointment" />
-                        Set Appointment
+                    <img 
+                        src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQwly9ieoqBhPisnyYoY9619JiA1gFq8nmmwVUTkWlJMOUG4fgX" 
+                        alt="Set Appointment" 
+                    />
+                    <a href="/ClinicSubscribe">Be our Partner</a>
                     </button>
                 </div>
             )}
