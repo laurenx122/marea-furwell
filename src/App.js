@@ -15,6 +15,9 @@ import ClinicSubscribe from './pages/Signup/ClinicSubscribe';
 import ContactUs from './pages/ContactUs/ContactUs'; // Corrected path
 import ClinicHome from './pages/Clinic/ClinicHome';
 import PetOwnerHome from './pages/PetOwner/PetOwnerHome';
+import AdminClinics from './pages/Admin/AdminHome';
+import AdminAnalytics from './pages/Admin/AdminAnalytics';
+import AdminSubscription from './pages/Admin/AdminSubscription';
 
 function App() {
   return (
@@ -33,6 +36,9 @@ function App() {
         <Route path="/ClinicSubscribe" element={<ClinicSubscribe />} />
         <Route path="/ClinicHome" element={<ClinicHome />} />
         <Route path="/PetOwnerHome" element={<PetOwnerHome />} />
+        <Route path="/AdminHome" element={<AdminClinics />} />
+        <Route path="/AdminAnalytics" element={<AdminAnalytics />} />
+        <Route path="/AdminSubscription" element={<AdminSubscription />} />
       </Routes>
     </Router>
   );

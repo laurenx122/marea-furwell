@@ -13,46 +13,55 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
+
+
+
   const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError(null);
-    
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log('User logged in:', userCredential.user);
-      
-      // Navigate to Clinic Home after login
-      navigate('/PetOwnerHome');
-    } catch (error) {
-      setError(error.message);
-      alert("Login failed: " + error.message);
+      event.preventDefault();
+      setError(null);
+  
+      try {
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          console.log("User logged in:", userCredential.user);
+          alert("Login successful!");
+      if (email === "mareafur@gmail.com" && password === "marea_2025") {
+         
+        navigate("/AdminHome"); // Redirect to AdminHome
+    } else {
+ 
+        navigate("/PetOwnerHome"); // Redirect to user home
     }
+  
+      } catch (error) {
+          setError(error.message);
+          alert("Login failed: " + error.message);
+      }
   };
-
+  
   const handleSocialLogin = async (provider) => {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      await setDoc(
-        doc(db, 'users', user.uid),
-        {
-          email: user.email,
-          name: user.displayName,
-          lastLogin: new Date(),
-        },
-        { merge: true }
-      );
-
-      console.log('User logged in and data stored:', user);
-      alert('Login successful!');
-
-      // Navigate after successful login
-      navigate("/ClinicHome");
-    } catch (error) {
-      setError(error.message);
-      alert("Login failed: " + error.message);
-    }
+      try {
+          const result = await signInWithPopup(auth, provider);
+          const user = result.user;
+  
+          await setDoc(
+              doc(db, "users", user.uid),
+              {
+                  email: user.email,
+                  name: user.displayName,
+                  lastLogin: new Date(),
+              },
+              { merge: true }
+          );
+  
+          console.log("User logged in and data stored:", user);
+         
+  
+      } catch (error) {
+          setError(error.message);
+          alert("Login failed: " + error.message);
+      }
   };
 
   return (
@@ -88,6 +97,7 @@ const Login = () => {
         <button className="petowner-home-button" onClick={() => navigate('/PetOwnerHome')}>
           Go to Pet Owner Home
         </button>
+     
       </div>
   );
 };
