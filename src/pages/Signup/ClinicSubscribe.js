@@ -1,5 +1,6 @@
+
 import { useNavigate } from 'react-router-dom';
-import './Signup.css'; 
+import './ClinicSubscribe.css'; 
 import { FaTimes, FaPaw } from "react-icons/fa";
 import { FiUser, FiLock, FiMail, FiPhone } from "react-icons/fi";
 import React, { useState } from 'react';
@@ -9,7 +10,7 @@ import { doc, setDoc } from 'firebase/firestore';
 
 
 
-const Signup = () => {
+const ClinicSubscribe = () => {
   const navigate = useNavigate(); // For navigation
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -118,4 +119,4 @@ const Signup = () => {
   );
 };
 
-export default Signup
+export default ClinicSubscribe

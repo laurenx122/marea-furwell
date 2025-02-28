@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import styles from './Navbar.module.css';
-import furwell_logo from '../../images/furwell_logo.png';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 const Navbar = () => {
     const [scrollProgress, setScrollProgress] = useState(0);
@@ -50,7 +49,7 @@ const Navbar = () => {
                 <div className={styles.navbarContent}>
                     {/* Left: Logo */}
                     <div className={styles.logoContainer}>
-                        <img src={furwell_logo} alt="FurWell Logo" className={styles.logo} />
+                        <img src='/images/furwell_logo.png' alt="FurWell Logo" className={styles.logo} />
                     </div>
 
                     {/* Center: Navigation Links */}

@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
 /* Background Styling */
 .login-container {
-    background: url('../../images/loginBG.png') no-repeat center center/cover;
+    background-image: url('/public/images/loginBG.png');
     height: 100vh;
     display: flex;
     align-items: center;
