@@ -89,7 +89,7 @@
 .rightSection {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
   margin-left: auto;
 }
 
@@ -148,4 +148,17 @@
   background-color: #3E6680;
   transition: width 0.2s ease-in-out;
   z-index: 1002;
+}
+
+.userMenu {
+  display: flex;
+  align-items: center;
+  gap: 50px; /* Adjust the spacing */
+}
+
+.username {
+  font-size: 1.2rem;
+  color: #3E6680;
+  font-family: 'Albert Sans';
+  font-weight: bold;
 }
