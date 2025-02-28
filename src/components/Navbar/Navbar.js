@@ -2,12 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import styles from './Navbar.module.css';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
+
 const Navbar = () => {
     const [scrollProgress, setScrollProgress] = useState(0);
     const navigate = useNavigate();
     const location = useLocation(); // Detect route changes
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [firstName, setFirstName] = useState('');
+
     useEffect(() => {
         const handleScroll = () => {
             const scrollTop = window.scrollY;
@@ -25,45 +30,46 @@ const Navbar = () => {
     }, [location.pathname]); 
 
     useEffect(() => {
-        // Listen for Firebase auth state changes
-        const unsubscribe = onAuthStateChanged( getAuth(), (user) => {
-            setIsLoggedIn(!!user);
-        });
+      const auth = getAuth();
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          if (user) {
+              setIsLoggedIn(true);
+              await fetchUserDetails(user.uid);
+          } else {
+              setIsLoggedIn(false);
+              setIsAdmin(false);
+              setFirstName('');
+          }
+      });
 
-        return () => unsubscribe(); // Cleanup listener on unmount
-    }, [ getAuth()]);  useEffect(() => {
-        // Check Firebase auth state
-        const auth = getAuth();
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setIsLoggedIn(true);
-                checkAdminStatus(user.email); // Check if the user is an admin
-            } else {
-                setIsLoggedIn(false);
-                setIsAdmin(false);
-            }
-        });
+      return () => unsubscribe();
+  }, []);
 
-        return () => unsubscribe();
-    }, []);
+  const fetchUserDetails = async (uid) => {
+    try {
+        const userDocRef = doc(db, 'users', uid);
+        const userDocSnap = await getDoc(userDocRef);
 
-    const handleSignOut = async () => {
-        try {
-            await signOut(getAuth());
-            navigate('/Home'); // Redirect to home after sign out
-            alert("Signout Successfully!")
-        } catch (error) {
-            console.error('Error signing out:', error);
+        if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            setFirstName(userData.FirstName);
+            setIsAdmin(userData.Type === "Admin"); 
         }
-    };
-    const checkAdminStatus = (email) => {
-        if (email === "mareafur@gmail.com") {
-            setIsAdmin(true);
-        } else {
-            setIsAdmin(false);
-        }
-    };
-   
+    } catch (error) {
+        console.error("Error fetching user details:", error);
+    }
+};
+
+const handleSignOut = async () => {
+  try {
+      await signOut(getAuth());
+      navigate('/Home');
+      alert("Signed out successfully!");
+  } catch (error) {
+      console.error('Error signing out:', error);
+  }
+};
+
     
     return (
         <>
@@ -115,7 +121,10 @@ const Navbar = () => {
                     {/* Right: Login and Signup Buttons */}
                     <div className={styles.rightSection}>
                         {isLoggedIn ? (
-                            <button onClick={handleSignOut} className={styles.logoutButton}>Sign Out</button>
+                            <div className={styles.userMenu}>
+                                <span className={styles.username}> {firstName} </span>
+                                <button onClick={handleSignOut} className={styles.logoutButton}>Sign Out</button>
+                            </div>
                         ) : (
                             <>
                                 <button onClick={() => navigate('/Login')} className={styles.loginButton}>Login</button>

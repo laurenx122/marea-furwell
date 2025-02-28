@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import './Login.css'; 
 import { CiUser , CiUnlock } from "react-icons/ci";
 import { FcGoogle } from "react-icons/fc";
+import { getDoc } from 'firebase/firestore';
 
 const Login = () => {
   const navigate = useNavigate(); // For navigation
@@ -22,23 +23,32 @@ const Login = () => {
       event.preventDefault();
       setError(null);
   
+
       try {
-          const userCredential = await signInWithEmailAndPassword(auth, email, password);
-          console.log("User logged in:", userCredential.user);
-          alert("Login successful!");
-      if (email === "mareafur@gmail.com" && password === "marea_2025") {
-         
-        navigate("/AdminHome"); // Redirect to AdminHome
-    } else {
- 
-        navigate("/PetOwnerHome"); // Redirect to user home
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        console.log("User logged in:", user);
+
+        // Fetch user type from Firestore
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            if (userData.Type === "Admin") {
+                navigate("/AdminHome"); // Redirect to AdminHome
+            } else {
+                navigate("/PetOwnerHome"); // Redirect to user home
+            }
+        } else {
+            console.error("User data not found in Firestore.");
+            alert("Login failed: User data not found.");
+        }
+    } catch (error) {
+        setError(error.message);
+        alert("Login failed: " + error.message);
     }
-  
-      } catch (error) {
-          setError(error.message);
-          alert("Login failed: " + error.message);
-      }
-  };
+};
   
   const handleSocialLogin = async (provider) => {
       try {
