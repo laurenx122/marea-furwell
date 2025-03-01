@@ -154,7 +154,7 @@ const Maps = () => {
         mapRef.current.on('click', (e) => {
             if (addingPin) {
                 addMarkerToDB(e.latlng.lat, e.latlng.lng);
-                setAddingPin(false);
+                setAddingPin(true);
             }
         });
 
