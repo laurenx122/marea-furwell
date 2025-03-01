@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import styles from './Navbar.module.css';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
 const Navbar = () => {
@@ -11,9 +11,14 @@ const Navbar = () => {
     const location = useLocation(); // Detect route changes
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
-    const [firstName, setFirstName] = useState('');
-    const [userDetails, setUserDetails] = useState({ firstName: '', lastName: '', mobile: '' });
+    const [userDetails, setUserDetails] = useState({ firstName: '', lastName: '', contactNumber: '' });
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editedDetails, setEditedDetails] = useState({ firstName: '', lastName: '', contactNumber: '' });
+    const [isEditing, setIsEditing] = useState(false);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
+    const [isSignOutSuccessOpen, setIsSignOutSuccessOpen] = useState(false);
+
 
     useEffect(() => {
         const handleScroll = () => {
@@ -40,7 +45,7 @@ const Navbar = () => {
           } else {
               setIsLoggedIn(false);
               setIsAdmin(false);
-              setUserDetails({ firstName: '', lastName: '', mobile: '' });
+              setUserDetails({ firstName: '', lastName: '', contactNumber: '' });
           }
       });
 
@@ -57,8 +62,13 @@ const Navbar = () => {
               setUserDetails({
                   firstName: userData.FirstName || '',
                   lastName: userData.LastName || '',
-                  mobile: userData.Mobile || '',
+                  contactNumber: userData.contactNumber || '',
               });
+              setEditedDetails({
+                firstName: userData.FirstName || '',
+                lastName: userData.LastName || '',
+                contactNumber: userData.contactNumber || '',
+            });
               setIsAdmin(userData.Type === "Admin");
           }
       } catch (error) {
@@ -66,15 +76,47 @@ const Navbar = () => {
       }
   };
 
-const handleSignOut = async () => {
-  try {
-      await signOut(getAuth());
-      navigate('/Home');
-      alert("Signed out successfully!");
-  } catch (error) {
-      console.error('Error signing out:', error);
-  }
+
+
+const handleSave = async () => {
+    setIsConfirmModalOpen(true);
 };
+
+const confirmSave = async () => {
+    try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (user) {
+            const userDocRef = doc(db, 'users', user.uid);
+            await updateDoc(userDocRef, {
+                FirstName: editedDetails.firstName,
+                LastName: editedDetails.lastName,
+                contactNumber: editedDetails.contactNumber,
+            });
+            setUserDetails(editedDetails);
+            setIsEditing(false);
+            setIsModalOpen(false);
+        }
+    } catch (error) {
+        console.error("Error updating user details:", error);
+    }
+    setIsConfirmModalOpen(false);
+};
+
+const handleSignOut = () => {
+    setIsSignOutConfirmOpen(true);
+};
+
+const confirmSignOut = async () => {
+    try {
+        await signOut(getAuth());
+        setIsSignOutSuccessOpen(true);
+    } catch (error) {
+        console.error('Error signing out:', error);
+    }
+    setIsSignOutConfirmOpen(false);
+};
+
 
     
     return (
@@ -151,18 +193,45 @@ const handleSignOut = async () => {
             </nav>
 
             {/* Scroll Progress Bar (Hidden if progress is 0) */}
-            {scrollProgress > 0 && (
-                <div className={styles.scrollProgressBar} style={{ width: `${scrollProgress}%` }}></div>
-            )}
-                        {/* Modal for User Details */}
-                        {isModalOpen && (
-                        <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
-                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            {scrollProgress > 0 && <div className={styles.scrollProgressBar} style={{ width: `${scrollProgress}%` }}></div>}
+            {isModalOpen && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
                         <h2>User Information</h2>
-                        <p><strong>First Name:</strong> {userDetails.firstName}</p>
-                        <p><strong>Last Name:</strong> {userDetails.lastName}</p>
-                        <p><strong>Mobile Number:</strong> {userDetails.mobile}</p>
-                        <button onClick={() => setIsModalOpen(false)} className={styles.closeButton}>Close</button>
+                        <p>First Name </p>
+                        <input type="text" value={editedDetails.firstName} onChange={(e) => setEditedDetails({...editedDetails, firstName: e.target.value})} />
+                        <p>Last Name </p>
+                        <input type="text" value={editedDetails.lastName} onChange={(e) => setEditedDetails({...editedDetails, lastName: e.target.value})} />
+                        <p>Contact Number</p>
+                        <input type="text" value={editedDetails.contactNumber} onChange={(e) => setEditedDetails({...editedDetails, contactNumber: e.target.value})} />
+                        <button onClick={handleSave}>Save</button>
+                        <button onClick={() => setIsModalOpen(false)} className={styles.cancelButton}>Cancel</button>
+                    </div>
+                </div>
+            )}
+            {isConfirmModalOpen && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <p>Confirm Changes?</p>
+                        <button onClick={confirmSave}>Yes</button>
+                        <button onClick={() => setIsConfirmModalOpen(false)} className={styles.cancelButton}>Cancel</button>
+                    </div>
+                </div>
+            )}
+            {isSignOutConfirmOpen && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <p>Are you sure you want to sign out?</p>
+                        <button onClick={confirmSignOut}>Yes</button>
+                        <button onClick={() => setIsSignOutConfirmOpen(false)} className={styles.cancelButton}>Cancel</button>
+                    </div>
+                </div>
+            )}
+            {isSignOutSuccessOpen && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <p>Signed out successfully!</p>
+                        <button onClick={() => { setIsSignOutSuccessOpen(false); navigate('/Home'); }}>OK</button>
                     </div>
                 </div>
             )}
