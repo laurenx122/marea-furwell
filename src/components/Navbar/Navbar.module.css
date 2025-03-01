@@ -162,34 +162,175 @@
   font-family: 'Albert Sans';
   font-weight: bold;
 }
+
+/* Modal Overlay */
 .modalOverlay {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(255, 182, 193, 0.5); 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1002;
+}
+
+/* Modal Content */
+.modalContent {
+  background: #E3F2FD; /* Light blue pastel */
+  padding: 20px;
+  border-radius: 20px;
+  width: 350px;
+  text-align: center;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  
+}
+
+/* User Avatar */
+.modalContent .avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #B3E5FC; /* Lighter blue */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  margin: 0 auto 0px;
+  position: relative;
+}
+
+/* Camera Icon */
+.modalContent .avatar .camera-icon {
+  position: absolute;
+  bottom: 5px;
+  right: 0;
+  background: white;
+  border-radius: 50%;
+  padding: 0px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Input Fields */
+.modalContent input {
+  width: 90%;
+  padding: 10px;
+  margin: 0;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  text-align: center;
+}
+/* Modal Overlay */
+.modalOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 182, 193, 0.5); 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1002;
+
+}
+
+/* Modal Content */
+.modalContent {
+  background: #E3F2FD; /* Light blue pastel */
+  padding: 20px;
+  border-radius: 20px;
+  width: 350px;
+  text-align: left;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  font-family: 'Albert Sans';
+}
+
+/* User Avatar */
+.modalContent .avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #B3E5FC; /* Lighter blue */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  margin: 0 auto 10px;
+  position: relative;
+}
+
+/* Camera Icon */
+.modalContent .avatar .camera-icon {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: white;
+  border-radius: 50%;
+  padding: 5px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Labels */
+.modalContent p {
+  margin: 10px 0 5px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Input Fields */
+.modalContent input {
+  width: 93%;
+  padding: 12px; /* Adjusted padding for better spacing */
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  text-align: left;
+  background: white;
+}
+/* Modal Buttons Container */
+.modalButtons {
   display: flex;
   justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modalContent {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 300px;
-  text-align: center;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.closeButton {
   margin-top: 15px;
-  background: red;
-  color: white;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Styling for both buttons */
+.modalButtons button {
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 16px;
   border: none;
-  padding: 8px 15px;
-  border-radius: 4px;
   cursor: pointer;
+  transition: 0.3s ease;
+  text-align: center;
+  min-width: 100px;
+  width: auto;
+}
+
+/* Save Button */
+.saveButton {
+  background-color: #164155; /* Light blue */
+  color: black;
+}
+
+.saveButton:hover {
+  background-color: #ffffff;
+}
+
+/* Cancel Button */
+.cancelButton {
+  background-color: #FFCDD2; /* Light red */
+  color: black;
+}
+
+.cancelButton:hover {
+  background-color: #EF9A9A;
 }
