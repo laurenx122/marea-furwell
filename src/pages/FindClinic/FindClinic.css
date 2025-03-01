@@ -1,0 +1,186 @@
+
+
+/* FindClinic.css */
+body {
+  background-color: #82c5ef;
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+}
+
+.find-clinic-container {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+  background-color: transparent;
+}
+
+.search-bar-container {
+  margin-top: 100px;
+  display: flex;
+  justify-content: right;
+  margin-bottom: 20px;
+
+}
+
+.search-bar-container input[type="text"] {
+  width: 60%;
+  padding: 10px;
+  border-radius: 25px;
+  border: 1px solid #aaa;
+  font-size: 1rem;
+}
+
+.search-bar-container button {
+  padding: 10px 15px;
+  background-color: #5abffd;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-left: 10px;
+}
+
+.search-bar-container button:hover {
+  background-color: #4e9dd4;
+}
+
+.filters-container {
+  margin-top: 30px;
+  width: 25%;
+  background-color: #d3e9f7;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(92, 162, 237, 0.83);
+  border-color: #5abffd;
+  width: 300px;
+}
+
+.filters-container h2 {
+  text-align: center;
+  color: #113B57;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.filter {
+  margin-bottom: 15px;
+}
+
+.filter p {
+  color: #113B57;
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.filter label {
+  display: block;
+  color: #113B57;
+  font-size: 1rem;
+}
+
+.quick-filter button {
+  width: 100%;
+  padding: 10px;
+  background-color: #CDEDF6;
+  border-radius: 20px;
+  font-size: 1rem;
+  border-color: #333;
+  cursor: pointer;
+}
+
+.quick-filter button:hover {
+  background-color: #f1c4c4;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  margin-right: 10px;
+}
+
+button {
+  padding: 10px;
+  background-color: #CDEDF6;
+  border: 1px solid #001731;
+  border-radius: 5px;
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+  display: center;
+}
+
+button.selected {
+  background-color: #ffb6b6;
+}
+
+/* Clinic Card Styling */
+.clinic-list {
+  width: 75%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-left: 30px;
+}
+
+.clinic-card {
+  margin-top: -450px;
+  background-color: #cfe9ed;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  margin-left: 100%;
+  width: 300px;
+  height: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.clinic-card img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.clinic-card h3 {
+  color: #113B57;
+  font-size: 1.25rem;
+  margin-bottom: 3px;
+}
+
+.clinic-card p {
+  color: #113B57;
+  font-size: 1rem;
+  margin-bottom: 3px;
+}
+
+.clinic-card ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 3px;
+}
+
+.clinic-card li {
+  color: #113B57;
+  font-size: 0.9rem;
+}
+
+.clinic-card .price {
+  margin-top: auto;
+  color: #4D9DE0;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.clinic-card:hover {
+  transform: translateY(-5px);
+}
+
+.clinic-card.selected {
+  border: 2px solid #d3e9f7;
+}

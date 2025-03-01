@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import './Home.css'; 
+import React, { useState } from 'react';
+import './Home.css';
+import { useNavigate } from 'react-router-dom'; // Importing useNavigate for redirection
 import Footer from '../../components/Footer/Footer';
 
 const Home = () => {
@@ -8,7 +9,13 @@ const Home = () => {
     const [buttonsVisible, setButtonsVisible] = useState(false);
     const [locationVisible, setLocationVisible] = useState(false);
 
-    useEffect(() => {
+    const navigate = useNavigate(); 
+    const handleFindClinicClick = () => {navigate('/FindClinic');};
+    const handleServicesClick = () => { navigate('/services'); };
+    const handleSetAppointmentClick = () => {navigate('/appointments');}; 
+
+    // Scroll event listener to trigger animations when elements come into view
+    React.useEffect(() => {
         const handleScroll = () => {
             const homeText = document.getElementById('home-text');
             const locationSection = document.getElementById('location');
@@ -21,7 +28,7 @@ const Home = () => {
                     setTimeout(() => setButtonsVisible(true), 4000);
                 }
             }
-            
+
             if (locationSection) {
                 const rect = locationSection.getBoundingClientRect();
                 if (rect.top < window.innerHeight * 0.85) {
@@ -49,25 +56,20 @@ const Home = () => {
             </section>
 
             {/* Buttons Container (Between Home & Location) */}
-            {buttonsVisible && (
-                <div className="buttons-container visible">
-                    <button className="service-button">
-                        <img src="https://images.squarespace-cdn.com/content/v1/65380b4b06f21d6d1e04a97b/eb367c7c-28c0-44ef-b89b-2e4326042bad/RAO_icons-03.png" alt="Services" />
-                        Services
-                    </button>
-                    <button className="service-button">
-                        <img src="https://cdn-icons-png.freepik.com/256/12641/12641101.png" alt="Find Clinic" />
-                        Find Clinic
-                    </button>
-                    <button className="service-button">
-                    <img 
-                        src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQwly9ieoqBhPisnyYoY9619JiA1gFq8nmmwVUTkWlJMOUG4fgX" 
-                        alt="Set Appointment" 
-                    />
-                    <a href="/ClinicSubscribe">Be our Partner</a>
-                    </button>
-                </div>
-            )}
+            <div className={`buttons-container ${buttonsVisible ? 'visible' : ''}`}>
+                <button className="service-button" onClick={handleServicesClick}>
+                    <img src="https://images.squarespace-cdn.com/content/v1/65380b4b06f21d6d1e04a97b/eb367c7c-28c0-44ef-b89b-2e4326042bad/RAO_icons-03.png" alt="Services" />
+                    Services
+                </button>
+                <button className="service-button" onClick={handleFindClinicClick}>
+                    <img src="https://cdn-icons-png.freepik.com/256/12641/12641101.png" alt="Find Clinic" />
+                    Find Clinic
+                </button>
+                <button className="service-button" onClick={handleSetAppointmentClick}>
+                    <img src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQwly9ieoqBhPisnyYoY9619JiA1gFq8nmmwVUTkWlJMOUG4fgX" alt="Set Appointment" />
+                    Set Appointment
+                </button>
+            </div>
 
             {/* Location Section */}
             <section id="location" className={locationVisible ? 'fade-in visible' : 'fade-in'}>

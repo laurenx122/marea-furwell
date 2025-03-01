@@ -8,16 +8,17 @@ import Login from './pages/Login/Login';
 import Signup from './pages/Signup/Signup';
 import Home from './pages/Home/Home';
 import Maps from './pages/Maps/Maps'; 
-import About from './pages/About/About'; // Corrected path
-import Services from './pages/Services/Services'; // Corrected path
-import Appointments from './pages/Appointments/Appointments'; // Corrected path
+import About from './pages/About/About'; 
+import Services from './pages/Services/Services'; 
+import Appointments from './pages/Appointments/Appointments'; 
 import ClinicSubscribe from './pages/Signup/ClinicSubscribe';
-import ContactUs from './pages/ContactUs/ContactUs'; // Corrected path
+import ContactUs from './pages/ContactUs/ContactUs'; 
 import ClinicHome from './pages/Clinic/ClinicHome';
 import PetOwnerHome from './pages/PetOwner/PetOwnerHome';
 import AdminClinics from './pages/Admin/AdminHome';
 import AdminAnalytics from './pages/Admin/AdminAnalytics';
 import AdminSubscription from './pages/Admin/AdminSubscription';
+import FindClinic from './pages/FindClinic/FindClinic';
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
         <Route path="/AdminHome" element={<AdminClinics />} />
         <Route path="/AdminAnalytics" element={<AdminAnalytics />} />
         <Route path="/AdminSubscription" element={<AdminSubscription />} />
+        <Route path="/FindClinic" element={<FindClinic />} />
       </Routes>
     </Router>
   );
