@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { auth, db } from '../../firebase'; // Ensure this path is correct
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import { CiUser , CiUnlock } from "react-icons/ci";
 
 const ClinicSubscribe = () => {
   const navigate = useNavigate();
@@ -20,7 +21,12 @@ const ClinicSubscribe = () => {
     ownerLastName: '',
     email: '',
     phone: '',
-    hasBIR: false
+    phone: '',
+    streetAddress: '',
+    city: '',
+    province: '',
+    postalCode: '',
+
   });
 
   const [verificationDocs, setVerificationDocs] = useState({
@@ -28,7 +34,7 @@ const ClinicSubscribe = () => {
     businessPermit: null,
     otherDocs: null
   });
-
+  
   // Handle input changes for the initial form
   const handleInitialFormChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -54,15 +60,44 @@ const ClinicSubscribe = () => {
   };
 
   // Next step handler
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
       // Handle final submission
       setShowModal(false);
-      // Process the complete form data
+      
+      // Create user in Firebase Authentication
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, clinicInfo.email, 'defaultPassword'); // Replace 'defaultPassword' with a secure password
+        const user = userCredential.user;
+
+        const userData = {
+          clinicName: clinicInfo.clinicName,
+          ownerFirstName: clinicInfo.ownerFirstName,
+          ownerLastName:clinicInfo.ownerLastName,
+          email: clinicInfo.email,
+          phone:clinicInfo.phone,
+          streetAddress: clinicInfo.streetAddress,
+          city: clinicInfo.city,
+          province: clinicInfo.province,
+          postalCode: clinicInfo.postalCode,
+          // profilePic:'/images/default-profile.jpg',
+          // coverPhoto:'/images/cover-default.png',
+          createdAt: new Date()
+        };
+        // Store additional user data in Firestore
+        await setDoc(doc(db, "registersClinics", user.uid), userData);
+        alert('User signed up successfully');
+        // Navigate to a success page or dashboard
+        navigate('/ClinicHome'); // Adjust this route as needed
+      } catch (error) {
+        alert('Error creating user:', error);
+        // Handle error (e.g., show error message to the user)
+      }
     }
   };
+
 
   // Get progress bar width based on current step
   const getProgressWidth = () => {
@@ -138,6 +173,16 @@ const ClinicSubscribe = () => {
                 required 
               />
             </div>
+            <div className="CS_input-container">
+                 <CiUnlock className="icon"/>
+              <input 
+                type="password" 
+                name="password"
+                placeholder="Enter your password" 
+                onChange={handleInitialFormChange}
+                required 
+              />
+            </div>
 
             <div className="CS_input-container">
               <FiPhone className="icon" />
@@ -154,17 +199,7 @@ const ClinicSubscribe = () => {
                 required 
               />
             </div>
-          
-            <div className="BIR_header">
-              <p>Do you have BIR 2303 form?</p>
-            </div>
-
-            <div className="BIR">
-              <input type="radio" id="yes" name="hasBIR" value="yes" required />
-              <label htmlFor="yes">Yes</label>
-              <input type="radio" id="no" name="hasBIR" value="no" required />
-              <label htmlFor="no">No</label>
-            </div>
+        
 
             {/* Create Account Button */}
             <button type="submit" className="get-started">
@@ -263,19 +298,20 @@ const ClinicSubscribe = () => {
                 <h3>Business Address</h3>
                 <div className="form-group">
                   <label>Street Address <span className="required">*</span></label>
-                  <input type="text" required />
+                  <input type="text"    value={clinicInfo.streetAddress}  required />
+                  
                 </div>
                 <div className="form-group">
                   <label>City <span className="required">*</span></label>
-                  <input type="text" required />
+                  <input type="text"    value={clinicInfo.city} required />
                 </div>
                 <div className="form-group">
                   <label>Province/State <span className="required">*</span></label>
-                  <input type="text" required />
+                  <input type="text"    value={clinicInfo.province} required />
                 </div>
                 <div className="form-group">
                   <label>Postal Code <span className="required">*</span></label>
-                  <input type="text" required />
+                  <input type="text"    value={clinicInfo.postalCode} required />
                 </div>
               </div>
             )}
