@@ -1,8 +1,29 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FaTrash, FaCheck } from "react-icons/fa";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../firebase";
 import "./AdminSubscription.css";
 
 const ClinicDashboard = () => {
+
+  const [clinics, setClinics] = useState([]);
+
+  useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "registersClinics"));
+        const clinicsData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setClinics(clinicsData);
+      } catch (error) {
+        console.error("Error fetching clinics: ", error);
+      }
+    };
+
+    fetchClinics();
+  }, []);
   return (
     <div className="dashboard-container">
       <div className="search-bar">
@@ -21,20 +42,22 @@ const ClinicDashboard = () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>1</td>
-            <td>Example Clinic</td>
-            <td>123 Main St</td>
-            <td>+123456789</td>
-            <td>clinic@example.com</td>
-            <td>Dr. Smith</td>
-            <td>
-           <div className="actions">
-                <button className="icon-buttoncheck"><FaCheck /></button>
-                <button className="icon-buttondelete"><FaTrash /></button>
-            </div>
-            </td>
-          </tr>
+          {clinics.map((clinic, index) => (
+            <tr key={clinic.id}>
+              <td>{index + 1}</td>
+              <td>{clinic.clinicName}</td>
+              <td>{clinic.streetAddress}, {clinic.city}, {clinic.province}, {clinic.postalCode}</td>
+              <td>{clinic.phone}</td>
+              <td>{clinic.email}</td>
+              <td>{clinic.ownerFirstName} {clinic.ownerLastName}</td>
+              <td>
+                <div className="actions">
+                  <button className="icon-buttoncheck"><FaCheck /></button>
+                  <button className="icon-buttondelete"><FaTrash /></button>
+                </div>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

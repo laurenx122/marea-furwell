@@ -5,25 +5,14 @@ import { Search } from "lucide-react";
 
 //must be replace based on the clinics that already subsribe to the furwell
 const clinics = [
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
-    { name: "Cebu Veterinary", branch: "Main" },
+    { name: "Cebu Veterinary" },
+    { name: "Cebu Veterinary" },
+    { name: "Cebu Veterinary" },
+    { name: "Cebu Veterinary" },
+    { name: "Cebu Veterinary" },
+    { name: "Cebu Veterinary" },
+    { name: "Cebu Veterinary" },
+    { name: "Cebu Veterinary" },
   ];
   
   const AdminHome = () => {
@@ -36,12 +25,12 @@ const clinics = [
         </div>
   
         {/* Clinic Grid */}
-        <div className="clinic-grid">
+        <div className="clinics-grid">
           {clinics.map((clinic, index) => (
-            <div key={index} className="clinic-card">
+            <div key={index} className="clinics-card">
               <div className="clinic-image" />
-              <h3>{clinic.name}</h3>
-              <p className="clinic-branch">{clinic.branch}</p>
+              <p className="clinic-name">Main</p>
+              <p className="clinic-name">Cebu Veterinary</p>
             </div>
           ))}
         </div>
