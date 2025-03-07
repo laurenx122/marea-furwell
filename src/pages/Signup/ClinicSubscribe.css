@@ -172,6 +172,8 @@ html, body {
     width: 500px;
     max-width: 90%;
     padding: 30px;
+    overflow-y: auto; 
+    max-height: 90vh;
 }
 
 .modal-header {
@@ -305,4 +307,69 @@ html, body {
 
 .btn-next:hover {
     background-color: #00a982;
+}
+
+
+/* Map at Step 2 */
+
+.leaflet-container {
+    height: 100%;
+    width: 100%;
+}
+
+.mapClinic-container {
+    height: 350px;
+    width: 100%;
+    margin-top: 10px;
+    background-color: rgba(166, 169, 168, 0.3);
+}
+
+
+/* Location search button */
+.location-search-btn {
+    background-color: #00C49A;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.location-search-btn:hover {
+    background-color: #00a982;
+}
+
+/* Location coordinates display */
+.location-coordinates {
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.location-coordinates p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.map-instruction {
+    font-style: italic;
+    color: #777;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modal-container {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .mapClinic-container {
+        height: 250px;
+    }
 }
