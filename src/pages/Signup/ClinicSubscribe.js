@@ -140,10 +140,10 @@ const ClinicSubscribe = () => {
 
 
         const myIcon = L.icon({
-          iconUrl: '/images/pawPin3.png', // Use the imported image
-          iconSize: [32, 32], // Adjust size as needed
-          iconAnchor: [16, 32], // Adjust anchor as needed
-          popupAnchor: [0, -32], // Adjust popup anchor as needed
+          iconUrl: '/images/pawPin3.png', 
+          iconSize: [32, 32], 
+          iconAnchor: [16, 32], 
+          popupAnchor: [0, -32],
         });
 
         markerRef.current = L.marker([clinicInfo.lat, clinicInfo.lng], {
