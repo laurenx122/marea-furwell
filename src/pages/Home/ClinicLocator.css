@@ -1,0 +1,39 @@
+/* ClinicLocator.css */
+.clinicLocatorContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 120px 20px 20px 20px;
+    font-family: sans-serif;
+}
+
+.clinicLocatorTitle {
+    margin-bottom: 20px;
+}
+
+.clinicSearchInputContainer {
+    display: flex;
+    width: 80%;
+    max-width: 500px;
+    margin-bottom: 20px;
+}
+
+.clinicSearchInputField {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px 0 0 5px;
+}
+
+.clinicSearchButton {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 0 5px 5px 0;
+    cursor: pointer;
+}
+
+.clinicSearchButton:hover {
+    background-color: #0056b3;
+}

@@ -7,6 +7,7 @@ import Navbar from './components/Navbar/Navbar';
 import Login from './pages/Login/Login';
 import Signup from './pages/Signup/Signup';
 import Home from './pages/Home/Home';
+import ClinicLocator from './pages/Home/ClinicLocator';
 import Maps from './pages/Maps/Maps'; 
 import About from './pages/About/About'; 
 import Services from './pages/Services/Services'; 
@@ -27,6 +28,7 @@ function App() {
       <Routes>
       <Route path="/" element={<Navigate to="/Home" />} />
         <Route path="/Home" element={<Home />} />
+        <Route path="/clinicLocator" element={<ClinicLocator />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/maps" element={<Maps />} />

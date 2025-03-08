@@ -254,15 +254,10 @@
     justify-content: center;
     gap: 10px;
     align-items: center;
+    width: 100%; 
+    max-width: 500px; 
+    margin: 0 auto; 
 }
-
-.location-search {
-    padding: 10px;
-    width: 300px;
-    border-radius: 30px;
-    border: 1px solid #ccc;
-}
-
 .search-button {
     padding: 10px 20px;
     background-color: #3E6680;
@@ -275,6 +270,33 @@
 
 .search-button:hover {
     background-color: #2a4b61;
+}
+
+/* Locate me */
+.location-search-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.location-search {
+    padding: 10px;
+    width: 300px;
+    border-radius: 30px;
+    border: 1px solid #ccc;
+    flex-grow: 1; 
+}
+
+.locate-me-icon {
+    width: 30px;
+    height: 30px;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.locate-me-icon:hover {
+    transform: scale(1.1);
 }
 
 /* Prevent horizontal scroll bar */
