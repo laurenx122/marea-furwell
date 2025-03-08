@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"; 
 import "./PetOwnerHome.css"; 
-import { db, auth } from "../../firebase"; // Import db and auth from your firebase.js
-import { collection, query, where, getDocs, doc, addDoc, serverTimestamp } from "firebase/firestore";
+import { db, auth } from "../../firebase"; 
+import { collection, query, where, getDocs, doc, addDoc, serverTimestamp, getDoc } from "firebase/firestore";
  
 const PetOwnerHome = () => { 
   const [activePanel, setActivePanel] = useState("petDetails"); 
@@ -23,30 +23,47 @@ const PetOwnerHome = () => {
   const [addingPet, setAddingPet] = useState(false);
   const [addPetError, setAddPetError] = useState("");
   const [addPetSuccess, setAddPetSuccess] = useState(false);
+  
+  const [newAppointment, setNewAppointment] = useState({
+    petId: "",
+    serviceType: "Vaccination",
+    dateofAppointment: "",
+    veterinarian: "",
+    clinicId: ""
+  });
+  const [bookingAppointment, setBookingAppointment] = useState(false);
+  const [appointmentError, setAppointmentError] = useState("");
+  const [appointmentSuccess, setAppointmentSuccess] = useState(false);
+  const [veterinarians, setVeterinarians] = useState([
+    "Dr. Sarah Johnson",
+    "Dr. Michael Rodriguez",
+    "Dr. Emily Chen",
+    "Dr. James Wilson"
+  ]);
+  const [clinics, setClinics] = useState([]);
+  const [loadingClinics, setLoadingClinics] = useState(true);
  
   // Function to safely format dates
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     
-    // If dateValue is a Firestore Timestamp
     if (dateValue && typeof dateValue.toDate === 'function') {
-      return dateValue.toDate().toLocaleDateString();
+      return dateValue.toDate().toLocaleString(); 
     }
     
-    // If dateValue is a string, try to parse it
     if (typeof dateValue === 'string') {
       try {
-        return new Date(dateValue).toLocaleDateString();
+        return new Date(dateValue).toLocaleString(); 
       } catch (e) {
-        return dateValue; // Return original string if parsing fails
+        return dateValue;
       }
     }
     
-    // Return as is for other cases
+
     return String(dateValue);
   };
 
-  // Handle input changes for the new pet form
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewPet({
@@ -55,7 +72,15 @@ const PetOwnerHome = () => {
     });
   };
 
-  // Function to add a new pet to Firebase
+
+  const handleAppointmentChange = (e) => {
+    const { name, value } = e.target;
+    setNewAppointment({
+      ...newAppointment,
+      [name]: value
+    });
+  };
+
   const handleAddPet = async (e) => {
     e.preventDefault();
     setAddingPet(true);
@@ -63,7 +88,6 @@ const PetOwnerHome = () => {
     setAddPetSuccess(false);
 
     try {
-      // Validate form
       if (!newPet.petName || !newPet.Species || !newPet.Gender) {
         throw new Error("Pet name, species, and gender are required");
       }
@@ -73,20 +97,17 @@ const PetOwnerHome = () => {
         throw new Error("You must be logged in to add a pet");
       }
 
-      // Create a reference to the owner document
       const ownerRef = doc(db, "users", currentUser.uid);
 
-      // Add the pet to Firestore
       await addDoc(collection(db, "pets"), {
         ...newPet,
         owner: ownerRef,
         createdAt: serverTimestamp()
       });
 
-      // Show success message
+
       setAddPetSuccess(true);
       
-      // Reset the form
       setNewPet({
         petName: "",
         Breed: "",
@@ -97,10 +118,8 @@ const PetOwnerHome = () => {
         dateofBirth: ""
       });
 
-      // Refresh the pets list
       fetchPets();
       
-      // Close modal after a short delay
       setTimeout(() => {
         setShowAddPetModal(false);
         setAddPetSuccess(false);
@@ -113,6 +132,67 @@ const PetOwnerHome = () => {
     }
   };
 
+  const handleBookAppointment = async (e) => {
+    e.preventDefault();
+    setBookingAppointment(true);
+    setAppointmentError("");
+    setAppointmentSuccess(false);
+
+    try {
+      if (!newAppointment.petId || !newAppointment.serviceType || !newAppointment.dateofAppointment || !newAppointment.veterinarian || !newAppointment.clinicId) {
+        throw new Error("All fields are required");
+      }
+
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error("You must be logged in to book an appointment");
+      }
+
+      const selectedPet = pets.find(pet => pet.id === newAppointment.petId);
+      if (!selectedPet) {
+        throw new Error("Selected pet not found");
+      }
+
+      const ownerRef = doc(db, "users", currentUser.uid);
+      const petRef = doc(db, "pets", newAppointment.petId);
+      const clinicRef = doc(db, "clinics", newAppointment.clinicId);
+
+      // Add the appointment to Firestore
+      await addDoc(collection(db, "appointments"), {
+        petId: newAppointment.petId,
+        petName: selectedPet.petName, 
+        petRef: petRef, 
+        owner: ownerRef,
+        clinic: clinicRef,
+        serviceType: newAppointment.serviceType,
+        dateofAppointment: new Date(newAppointment.dateofAppointment),
+        veterinarian: newAppointment.veterinarian,
+        createdAt: serverTimestamp()
+      });
+
+      setAppointmentSuccess(true);
+      
+      setNewAppointment({
+        petId: "",
+        serviceType: "Vaccination",
+        dateofAppointment: "",
+        veterinarian: "",
+        clinicId: ""
+      });
+
+      fetchAppointments();
+      
+      setTimeout(() => {
+        setAppointmentSuccess(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Error booking appointment:", error);
+      setAppointmentError(error.message);
+    } finally {
+      setBookingAppointment(false);
+    }
+  };
+
   // Fetch pets from Firestore
   const fetchPets = async () => {
     try {
@@ -120,7 +200,6 @@ const PetOwnerHome = () => {
       const currentUser = auth.currentUser;
       
       if (currentUser) {
-        // Query pets collection where owner matches current user ID
         const petsQuery = query(
           collection(db, "pets"),
           where("owner", "==", doc(db, "users", currentUser.uid))
@@ -142,36 +221,123 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Fetch pets when component mounts
+  // Fetch clinics from Firestore
+  const fetchClinics = async () => {
+    try {
+      setLoadingClinics(true);
+      const clinicsCollection = collection(db, "clinics");
+      const querySnapshot = await getDocs(clinicsCollection);
+      const clinicsList = [];
+      
+      querySnapshot.forEach((doc) => {
+        const clinicData = doc.data();
+        if (clinicData.clinicName) {
+          clinicsList.push({ 
+            id: doc.id, 
+            name: clinicData.clinicName 
+          });
+        }
+      });
+      
+      setClinics(clinicsList);
+    } catch (error) {
+      console.error("Error fetching clinics:", error);
+    } finally {
+      setLoadingClinics(false);
+    }
+  };
+
+const fetchAppointments = async () => {
+  try {
+    const currentUser = auth.currentUser;
+    
+    if (currentUser) {
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        where("owner", "==", doc(db, "users", currentUser.uid))
+      );
+      
+      const querySnapshot = await getDocs(appointmentsQuery);
+      const appointmentsList = [];
+      
+      for (const appointmentDoc of querySnapshot.docs) {
+        const appointmentData = appointmentDoc.data();
+        let appointmentWithResolvedRefs = { 
+          id: appointmentDoc.id,
+          ...appointmentData
+        };
+        
+        if (typeof appointmentData.petName === 'string') {
+        } 
+        else if (appointmentData.petName && appointmentData.petName.path) {
+          try {
+            const petDocRef = appointmentData.petName;
+            const petDoc = await getDoc(petDocRef);
+            
+            if (petDoc.exists()) {
+              const petData = petDoc.data();
+              appointmentWithResolvedRefs.petName = petData.petName || "Unknown Pet";
+            } else {
+              appointmentWithResolvedRefs.petName = "Pet Not Found";
+            }
+          } catch (error) {
+            console.error("Error fetching pet reference:", error);
+            appointmentWithResolvedRefs.petName = "Error Loading Pet";
+          }
+        } 
+        else if (appointmentData.petId) {
+          try {
+            const petDocRef = doc(db, "pets", appointmentData.petId);
+            const petDoc = await getDoc(petDocRef);
+            
+            if (petDoc.exists()) {
+              const petData = petDoc.data();
+              appointmentWithResolvedRefs.petName = petData.petName || "Unknown Pet";
+            } else {
+              appointmentWithResolvedRefs.petName = "Pet Not Found";
+            }
+          } catch (error) {
+            console.error("Error fetching pet by ID:", error);
+            appointmentWithResolvedRefs.petName = "Error Loading Pet";
+          }
+        } else {
+          appointmentWithResolvedRefs.petName = "Unknown Pet";
+        }
+        
+        // Resolve clinic name
+        if (appointmentData.clinic) {
+          try {
+            const clinicDoc = await getDoc(appointmentData.clinic);
+            if (clinicDoc.exists()) {
+              const clinicData = clinicDoc.data();
+              appointmentWithResolvedRefs.clinicName = clinicData.clinicName || "Unknown Clinic";
+            } else {
+              appointmentWithResolvedRefs.clinicName = "Clinic Not Found";
+            }
+          } catch (error) {
+            console.error("Error fetching clinic:", error);
+            appointmentWithResolvedRefs.clinicName = "Error Loading Clinic";
+          }
+        } else {
+          appointmentWithResolvedRefs.clinicName = "Unknown Clinic";
+        }
+        
+        appointmentsList.push(appointmentWithResolvedRefs);
+      }
+      
+      setAppointments(appointmentsList);
+    }
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+  }
+};
+
+  // Fetch data when component mounts
   useEffect(() => {
     fetchPets();
     fetchAppointments();
+    fetchClinics();
   }, []);
-
-  // Fetch appointments
-  const fetchAppointments = async () => {
-    try {
-      const currentUser = auth.currentUser;
-      
-      if (currentUser) {
-        const appointmentsQuery = query(
-          collection(db, "appointments"),
-          where("owner", "==", doc(db, "users", currentUser.uid))
-        );
-        
-        const querySnapshot = await getDocs(appointmentsQuery);
-        const appointmentsList = [];
-        
-        querySnapshot.forEach((doc) => {
-          appointmentsList.push({ id: doc.id, ...doc.data() });
-        });
-        
-        setAppointments(appointmentsList);
-      }
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-    }
-  };
 
   const handlePetClick = (pet) => {
     setSelectedPet(pet);
@@ -264,6 +430,11 @@ const PetOwnerHome = () => {
                               {pet.petName}
                             </a>
                           </td>
+                          <td>-</td>
+                          <td>-</td>
+                          <td>-</td>
+                          <td>-</td>
+                          <td>-</td>
                         </tr>
                       ))
                     ) : (
@@ -285,7 +456,7 @@ const PetOwnerHome = () => {
                   <tr> 
                     <th>Pet Name</th> 
                     <th>Time & Date of Appointment</th> 
-                    <th>Diagnosis</th> 
+                    <th>Clinic</th> 
                     <th>Service</th> 
                     <th>Veterinarian</th> 
                   </tr> 
@@ -294,10 +465,10 @@ const PetOwnerHome = () => {
                   {appointments.length > 0 ? (
                     appointments.map((appointment) => (
                       <tr key={appointment.id}>
-                        <td>{appointment.petName}</td>
-                        <td>{formatDate(appointment.date)}</td>
-                        <td>{appointment.diagnosis || "N/A"}</td>
-                        <td>{appointment.service || "N/A"}</td>
+                        <td>{typeof appointment.petName === 'string' ? appointment.petName : 'Unknown Pet'}</td>
+                        <td>{formatDate(appointment.dateofAppointment)}</td>
+                        <td>{appointment.clinicName || "N/A"}</td>
+                        <td>{appointment.serviceType || "N/A"}</td>
                         <td>{appointment.veterinarian || "N/A"}</td>
                       </tr>
                     ))
@@ -314,32 +485,117 @@ const PetOwnerHome = () => {
           {activePanel === "bookAppointment" && ( 
             <div className="panel book-appointment-panel"> 
               <h3>Book Appointment</h3> 
-              <form> 
-                <label>Choose Pet</label> 
-                <select>
-                  {pets.map((pet) => (
-                    <option key={pet.id} value={pet.id}>
-                      {pet.petName}
-                    </option>
-                  ))}
-                </select> 
-                <br /> 
-                <label>Service Type</label> 
-                <select> 
-                  <option>Vaccination</option> 
-                  <option>Pet Surgery</option> 
-                  <option>Regular Checkup</option>
-                  <option>Grooming</option>
-                  <option>Dental Care</option>
-                </select> 
-                <br /> 
-                <label>Clinic Location</label> 
-                <input type="text" value="Ayrate Veterinary Center Inc." readOnly /> 
-                <br /> 
-                <label>Appointment Date</label> 
-                <input type="datetime-local" /> 
-                <br /> 
-                <button type="submit">Book Appointment</button> 
+              
+              {appointmentSuccess && (
+                <div className="success-message">
+                  Appointment booked successfully!
+                </div>
+              )}
+              
+              {appointmentError && (
+                <div className="error-message">
+                  {appointmentError}
+                </div>
+              )}
+              
+              <form onSubmit={handleBookAppointment}> 
+                <div className="form-group">
+                  <label htmlFor="petId">Choose Pet *</label> 
+                  <select
+                    id="petId"
+                    name="petId"
+                    value={newAppointment.petId}
+                    onChange={handleAppointmentChange}
+                    required
+                  >
+                    <option value="">Select a pet</option>
+                    {pets.map((pet) => (
+                      <option key={pet.id} value={pet.id}>
+                        {pet.petName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="serviceType">Service Type *</label> 
+                  <select
+                    id="serviceType"
+                    name="serviceType"
+                    value={newAppointment.serviceType}
+                    onChange={handleAppointmentChange}
+                    required
+                  > 
+                    <option value="Vaccination">Vaccination</option> 
+                    <option value="Pet Surgery">Pet Surgery</option> 
+                    <option value="Regular Checkup">Regular Checkup</option>
+                    <option value="Grooming">Grooming</option>
+                    <option value="Dental Care">Dental Care</option>
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="veterinarian">Veterinarian *</label>
+                  <select
+                    id="veterinarian"
+                    name="veterinarian"
+                    value={newAppointment.veterinarian}
+                    onChange={handleAppointmentChange}
+                    required
+                  >
+                    <option value="">Select a veterinarian</option>
+                    {veterinarians.map((vet, index) => (
+                      <option key={index} value={vet}>
+                        {vet}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="clinicId">Clinic Location *</label> 
+                  <select
+                    id="clinicId"
+                    name="clinicId"
+                    value={newAppointment.clinicId}
+                    onChange={handleAppointmentChange}
+                    required
+                  >
+                    <option value="">Select a clinic</option>
+                    {loadingClinics ? (
+                      <option value="" disabled>Loading clinics...</option>
+                    ) : (
+                      clinics.map((clinic) => (
+                        <option key={clinic.id} value={clinic.id}>
+                          {clinic.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="dateofAppointment">Appointment Date & Time *</label> 
+                  <input
+                    type="datetime-local"
+                    id="dateofAppointment"
+                    name="dateofAppointment"
+                    value={newAppointment.dateofAppointment}
+                    onChange={handleAppointmentChange}
+                    required
+                    min={new Date().toISOString().slice(0, 16)}
+                  /> 
+                </div>
+                
+                <div className="form-actions">
+                  <button 
+                    type="submit"
+                    disabled={bookingAppointment || !newAppointment.petId}
+                    className="submit-btn"
+                  >
+                    {bookingAppointment ? "Booking..." : "Book Appointment"}
+                  </button>
+                </div>
               </form> 
             </div> 
           )} 
