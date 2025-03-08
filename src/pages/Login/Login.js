@@ -82,11 +82,6 @@ const Login = () => {
         <button className="clinic-home-btn" onClick={() => navigate('/ClinicHome')}>
           Go to Clinic Home
         </button>
-        {/* Redirect to PetOwner */}
-        <button className="petowner-home-button" onClick={() => navigate('/PetOwnerHome')}>
-          Go to Pet Owner Home
-        </button>
-     
       </div>
   );
 };
