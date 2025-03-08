@@ -19,38 +19,42 @@ const Navbar = () => {
     const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
     const [isSignOutSuccessOpen, setIsSignOutSuccessOpen] = useState(false);
 
-
     useEffect(() => {
-        const handleScroll = () => {
-            const scrollTop = window.scrollY;
-            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const progress = (scrollTop / docHeight) * 100;
-            setScrollProgress(progress);
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        const auth = getAuth();
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDocRef = doc(db, 'users', user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+    
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    setIsLoggedIn(true);
+                    setUserDetails({
+                        firstName: userData.FirstName || '',
+                        lastName: userData.LastName || '',
+                        contactNumber: userData.contactNumber || '',
+                    });
+                    setEditedDetails({
+                        firstName: userData.FirstName || '',
+                        lastName: userData.LastName || '',
+                        contactNumber: userData.contactNumber || '',
+                    });
+                    setIsAdmin(userData.Type === "Admin");
+                } else {
+                    await signOut(auth);
+                    setIsLoggedIn(false);
+                    setIsAdmin(false);
+                    setUserDetails({ firstName: '', lastName: '', contactNumber: '' });
+                }
+            } else {
+                setIsLoggedIn(false);
+                setIsAdmin(false);
+                setUserDetails({ firstName: '', lastName: '', contactNumber: '' });
+            }
+        });
+    
+        return () => unsubscribe();
     }, []);
-
-    useEffect(() => {
-        setScrollProgress(0);
-    }, [location.pathname]); 
-
-    useEffect(() => {
-      const auth = getAuth();
-      const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          if (user) {
-              setIsLoggedIn(true);
-              await fetchUserDetails(user.uid);
-          } else {
-              setIsLoggedIn(false);
-              setIsAdmin(false);
-              setUserDetails({ firstName: '', lastName: '', contactNumber: '' });
-          }
-      });
-
-      return () => unsubscribe();
-  }, []);
 
   const fetchUserDetails = async (uid) => {
       try {

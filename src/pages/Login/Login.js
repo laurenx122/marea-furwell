@@ -14,65 +14,40 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
 
-  const [isAdmin, setIsAdmin] = useState(false);
-
-
-
-
   const handleSubmit = async (event) => {
-      event.preventDefault();
-      setError(null);
-  
+    event.preventDefault();
+    setError(null);
 
-      try {
+    try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        console.log("User logged in:", user);
-        alert("Login successfully!");
-        // Fetch user type from Firestore
+  
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
+            
+            alert("Login successfully!"); 
+
             if (userData.Type === "Admin") {
-                navigate("/AdminHome"); // Redirect to AdminHome
-            } else {
-                navigate("/PetOwnerHome"); // Redirect to user home
+                navigate("/AdminHome"); 
+            } else if  (userData.Type === "Pet owner") {
+                navigate("/PetOwnerHome"); 
+            }else if (userData.Type === "Clinic"){
+              navigate("/ClinicHome"); 
             }
         } else {
             console.error("User data not found in Firestore.");
             alert("Login failed: User data not found.");
+            setError("User data not found in Firestore.");
         }
     } catch (error) {
         setError(error.message);
         alert("Login failed: " + error.message);
     }
 };
-  
-  const handleSocialLogin = async (provider) => {
-      try {
-          const result = await signInWithPopup(auth, provider);
-          const user = result.user;
-  
-          await setDoc(
-              doc(db, "users", user.uid),
-              {
-                  email: user.email,
-                  name: user.displayName,
-                  lastLogin: new Date(),
-              },
-              { merge: true }
-          );
-  
-          console.log("User logged in and data stored:", user);
-         
-  
-      } catch (error) {
-          setError(error.message);
-          alert("Login failed: " + error.message);
-      }
-  };
+
 
   return (
       <div className="login-container">
