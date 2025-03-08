@@ -1,4 +1,3 @@
-/* ClinicLocator.css */
 .clinicLocatorContainer {
     display: flex;
     flex-direction: column;
@@ -37,3 +36,13 @@
 .clinicSearchButton:hover {
     background-color: #0056b3;
 }
+
+.mapClinicLocatorContainer {
+    height: 500px;
+    width: 100%;
+    margin-top: 10px;
+    background-color: rgba(166, 169, 168, 0.3);
+    border: 2px solid rgb(156, 211, 251);
+    border-radius: 10px;
+}
+
