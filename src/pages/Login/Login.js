@@ -27,9 +27,10 @@ const Login = () => {
 
         if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
-            
+            setEmail('');
+            setPassword('');
             alert("Login successfully!"); 
-
+          
             if (userData.Type === "Admin") {
                 navigate("/AdminHome"); 
             } else if  (userData.Type === "Pet owner") {
@@ -39,8 +40,11 @@ const Login = () => {
             }
         } else {
             console.error("User data not found in Firestore.");
+            setEmail('');
+            setPassword('');
             alert("Login failed: User data not found.");
             setError("User data not found in Firestore.");
+
         }
     } catch (error) {
         setError(error.message);
