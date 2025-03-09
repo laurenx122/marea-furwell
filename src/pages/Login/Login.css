@@ -39,7 +39,8 @@
   .logo-furwell {
     height: 250px; 
     width: auto;
-    margin: -50px;
+    margin-top: -50px;
+    margin-bottom: -40px;
   }
   
   /* Input Fields */
