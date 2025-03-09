@@ -57,7 +57,7 @@ const Login = () => {
       <div className="login-container">
         <div className="login-box">
           <img src='/images/baby_doggy.png' alt="Dog" className="dog-img" />
-          <img src='/images/furwell_logo.png' alt="FurWell Logo" className="logo" />
+          <img src='/images/furwell_logo.png' alt="FurWell Logo" className="logo-furwell" />
           <form onSubmit={handleSubmit}>
             <div className="input-container">
               <CiUser className="icon"/>
