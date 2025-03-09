@@ -16,7 +16,7 @@
   justify-content: flex-end; 
   margin-bottom: 20px;
   width: 60%;
-  margin-left: 450px;
+  margin-left: 500px;
 }
 
 .search-bar-container input[type="text"] {
@@ -29,7 +29,7 @@
 
 .search-bar-container button {
   padding: 10px 15px;
-  background-color: #5abffd;
+  background-color: #3E6680;
   color: white;
   border: none;
   border-radius: 25px;
@@ -40,7 +40,10 @@
 }
 
 .search-bar-container button:hover {
-  background-color: #4e9dd4;
+  background-color: #CDEDF6;
+  color: #3E6680;
+  border: 2px solid #3E6680;
+  
 }
 
 .filters-container {
@@ -51,6 +54,7 @@
   border-radius: 8px;
   box-shadow: 0 8px 16px rgba(92, 162, 237, 0.83);
   border-color: #5abffd;
+  margin-left: 2%;
  
 }
 
@@ -122,14 +126,14 @@ button.selected {
 }
 
 .clinic-card {
-  margin-top: -450px;
+  margin-top: -430px;
   background-color: #cfe9ed;
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(2, 93, 105, 0.875);
   cursor: pointer;
   transition: transform 0.3s ease;
-  margin-left: 100%;
+  margin-left: 120%;
   width: 260px;
   height: 330px;
   display: flex;
@@ -180,4 +184,57 @@ button.selected {
 
 .clinic-card.selected {
   border: 2px solid #d3e9f7;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal {
+  background-color: #CDEDF6;
+  padding: 20px;
+  border-radius: 8px;
+  width: 600px;
+  height: auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  position: relative;
+}
+
+.modal img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.close-modal {
+  position: absolute;
+  top: 10px;
+  right: 10px; 
+  background-color: #EDBFC6;
+  color: white;
+  font-size: 1.1rem; 
+  padding: 3px 6px; 
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  width: 30px;
+  height: 30px; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.close-modal:hover {
+  background-color: #0494cd;
 }
