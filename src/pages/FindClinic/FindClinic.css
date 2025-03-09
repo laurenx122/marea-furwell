@@ -1,34 +1,29 @@
-
-
 /* FindClinic.css */
-body {
-  background-color: #82c5ef;
-  margin: 0;
-  padding: 0;
-  font-family: 'Arial', sans-serif;
-}
+
 
 .find-clinic-container {
   display: flex;
   flex-direction: column;
   padding: 20px;
   font-family: 'Arial', sans-serif;
-  background-color: transparent;
+  background-color: #CDEDF6;
 }
 
 .search-bar-container {
-  margin-top: 100px;
-  display: flex;
-  justify-content: right;
-  margin-bottom: 20px;
+  margin-top: 100px; 
 
+  display: flex;
+  justify-content: flex-end; 
+  margin-bottom: 20px;
+  width: 60%;
+  margin-left: 450px;
 }
 
 .search-bar-container input[type="text"] {
-  width: 60%;
+  width: 85%;
   padding: 10px;
   border-radius: 25px;
-  border: 1px solid #aaa;
+  border: 1px solid #004275;
   font-size: 1rem;
 }
 
@@ -49,14 +44,14 @@ body {
 }
 
 .filters-container {
-  margin-top: 30px;
-  width: 25%;
-  background-color: #d3e9f7;
+  margin-top: -5%;
+  width: 18%;
+  background-color: #CDEDF6;
   padding: 40px;
   border-radius: 8px;
   box-shadow: 0 8px 16px rgba(92, 162, 237, 0.83);
   border-color: #5abffd;
-  width: 300px;
+ 
 }
 
 .filters-container h2 {
@@ -107,7 +102,7 @@ button {
   border: 1px solid #001731;
   border-radius: 5px;
   font-size: 1rem;
-  color: #333;
+  color: #03538b;
   cursor: pointer;
   display: center;
 }
@@ -118,33 +113,35 @@ button.selected {
 
 /* Clinic Card Styling */
 .clinic-list {
-  width: 75%;
+  width: 70%;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 10px;
   margin-left: 30px;
+  margin-top: 30px;
 }
 
 .clinic-card {
   margin-top: -450px;
   background-color: #cfe9ed;
-  padding: 15px;
+  padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(2, 93, 105, 0.875);
   cursor: pointer;
   transition: transform 0.3s ease;
   margin-left: 100%;
-  width: 300px;
-  height: 380px;
+  width: 260px;
+  height: 330px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 10px;
 }
 
 .clinic-card img {
   max-width: 100%;
-  border-radius: 8px;
-  margin-bottom: 15px;
+  border-radius: 4px;
+  margin-bottom: 10px;
 }
 
 .clinic-card h3 {
