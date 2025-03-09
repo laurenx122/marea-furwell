@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './FindClinic.css';
 import { useNavigate } from 'react-router-dom';
+import Footer from '../../components/Footer/Footer'; // Import Footer component
 
 const FindClinic = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,7 +17,7 @@ const FindClinic = () => {
       location: 'Cebu City',
       services: ['Consultation', 'Ultrasound'],
       price: '₱₱',
-      image: 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp', // Replace with actual image URL
+      image: 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
     },
     {
       id: 2,
@@ -24,7 +25,7 @@ const FindClinic = () => {
       location: 'Mandaue',
       services: ['X-Ray', 'Emergency Care'],
       price: '₱₱₱',
-      image: 'dhttps://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp', // Replace with actual image URL
+      image: 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
     },
     {
       id: 3,
@@ -32,7 +33,7 @@ const FindClinic = () => {
       location: 'Cebu City',
       services: ['Endoscopy', 'Consultation'],
       price: '₱₱₱',
-      image: 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp', // Replace with actual image URL
+      image: 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
     }
   ]);
 
@@ -202,4 +203,14 @@ const FindClinic = () => {
   );
 };
 
-export default FindClinic;
+// Footer placed outside the FindClinic container
+const FindClinicWithFooter = () => {
+  return (
+    <div>
+      <FindClinic />
+      <Footer />
+    </div>
+  );
+};
+
+export default FindClinicWithFooter;
