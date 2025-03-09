@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react"; 
-import "./PetOwnerHome.css"; 
+import "./VeterinaryHome.css"; 
 import { db, auth } from "../../firebase"; 
 import { collection, query, where, getDocs, doc, addDoc, serverTimestamp, getDoc } from "firebase/firestore";
  
-const PetOwnerHome = () => { 
+const VeterinaryHome = () => { 
   const [activePanel, setActivePanel] = useState("petDetails"); 
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -376,19 +376,19 @@ const fetchAppointments = async () => {
           className={activePanel === "petDetails" ? "active" : ""} 
           onClick={() => setActivePanel("petDetails")} 
         > 
-          Pet Details 
+          Upcoming Appointments
         </button> 
         <button 
           className={activePanel === "appointments" ? "active" : ""} 
           onClick={() => setActivePanel("appointments")} 
         > 
-          Appointments 
+          Schedule
         </button> 
         <button 
           className={activePanel === "bookAppointment" ? "active" : ""} 
           onClick={() => setActivePanel("bookAppointment")} 
         > 
-          Book Appointment 
+          Insert Req'd info
         </button> 
       </div> 
  
@@ -397,7 +397,7 @@ const fetchAppointments = async () => {
           {activePanel === "petDetails" && ( 
             <div className="panel pet-details-panel"> 
               <div className="pet-details-header">
-                <h3>Pet Details</h3>
+                <h3>Upcoming Appointments</h3>
                 <button className="addpetbutt" onClick={openAddPetModal}>Add A Pet</button>
               </div>
               {loading ? (
@@ -406,11 +406,11 @@ const fetchAppointments = async () => {
                 <table> 
                   <thead> 
                     <tr> 
+                      <th>Date & Time</th> 
                       <th>Pet Name</th> 
-                      <th>Date</th> 
-                      <th>Veterinarian</th> 
-                      <th>Diagnosis</th> 
-                      <th>Medication</th> 
+                      <th>Owner</th> 
+                      <th>Species</th> 
+                      <th>Service</th> 
                       <th>Comments</th> 
                     </tr> 
                   </thead> 
@@ -445,15 +445,17 @@ const fetchAppointments = async () => {
  
           {activePanel === "appointments" && ( 
             <div className="panel appointments-panel"> 
-              <h3>Appointments</h3> 
+              <h3>Schedule</h3> 
               <table> 
                 <thead> 
                   <tr> 
-                    <th>Pet Name</th> 
-                    <th>Time & Date of Appointment</th> 
-                    <th>Clinic</th> 
-                    <th>Service</th> 
-                    <th>Veterinarian</th> 
+                    <th>Monday</th> 
+                    <th>Tuesday</th> 
+                    <th>Wednesday</th> 
+                    <th>Thursday</th> 
+                    <th>Friday</th> 
+                    <th>Saturday</th> 
+                    <th>Sunday</th> 
                   </tr> 
                 </thead> 
                 <tbody>
@@ -465,11 +467,12 @@ const fetchAppointments = async () => {
                         <td>{appointment.clinicName || "N/A"}</td>
                         <td>{appointment.serviceType || "N/A"}</td>
                         <td>{appointment.veterinarian || "N/A"}</td>
+                        
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5">No appointments found</td>
+                      <td colSpan="7">No appointments found</td>
                     </tr>
                   )}
                 </tbody> 
@@ -757,4 +760,4 @@ const fetchAppointments = async () => {
   ); 
 }; 
  
-export default PetOwnerHome;
+export default VeterinaryHome;

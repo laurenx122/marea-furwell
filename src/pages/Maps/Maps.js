@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import Footer from '../../components/Footer/Footer';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Maps.css';
@@ -234,6 +235,7 @@ const Maps = () => {
     };
 
     return (
+        <div className = "maps-page">
         <div className="maps-container">
             <h2>🌍 Explore Locations</h2>
             <div className="search-container" ref={suggestionBoxRef}>
@@ -340,7 +342,10 @@ const Maps = () => {
                     )}
                 </div>
             </div>
+            </div>
+            <Footer />
         </div>
+
     );
 };
 
