@@ -1,15 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import './Signup.css'; 
-import { FaTimes, FaPaw, FaCamera } from "react-icons/fa";
-import { FiUser, FiLock, FiMail, FiPhone, FiEye, FiEyeOff } from "react-icons/fi";
-import React, { useState, useRef } from 'react';
-import { auth, db, storage } from '../../firebase'; // Ensure storage is exported
+import { FaTimes, FaPaw } from "react-icons/fa";
+import { FiUser, FiLock, FiMail, FiPhone } from "react-icons/fi";
+import React, { useState } from 'react';
+import { auth, db } from '../../firebase'; // Ensure this path is correct
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+
 
 const Signup = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // For navigation
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,40 +18,17 @@ const Signup = () => {
   const [lname, setlName] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [error, setError] = useState(null);
-  const [profilePicture, setProfilePicture] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const fileInputRef = useRef(null);
 
   const isValidPhilippinesNumber = (number) => {
     const phRegex = /^(\+63|0)9\d{9}$/;
     return phRegex.test(number);
   };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setProfilePicture(file);
-      // Create a preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current.click();
-  };
  
   const handleSignup = async (e) => {
     e.preventDefault();
-    
-    // Reset any existing errors
-    setError(null);
     
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -66,14 +44,6 @@ const Signup = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      // Upload profile picture if one was selected
-      let profilePictureUrl = null;
-      if (profilePicture) {
-        const storageRef = ref(storage, `profilePictures/${user.uid}`);
-        await uploadBytes(storageRef, profilePicture);
-        profilePictureUrl = await getDownloadURL(storageRef);
-      }
-      
       // Store user info in Firestore
       await setDoc(doc(db, "users", user.uid), {
         Type: "Pet owner",
@@ -82,10 +52,7 @@ const Signup = () => {
         email: email,
         contactNumber: contactNumber,
         uid: user.uid,
-        profilePictureUrl: profilePictureUrl
       });
-      
-      // Show success modal instead of alert
       setShowSuccessModal(true);
     } catch (error) {
       console.error("Signup error:", error);
@@ -124,50 +91,21 @@ const Signup = () => {
   };
 
   return (
-    <div className="signup-container">
-      <div className="signup-box">
-        {/* Header */}
-        <div className="signup-header">
+      <div className="signup-container">
+        <div className="signup-box">
+          {/* Header */}
+          <div className="signup-header">
           <div className="signup-head">
             <h2>Sign Up</h2>
             <p>Compassionate Care for Every Paw, Hoof, and Claw!</p>
           </div>
           <img src='/images/furwell_logo.png' alt="FurWell Logo" className="signup-logo" />
         </div>
-        
-        {/* Error message with improved styling */}
-        {error && (
-          <div className="error-message">
-            <FaTimes className="error-icon" />
-            <p>{error}</p>
-          </div>
-        )}
-        
-        <form onSubmit={handleSignup}>
-          {/* Profile Picture Upload */}
-          <div className="profile-picture-container">
-            <div 
-              className="profile-picture-upload" 
-              onClick={triggerFileInput}
-              style={{ backgroundImage: previewUrl ? `url(${previewUrl})` : 'none' }}
-            >
-              {!previewUrl && (
-                <>
-                  <FaCamera className="camera-icon" />
-                  <p>Upload Photo</p>
-                </>
-              )}
-            </div>
-            <input 
-              type="file" 
-              ref={fileInputRef}
-              accept="image/*" 
-              onChange={handleFileChange} 
-              style={{ display: 'none' }} 
-            />
-          </div>
-          
-          <div className="name-container">
+           {/* Form Fields */}
+           {error && <p style={{ color: "red" }}>{error}</p>}
+        <form  onSubmit={handleSignup}>
+        <div className="name-container">
+            {/* setting the values of the field */}
             <input type="text" placeholder="First Name" value={fname} onChange={(e) => setfName(e.target.value)} required /> 
             <input type="text" placeholder="Last Name"  value={lname} onChange={(e) => setlName(e.target.value)} required />
           </div>
@@ -181,8 +119,9 @@ const Signup = () => {
             <FiPhone className="icon" />
             <select className="country-code">
               <option>PH +63</option>
+              {/* Add other country codes if needed */}
             </select>
-            <input type="text" placeholder="09XXX-XXXX-XXX" value={contactNumber} onChange={(e) => setContactNumber(e.target.value.replace(/[^0-9]/g, ""))} required />
+            <input type="text" placeholder="09XXX - XXXX - XXX"value={contactNumber}   onChange={(e) => setContactNumber(e.target.value.replace(/[^0-9]/g, ""))}    required />
           </div>
 
           <div className="input-container">
@@ -230,19 +169,18 @@ const Signup = () => {
           </div>
 
           {/* Create Account Button */}
-          <button type="submit" className="create-account">
+          <button  type="submit" className="create-account">
             <FaPaw className="paw-icon" /> Create Account
           </button>
-          
+
           {/* Already have an account link */}
           <div className="already-account">
             Already have an account? <a onClick={goToLogin} className="login-link">Login</a>
           </div>
         </form>
       </div>
-      
-      {/* Success Modal */}
-      {showSuccessModal && (
+            {/* Success Modal */}
+            {showSuccessModal && (
         <div className="modal-overlay">
           <div className="success-modal">
             <div className="success-modal-content">
@@ -257,8 +195,8 @@ const Signup = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
   );
 };
 
-export default Signup;
+export default Signup

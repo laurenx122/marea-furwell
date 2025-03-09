@@ -13,7 +13,11 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError(null);
@@ -86,8 +90,20 @@ const Login = () => {
             </div>
             <div className="input-container">
               <CiUnlock className="icon"/>
-              <input type="password" placeholder="Password"  value={password}
-              onChange={(e) => setPassword(e.target.value)} required />
+              <input 
+                type={showPassword ? "text" : "password"} 
+                placeholder="Password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
+              />
+              <div className="password-toggle" onClick={togglePasswordVisibility}>
+                {showPassword ? (
+                  <img src="https://www.freeiconspng.com/thumbs/eye-icon/eyeball-icon-png-eye-icon-1.png" alt="Hide" className="eye-icon" />
+                ) : (
+                  <img src="https://static.thenounproject.com/png/22249-200.png" alt="Show" className="eye-icon" />
+                )}
+              </div>
             </div>
             <button className="sign-in-btn">Sign In</button>
           </form>

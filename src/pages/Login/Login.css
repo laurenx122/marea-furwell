@@ -126,8 +126,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #e8faff;
-  border-radius: 15px;
 }
 
 .success-gif {
@@ -138,6 +136,23 @@
 
 .success-modal h3 {
   margin: 0;
-  color: #4CAF50;
+  color: #000000;
   font-size: 18px;
+}
+
+.input-container {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.eye-icon {
+  width: 20px;
+  height: 20px;
 }
