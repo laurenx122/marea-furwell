@@ -18,6 +18,9 @@ const Signup = () => {
   const [lname, setlName] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [error, setError] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const isValidPhilippinesNumber = (number) => {
     const phRegex = /^(\+63|0)9\d{9}$/;
@@ -50,11 +53,41 @@ const Signup = () => {
         contactNumber: contactNumber,
         uid: user.uid,
       });
-      alert("Signup successful! 🎉"); 
-      navigate('/Login');
+      setShowSuccessModal(true);
     } catch (error) {
-      setError(error.message);
+      console.error("Signup error:", error);
+      
+      // Handle specific Firebase errors with user-friendly messages
+      if (error.code === 'auth/email-already-in-use') {
+        setError("This email is already registered. Please use a different email or try logging in.");
+      } else if (error.code === 'auth/weak-password') {
+        setError("Password is too weak. Please use at least 6 characters.");
+      } else if (error.code === 'auth/invalid-email') {
+        setError("Invalid email format. Please check your email address.");
+      } else if (error.code === 'auth/network-request-failed') {
+        setError("Network error. Please check your internet connection and try again.");
+      } else {
+        setError("An error occurred during signup. Please try again later.");
+      }
     }
+  };
+
+  const closeSuccessModal = () => {
+    setShowSuccessModal(false);
+    navigate('/Login');
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  // Function to navigate to login page
+  const goToLogin = () => {
+    navigate('/Login');
   };
 
   return (
@@ -88,17 +121,43 @@ const Signup = () => {
               <option>PH +63</option>
               {/* Add other country codes if needed */}
             </select>
-            <input type="text" placeholder="XXX - XXXX - XXX"value={contactNumber}   onChange={(e) => setContactNumber(e.target.value.replace(/[^0-9]/g, ""))}    required />
+            <input type="text" placeholder="09XXX - XXXX - XXX"value={contactNumber}   onChange={(e) => setContactNumber(e.target.value.replace(/[^0-9]/g, ""))}    required />
           </div>
 
           <div className="input-container">
             <FiLock className="icon" />
-            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input 
+              type={showPassword ? "text" : "password"} 
+              placeholder="Password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
+            <div className="password-toggle" onClick={togglePasswordVisibility}>
+              {showPassword ? (
+                <img src="https://www.freeiconspng.com/thumbs/eye-icon/eyeball-icon-png-eye-icon-1.png" alt="Hide" className="eye-icon" />
+              ) : (
+                <img src="https://static.thenounproject.com/png/22249-200.png" alt="Show" className="eye-icon" />
+              )}
+            </div>
           </div>
 
           <div className="input-container">
             <FiLock className="icon" />
-            <input type="password" placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}  required />
+            <input 
+              type={showConfirmPassword ? "text" : "password"} 
+              placeholder="Confirm Password" 
+              value={confirmPassword} 
+              onChange={(e) => setConfirmPassword(e.target.value)} 
+              required 
+            />
+            <div className="password-toggle" onClick={toggleConfirmPasswordVisibility}>
+              {showConfirmPassword ? (
+                <img src="https://www.freeiconspng.com/thumbs/eye-icon/eyeball-icon-png-eye-icon-1.png" alt="Hide" className="eye-icon" />
+              ) : (
+                <img src="https://static.thenounproject.com/png/22249-200.png" alt="Show" className="eye-icon" />
+              )}
+            </div>
           </div>
 
           {/* Terms & Conditions */}
@@ -113,8 +172,29 @@ const Signup = () => {
           <button  type="submit" className="create-account">
             <FaPaw className="paw-icon" /> Create Account
           </button>
+
+          {/* Already have an account link */}
+          <div className="already-account">
+            Already have an account? <a onClick={goToLogin} className="login-link">Login</a>
+          </div>
         </form>
       </div>
+            {/* Success Modal */}
+            {showSuccessModal && (
+        <div className="modal-overlay">
+          <div className="success-modal">
+            <div className="success-modal-content">
+              <img src="/images/furwell_logo.png" alt="FurWell Logo" className="modal-logo" />
+              <h2>Welcome to FurWell!</h2>
+              <p>Your account has been successfully created.</p>
+              <p className="success-message">Get ready for compassionate care for your furry friend!</p>
+              <button onClick={closeSuccessModal} className="modal-button">
+                Continue to Login
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
   );
 };

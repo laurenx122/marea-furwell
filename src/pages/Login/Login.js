@@ -1,19 +1,23 @@
-import React, { useState } from 'react';
-import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 import { useNavigate } from 'react-router-dom';
 import './Login.css'; 
-import { CiUser , CiUnlock } from "react-icons/ci";
+import { CiUser, CiUnlock } from "react-icons/ci";
 import { FcGoogle } from "react-icons/fc";
-import { getDoc } from 'firebase/firestore';
 
 const Login = () => {
-  const navigate = useNavigate(); // For navigation
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError(null);
@@ -29,29 +33,49 @@ const Login = () => {
             const userData = userDocSnap.data();
             setEmail('');
             setPassword('');
-            alert("Login successfully!"); 
-          
-            if (userData.Type === "Admin") {
-                navigate("/AdminHome"); 
-            } else if  (userData.Type === "Pet owner") {
-                navigate("/PetOwnerHome"); 
-            }else if (userData.Type === "Clinic"){
-              navigate("/ClinicHome"); 
-            }
+            
+            // Show success modal
+            setShowSuccessModal(true);
+            
+            // Auto close modal after 2 seconds and navigate
+            setTimeout(() => {
+                setShowSuccessModal(false);
+                if (userData.Type === "Admin") {
+                    navigate("/AdminHome"); 
+                } else if (userData.Type === "Pet owner") {
+                    navigate("/PetOwnerHome"); 
+                } else if (userData.Type === "Clinic") {
+                    navigate("/ClinicHome"); 
+                }
+            }, 2000);
         } else {
             console.error("User data not found in Firestore.");
             setEmail('');
             setPassword('');
             alert("Login failed: User data not found.");
             setError("User data not found in Firestore.");
-
         }
     } catch (error) {
         setError(error.message);
         alert("Login failed: " + error.message);
     }
-};
+  };
 
+  // Success Modal Component
+  const SuccessModal = () => {
+    if (!showSuccessModal) return null;
+    
+    return (
+      <div className="success-modal-overlay">
+        <div className="success-modal">
+          <div className="success-content">
+            <img src="https://cliply.co/wp-content/uploads/2021/03/372103860_CHECK_MARK_400px.gif" alt="Success" className="success-gif" />
+            <h3>Logged In Successfully</h3>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
       <div className="login-container">
@@ -66,8 +90,20 @@ const Login = () => {
             </div>
             <div className="input-container">
               <CiUnlock className="icon"/>
-              <input type="password" placeholder="Password"  value={password}
-              onChange={(e) => setPassword(e.target.value)} required />
+              <input 
+                type={showPassword ? "text" : "password"} 
+                placeholder="Password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
+              />
+              <div className="password-toggle" onClick={togglePasswordVisibility}>
+                {showPassword ? (
+                  <img src="https://www.freeiconspng.com/thumbs/eye-icon/eyeball-icon-png-eye-icon-1.png" alt="Hide" className="eye-icon" />
+                ) : (
+                  <img src="https://static.thenounproject.com/png/22249-200.png" alt="Show" className="eye-icon" />
+                )}
+              </div>
             </div>
             <button className="sign-in-btn">Sign In</button>
           </form>
@@ -85,7 +121,9 @@ const Login = () => {
         <button className="petowner-home-button" onClick={() => navigate('/VeterinaryHome')}>
           Go to Vet Home
         </button>
-      </div>
+      {/* Success Modal */}
+      <SuccessModal />
+    </div>
   );
 };
 
