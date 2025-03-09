@@ -73,8 +73,7 @@ const ClinicSubscribe = () => {
 
       // Create user in Firebase Authentication
       try {
-        // const userCredential = await createUserWithEmailAndPassword(auth, clinicInfo.email, 'defaultPassword'); // Replace 'defaultPassword' with a secure password
-        const userCredential = await createUserWithEmailAndPassword(auth, clinicInfo.email, clinicInfo.password);
+        const userCredential = await createUserWithEmailAndPassword(auth, clinicInfo.email, 'defaultPassword'); // Replace 'defaultPassword' with a secure password
         const user = userCredential.user;
 
         const userData = {
@@ -100,7 +99,6 @@ const ClinicSubscribe = () => {
         navigate('/ClinicHome'); // Adjust this route as needed
       } catch (error) {
         alert('Error creating user:', error);
-        console.error("Firebase error:", error); 
         // Handle error (e.g., show error message to the user)
       }
     }
