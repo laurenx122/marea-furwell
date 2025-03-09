@@ -8,7 +8,6 @@ import { auth, db } from '../../firebase'; // Ensure this path is correct
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { CiUser, CiUnlock } from "react-icons/ci";
-
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -16,6 +15,9 @@ const ClinicSubscribe = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // Add this state outside of useEffect
+  const [selectedServices, setSelectedServices] = useState([]);
 
   // Form state
   const [clinicInfo, setClinicInfo] = useState({
@@ -30,7 +32,6 @@ const ClinicSubscribe = () => {
     postalCode: '',
     lat: 10.3157, // Default latitude for Cebu City
     lng: 123.8854,
-
   });
 
   const [verificationDocs, setVerificationDocs] = useState({
@@ -38,6 +39,15 @@ const ClinicSubscribe = () => {
     businessPermit: null,
     otherDocs: null
   });
+
+  // Handle service selection - move this outside of useEffect
+  const handleServiceToggle = (service) => {
+    setSelectedServices((prevSelected) => 
+      prevSelected.includes(service)
+        ? prevSelected.filter(s => s !== service)  // Remove if already selected
+        : [...prevSelected, service]               // Add if not already selected
+    );
+  };
 
   // Handle input changes for the initial form
   const handleInitialFormChange = (e) => {
@@ -69,13 +79,17 @@ const ClinicSubscribe = () => {
       setCurrentStep(currentStep + 1);
     } else {
       // Handle final submission
-      setShowModal(false);
-
-      // Create user in Firebase Authentication
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, clinicInfo.email, 'defaultPassword'); // Replace 'defaultPassword' with a secure password
+        // Step 1: Create user in Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(
+          auth, 
+          clinicInfo.email, 
+          'defaultPassword'
+        );
+        
+        // Step 2: Only proceed to database operation if authentication succeeds
         const user = userCredential.user;
-
+        
         const userData = {
           clinicName: clinicInfo.clinicName,
           ownerFirstName: clinicInfo.ownerFirstName,
@@ -88,22 +102,25 @@ const ClinicSubscribe = () => {
           postalCode: clinicInfo.postalCode,
           lat: clinicInfo.lat,
           lng: clinicInfo.lng,
-          // profilePic:'/images/default-profile.jpg',
-          // coverPhoto:'/images/cover-default.png',
+          services: selectedServices,
+          status: "pending",
           createdAt: new Date()
         };
-        // Store additional user data in Firestore
-        await setDoc(doc(db, "registersClinics", user.uid), userData);
-        alert('User signed up successfully');
-        // Navigate to a success page or dashboard
-        navigate('/ClinicHome'); // Adjust this route as needed
+        setShowModal(false);
+        alert('Pending Account: Please wait for the admin to confirm the clinic information');
+        navigate('/Home');
+        // Store user data in Firestore
+        await setDoc(doc(db, "registersClinics", user.uid), userData);        
       } catch (error) {
-        alert('Error creating user:', error);
-        // Handle error (e.g., show error message to the user)
+        // Check for specific authentication errors
+        if (error.code === 'auth/email-already-in-use') {
+          alert('This email is already registered. Please use a different email.');
+        } else {
+          alert(`Error creating user: ${error.message}`);
+        }
       }
     }
   };
-
 
   // Get progress bar width based on current step
   const getProgressWidth = () => {
@@ -137,7 +154,6 @@ const ClinicSubscribe = () => {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap contributors',
         }).addTo(mapRef.current);
-
 
         const myIcon = L.icon({
           iconUrl: '/images/pawPin3.png', 
@@ -214,6 +230,31 @@ const ClinicSubscribe = () => {
       alert('Error searching for location. Please try again.');
     }
   };
+
+  // Custom Chip component to replace MUI Chip
+  const CustomChip = ({ label, onClick, isSelected }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`custom-chip ${isSelected ? 'selected' : ''}`}
+      style={{
+        margin: '4px',
+        padding: '4px 12px',
+        borderRadius: '16px',
+        border: isSelected ? 'none' : '1px solid #bdbdbd',
+        backgroundColor: isSelected ? '#1976d2' : 'transparent',
+        color: isSelected ? 'white' : 'inherit',
+        cursor: 'pointer',
+        fontSize: '0.875rem',
+        fontWeight: '400',
+        display: 'inline-flex',
+        alignItems: 'center',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <div className="CS_container">
@@ -332,7 +373,7 @@ const ClinicSubscribe = () => {
               <div className="progress-bar" style={{ width: getProgressWidth() }}></div>
               <div className={`step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
                 1
-                <span className="step-label">Verification</span>
+                <span className="step-label">Services</span>
               </div>
               <div className={`step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
                 2
@@ -340,66 +381,40 @@ const ClinicSubscribe = () => {
               </div>
               <div className={`step ${currentStep >= 3 ? 'active' : ''}`}>
                 3
-                <span className="step-label">Payment</span>
+                <span className="step-label">Verification</span>
               </div>
             </div>
-
-            {/* Step 1: Business Verification */}
+            
+            {/* Step 1: Offered Services */}
             {currentStep === 1 && (
               <div>
-                <h3>Business Verification</h3>
-
-                {/* Read-only clinic name */}
-                <div className="form-group">
-                  <label>Clinic Name</label>
-                  <input
-                    type="text"
-                    value={clinicInfo.clinicName}
-                    disabled
-                    className="readonly-input"
-                  />
-                </div>
-
-                {/* Document uploads */}
-                <div className="form-group">
-                  <label>BIR 2303 Form <span className="required">*</span></label>
-                  <div className="file-upload-container">
-                    <FiUpload className="upload-icon" />
-                    <input
-                      type="file"
-                      name="birDoc"
-                      onChange={handleFileChange}
-                      required
+                <h3>Offered Services</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {/* Pre-defined services */}
+                  {[
+                    "Wellness & Prevention", 
+                    "Testing & Diagnostics", 
+                    "Advanced Care", 
+                    "Pet Anesthesia", 
+                    "Pet Dental Surgery", 
+                    "Orthopedic Pet Surgery", 
+                    "Pet Surgery", 
+                    "Urgent Care",
+                    "Behavioral Consultation",
+                    "Nutritional Counseling",
+                    "Geriatric Care"
+                  ].map((service) => (
+                    <CustomChip
+                      key={service}
+                      label={service}
+                      onClick={() => handleServiceToggle(service)}
+                      isSelected={selectedServices.includes(service)}
                     />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Business Permit <span className="required">*</span></label>
-                  <div className="file-upload-container">
-                    <FiUpload className="upload-icon" />
-                    <input
-                      type="file"
-                      name="businessPermit"
-                      onChange={handleFileChange}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Other Supporting Documents (optional)</label>
-                  <div className="file-upload-container">
-                    <FiUpload className="upload-icon" />
-                    <input
-                      type="file"
-                      name="otherDocs"
-                      onChange={handleFileChange}
-                    />
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
+
 
             {/* Step 2: Address */}
             {currentStep === 2 && (
@@ -464,28 +479,63 @@ const ClinicSubscribe = () => {
               </div>
             )}
 
-            {/* Step 3: Payment */}
+            {/* Step 3: Business Verification */}
             {currentStep === 3 && (
               <div>
-                <h3>Payment Information</h3>
+                <h3>Business Verification</h3>
+
+                {/* Read-only clinic name */}
                 <div className="form-group">
-                  <label>Card Number <span className="required">*</span></label>
-                  <input type="text" required />
+                  <label>Clinic Name</label>
+                  <input
+                    type="text"
+                    value={clinicInfo.clinicName}
+                    disabled
+                    className="readonly-input"
+                  />
                 </div>
+
+                {/* Document uploads */}
                 <div className="form-group">
-                  <label>Expiration Date <span className="required">*</span></label>
-                  <input type="text" placeholder="MM/YY" required />
+                  <label>BIR 2303 Form <span className="required">*</span></label>
+                  <div className="file-upload-container">
+                    <FiUpload className="upload-icon" />
+                    <input
+                      type="file"
+                      name="birDoc"
+                      onChange={handleFileChange}
+                      required
+                    />
+                  </div>
                 </div>
+
                 <div className="form-group">
-                  <label>CVV <span className="required">*</span></label>
-                  <input type="text" required />
+                  <label>Business Permit <span className="required">*</span></label>
+                  <div className="file-upload-container">
+                    <FiUpload className="upload-icon" />
+                    <input
+                      type="file"
+                      name="businessPermit"
+                      onChange={handleFileChange}
+                      required
+                    />
+                  </div>
                 </div>
+
                 <div className="form-group">
-                  <label>Billing Address <span className="required">*</span></label>
-                  <input type="text" required />
+                  <label>Other Supporting Documents (optional)</label>
+                  <div className="file-upload-container">
+                    <FiUpload className="upload-icon" />
+                    <input
+                      type="file"
+                      name="otherDocs"
+                      onChange={handleFileChange}
+                    />
+                  </div>
                 </div>
               </div>
             )}
+            
 
             <div className="modal-actions">
               <button
