@@ -48,7 +48,7 @@ const ClinicSubscribe = () => {
         : [...prevSelected, service]               // Add if not already selected
     );
   };
-
+  
   // Handle input changes for the initial form
   const handleInitialFormChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -58,13 +58,58 @@ const ClinicSubscribe = () => {
     });
   };
 
-  // Handle file uploads
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const { name, files } = e.target;
-    setVerificationDocs({
-      ...verificationDocs,
-      [name]: files[0]
-    });
+    const file = files[0];
+  
+    if (!file) return;
+  
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "furwell"); // Cloudinary upload preset
+  
+    try {
+      const response = await fetch("https://api.cloudinary.com/v1_1/dbqoga68a/upload", {
+        method: "POST",
+        body: formData,
+      });
+  
+      const data = await response.json();
+  
+      if (data.secure_url) {
+        console.log("File uploaded to Cloudinary:", data.secure_url);
+  
+        // Update local state
+        setVerificationDocs((prevDocs) => {
+          const updatedDocs = {
+            ...prevDocs,
+            [name]: data.secure_url,
+          };
+  
+          // Store in Firestore after state is updated
+          updateFirestoreVerificationDocs(updatedDocs);
+          return updatedDocs;
+        });
+  
+        alert("Document uploaded successfully!");
+      } else {
+        throw new Error("No secure URL received from Cloudinary.");
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Failed to upload document. Please try again.");
+    }
+  };
+  
+  // Helper function to update Firestore
+  const updateFirestoreVerificationDocs = async (updatedDocs) => {
+    try {
+      const clinicRef = doc(db, "registersClinics", auth.currentUser?.uid);
+      await setDoc(clinicRef, { verificationDocs: updatedDocs }, { merge: true });
+      console.log("Verification docs updated in Firestore:", updatedDocs);
+    } catch (error) {
+      console.error("Error updating Firestore:", error);
+    }
   };
 
   // Handle form submission
@@ -104,6 +149,7 @@ const ClinicSubscribe = () => {
           lng: clinicInfo.lng,
           services: selectedServices,
           status: "pending",
+          verificationDocs,
           createdAt: new Date()
         };
         setShowModal(false);
