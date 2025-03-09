@@ -82,6 +82,9 @@ const Login = () => {
         <button className="clinic-home-btn" onClick={() => navigate('/ClinicHome')}>
           Go to Clinic Home
         </button>
+        <button className="petowner-home-button" onClick={() => navigate('/VeterinaryHome')}>
+          Go to Vet Home
+        </button>
       </div>
   );
 };
