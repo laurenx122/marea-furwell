@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './FindClinic.css';
 import { useNavigate } from 'react-router-dom';
+import Footer from '../../components/Footer/Footer'; // Import Footer component
 
 const FindClinic = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -8,6 +9,8 @@ const FindClinic = () => {
   const [selectedPrice, setSelectedPrice] = useState('');
   const [selectedSort, setSelectedSort] = useState('Relevance');
   const [selectedClinic, setSelectedClinic] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal visibility
+  const [clinicDetails, setClinicDetails] = useState(null); // To store selected clinic's details
 
   const [clinics, setClinics] = useState([
     {
@@ -16,7 +19,7 @@ const FindClinic = () => {
       location: 'Cebu City',
       services: ['Consultation', 'Ultrasound'],
       price: '₱₱',
-      image: 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp', // Replace with actual image URL
+      image: 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
     },
     {
       id: 2,
@@ -24,7 +27,7 @@ const FindClinic = () => {
       location: 'Mandaue',
       services: ['X-Ray', 'Emergency Care'],
       price: '₱₱₱',
-      image: 'dhttps://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp', // Replace with actual image URL
+      image: 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
     },
     {
       id: 3,
@@ -32,19 +35,22 @@ const FindClinic = () => {
       location: 'Cebu City',
       services: ['Endoscopy', 'Consultation'],
       price: '₱₱₱',
-      image: 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp', // Replace with actual image URL
+      image: 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
     }
   ]);
-
-  const navigate = useNavigate();
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
 
-  const handleClinicClick = (clinicId) => {
-    setSelectedClinic(clinicId);
-    navigate(`/clinic/${clinicId}`);
+  const handleClinicClick = (clinic) => {
+    setClinicDetails(clinic); // Set the selected clinic details
+    setIsModalOpen(true); // Open the modal
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false); // Close the modal
+    setClinicDetails(null); // Clear the clinic details
   };
 
   const handleServiceChange = (e) => {
@@ -183,7 +189,7 @@ const FindClinic = () => {
             <div
               key={clinic.id}
               className={`clinic-card ${selectedClinic === clinic.id ? 'selected' : ''}`}
-              onClick={() => handleClinicClick(clinic.id)}
+              onClick={() => handleClinicClick(clinic)}
             >
               <img src={clinic.image} alt={clinic.name} />
               <h3>{clinic.name}</h3>
@@ -198,8 +204,36 @@ const FindClinic = () => {
           ))
         )}
       </div>
+
+      {/* Modal to show clinic details */}
+      {isModalOpen && clinicDetails && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <button className="close-modal" onClick={closeModal}>X</button>
+            <h3>{clinicDetails.name}</h3>
+            <p>{clinicDetails.location}</p>
+            <img src={clinicDetails.image} alt={clinicDetails.name} />
+            <ul>
+              {clinicDetails.services.map(service => (
+                <li key={service}>{service}</li>
+              ))}
+            </ul>
+            <p className="price">Price: {clinicDetails.price}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default FindClinic;
+// Footer placed outside the FindClinic container
+const FindClinicWithFooter = () => {
+  return (
+    <div>
+      <FindClinic />
+      <Footer />
+    </div>
+  );
+};
+
+export default FindClinicWithFooter;

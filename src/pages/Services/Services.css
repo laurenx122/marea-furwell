@@ -1,0 +1,114 @@
+/* Overall container for the services section */
+.services-container {
+    background-color: #B2D4D8;
+    padding: 20px;
+    text-align: left;  
+    padding-top: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; 
+}
+
+/* Title container */
+.services-container .services-title {
+    margin-bottom: 30px;
+}
+
+
+/* Title style */
+.services-container h1 {
+    padding: 30px;
+    font-size: 3rem; /* Adjust font size */
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+}
+
+
+.services-container h1 span.our {
+    color: #113B57; 
+    font-weight: bold;   
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.services-container h1 span.services {
+    color: #EDBFC6; 
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+
+/* Grid container for the service icons */
+.services-container .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 30px;  
+    justify-items: center;
+    align-items: start;
+    width: 100%; 
+}
+
+/* Individual service item styles */
+.services-container .service-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px;
+    background-color:#B2D4D8;
+    border-radius: 15px; 
+    width: 220px; 
+    height: 120px;
+    min-width: 220px; 
+    opacity: 0;
+    animation: fadeInUp 0.8s ease-out forwards; 
+    animation-delay: 0.6s;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease; 
+}
+
+/* Keyframe animation for each service item */
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0); 
+    }
+}
+
+/* Hover effect: Scale and add shadow */
+.services-container .service-item:hover {
+    transform: scale(1.05); 
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1); 
+    background-color: #EDBFC6;
+}
+
+/* Service icon circle */
+.services-container .service-item .icon {
+    width: 70px;
+    height: 70px;
+    background-color: #fff;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1.5px solid #4D6C73;
+    margin-right: 15px; 
+    flex-shrink: 0; 
+}
+
+/* Ensures the image fits within the circle */
+.services-container .service-item .icon img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+}
+
+/* Service item text */
+.services-container .service-item p {
+    font-size: 1rem;
+    color: #4D6C73;
+    font-weight: bold;
+    margin: 0;
+    word-wrap: break-word; 
+}

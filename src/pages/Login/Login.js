@@ -74,48 +74,37 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <img src='/images/baby_doggy.png' alt="Dog" className="dog-img" />
-        <img src='/images/furwell_logo.png' alt="FurWell Logo" className="logo" />
-        <form onSubmit={handleSubmit}>
-          <div className="input-container">
-            <CiUser className="icon"/>
-            <input 
-              type="text" 
-              placeholder="Email / Mobile Number"  
-              value={email}
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
-            />
-          </div>
-          <div className="input-container">
-            <CiUnlock className="icon"/>
-            <input 
-              type="password" 
-              placeholder="Password"  
-              value={password}
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-            />
-          </div>
-          <button className="sign-in-btn">Sign In</button>
-        </form>
-        <p>or continue with</p>
-        <button className="google-btn"><FcGoogle size={24}/> Google</button>
-        <p className="signup-text">
-          Don't have an account yet? <a href="/signup">Sign Up for Free</a>
-        </p>
-      </div>
-      
-      {/* Redirect buttons */}
-      <button className="clinic-home-btn" onClick={() => navigate('/ClinicHome')}>
-        Go to Clinic Home
-      </button>
-      <button className="petowner-home-button" onClick={() => navigate('/VeterinaryHome')}>
-        Go to Vet Home
-      </button>
-      
+      <div className="login-container">
+        <div className="login-box">
+          <img src='/images/baby_doggy.png' alt="Dog" className="dog-img" />
+          <img src='/images/furwell_logo.png' alt="FurWell Logo" className="logo-furwell" />
+          <form onSubmit={handleSubmit}>
+            <div className="input-container">
+              <CiUser className="icon"/>
+              <input type="text" placeholder="Email / Mobile Number"  value={email}
+              onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div className="input-container">
+              <CiUnlock className="icon"/>
+              <input type="password" placeholder="Password"  value={password}
+              onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <button className="sign-in-btn">Sign In</button>
+          </form>
+          <p>or continue with</p>
+          <button className="google-btn"><FcGoogle size={24}/> Google</button>
+          <p className="signup-text">
+            Don't have an account yet? <a href="/signup">Sign Up for Free</a>
+          </p>
+        </div>
+        
+        {/* Redirect to ClinicHome */}
+        <button className="clinic-home-btn" onClick={() => navigate('/ClinicHome')}>
+          Go to Clinic Home
+        </button>
+        <button className="petowner-home-button" onClick={() => navigate('/VeterinaryHome')}>
+          Go to Vet Home
+        </button>
       {/* Success Modal */}
       <SuccessModal />
     </div>

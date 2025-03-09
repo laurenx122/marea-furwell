@@ -36,20 +36,16 @@
 
   
   /* Logo */
-  .logo {
+  .logo-furwell {
     height: 250px; 
     width: auto;
-    margin: -50px;
+    margin-top: -50px;
+    margin-bottom: -40px;
   }
   
   /* Input Fields */
   .input-container {
-    display: flex;
-    align-items: center;
-    background: white;
-    padding: 10px;
-    border-radius: 8px;
-    margin: 8px 0;
+    margin: 0px 0 !important;
   }
   
   /* .input-container .input-icon {
@@ -75,7 +71,7 @@
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    margin-top: 0px;
+    margin-top: 10px;
   }
   
   .sign-in-btn:hover {
