@@ -1,13 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import './Signup.css'; 
-import { FaTimes, FaPaw } from "react-icons/fa";
+import { FaTimes, FaPaw, FaCamera } from "react-icons/fa";
 import { FiUser, FiLock, FiMail, FiPhone } from "react-icons/fi";
 import React, { useState } from 'react';
 import { auth, db } from '../../firebase'; // Ensure this path is correct
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-
-
 
 const Signup = () => {
   const navigate = useNavigate(); // For navigation
@@ -21,6 +19,21 @@ const Signup = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Hardcoded upload preset - you should replace this with your actual preset name
+  // from your Cloudinary dashboard
+  const UPLOAD_PRESET = "furwell"; // Replace with your actual upload preset
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const isValidPhilippinesNumber = (number) => {
     const phRegex = /^(\+63|0)9\d{9}$/;
@@ -29,18 +42,58 @@ const Signup = () => {
  
   const handleSignup = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      setIsLoading(false);
       return;
     }
     
     if (!isValidPhilippinesNumber(contactNumber)) {
       setError("Invalid Philippines contact number");
+      setIsLoading(false);
       return;
     }
     
     try {
+      // Upload profile image if one was selected
+      let profileImageURL = "";
+      
+      if (profileImage && (
+        profileImage.type === "image/jpeg" ||
+        profileImage.type === "image/jpg" ||
+        profileImage.type === "image/png"
+      )) {
+        try {
+          const image = new FormData();
+          image.append("file", profileImage);
+          image.append("cloud_name", "dfgnexrda");
+          image.append("upload_preset", UPLOAD_PRESET);
+
+          const response = await fetch(
+            "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
+            {
+              method: "post",
+              body: image
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Image upload failed");
+          }
+
+          const imgData = await response.json();
+          profileImageURL = imgData.url.toString();
+          console.log("Image uploaded successfully:", profileImageURL);
+        } catch (uploadError) {
+          console.error("Error uploading image:", uploadError);
+          setError("Failed to upload profile picture. Continuing with signup...");
+          // Continue with signup even if image upload fails
+        }
+      }
+
+      // Create user account
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
@@ -51,11 +104,15 @@ const Signup = () => {
         LastName: lname,
         email: email,
         contactNumber: contactNumber,
+        profileImageURL: profileImageURL, // Store the image URL
         uid: user.uid,
       });
+      
+      setIsLoading(false);
       setShowSuccessModal(true);
     } catch (error) {
       console.error("Signup error:", error);
+      setIsLoading(false);
       
       // Handle specific Firebase errors with user-friendly messages
       if (error.code === 'auth/email-already-in-use') {
@@ -91,23 +148,49 @@ const Signup = () => {
   };
 
   return (
-      <div className="signup-container">
-        <div className="signup-box">
-          {/* Header */}
-          <div className="signup-header">
+    <div className="signup-container">
+      <div className="signup-box">
+        {/* Header */}
+        <div className="signup-header">
           <div className="signup-head">
             <h2>Sign Up</h2>
             <p>Compassionate Care for Every Paw, Hoof, and Claw!</p>
           </div>
           <img src='/images/furwell_logo.png' alt="FurWell Logo" className="signup-logo" />
         </div>
-           {/* Form Fields */}
-           {error && <p style={{ color: "red" }}>{error}</p>}
-        <form  onSubmit={handleSignup}>
-        <div className="name-container">
+        
+        {/* Error Message */}
+        {error && (
+          <div className="error-message">
+            <FaTimes className="error-icon" />
+            <p>{error}</p>
+          </div>
+        )}
+        
+        <form onSubmit={handleSignup}>
+          {/* Profile Picture Upload */}
+          <div className="profile-picture-container">
+            <label htmlFor="profile-upload" className="profile-picture-upload" style={imagePreview ? {backgroundImage: `url(${imagePreview})`} : {}}>
+              {!imagePreview && (
+                <>
+                  <FaCamera className="camera-icon" />
+                  <p>Upload Photo</p>
+                </>
+              )}
+              <input 
+                type="file" 
+                id="profile-upload" 
+                accept="image/jpeg, image/jpg, image/png" 
+                onChange={handleImageChange} 
+                style={{ display: 'none' }} 
+              />
+            </label>
+          </div>
+          
+          <div className="name-container">
             {/* setting the values of the field */}
             <input type="text" placeholder="First Name" value={fname} onChange={(e) => setfName(e.target.value)} required /> 
-            <input type="text" placeholder="Last Name"  value={lname} onChange={(e) => setlName(e.target.value)} required />
+            <input type="text" placeholder="Last Name" value={lname} onChange={(e) => setlName(e.target.value)} required />
           </div>
 
           <div className="input-container">
@@ -121,7 +204,7 @@ const Signup = () => {
               <option>PH +63</option>
               {/* Add other country codes if needed */}
             </select>
-            <input type="text" placeholder="09XXX - XXXX - XXX"value={contactNumber}   onChange={(e) => setContactNumber(e.target.value.replace(/[^0-9]/g, ""))}    required />
+            <input type="text" placeholder="09XXX - XXXX - XXX" value={contactNumber} onChange={(e) => setContactNumber(e.target.value.replace(/[^0-9]/g, ""))} required />
           </div>
 
           <div className="input-container">
@@ -169,8 +252,12 @@ const Signup = () => {
           </div>
 
           {/* Create Account Button */}
-          <button  type="submit" className="create-account">
-            <FaPaw className="paw-icon" /> Create Account
+          <button type="submit" className="create-account" disabled={isLoading}>
+            {isLoading ? 'Creating Account...' : (
+              <>
+                <FaPaw className="paw-icon" /> Create Account
+              </>
+            )}
           </button>
 
           {/* Already have an account link */}
@@ -179,8 +266,9 @@ const Signup = () => {
           </div>
         </form>
       </div>
-            {/* Success Modal */}
-            {showSuccessModal && (
+      
+      {/* Success Modal */}
+      {showSuccessModal && (
         <div className="modal-overlay">
           <div className="success-modal">
             <div className="success-modal-content">
@@ -195,8 +283,8 @@ const Signup = () => {
           </div>
         </div>
       )}
-      </div>
+    </div>
   );
 };
 
-export default Signup
+export default Signup;
