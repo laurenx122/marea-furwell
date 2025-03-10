@@ -153,7 +153,7 @@
 .userMenu {
   display: flex;
   align-items: center;
-  gap: 50px; /* Adjust the spacing */
+  gap: 10px; /* Adjust the spacing */
 }
 
 .username {
@@ -222,6 +222,10 @@
   border: 1px solid #ccc;
   font-size: 16px;
   text-align: center;
+}
+
+.modalContent img{
+  position: center;
 }
 /* Modal Overlay */
 .modalOverlay {
