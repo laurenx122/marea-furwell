@@ -36,6 +36,31 @@ const Navbar = () => {
     // Cloudinary upload preset - same as in Signup component
     const UPLOAD_PRESET = "furwell";
 
+    // Add scroll event listener to track scroll progress
+    useEffect(() => {
+        const calculateScrollProgress = () => {
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Calculate the scroll percentage
+            const scrollPercentage = (scrollTop / (documentHeight - windowHeight)) * 100;
+            
+            setScrollProgress(scrollPercentage);
+        };
+
+        // Add scroll event listener
+        window.addEventListener('scroll', calculateScrollProgress);
+        
+        // Initial calculation
+        calculateScrollProgress();
+        
+        // Clean up the event listener on component unmount
+        return () => {
+            window.removeEventListener('scroll', calculateScrollProgress);
+        };
+    }, []);
+
     useEffect(() => {
         const auth = getAuth();
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -311,7 +336,7 @@ const Navbar = () => {
                                     />
                                 ) : (
                                     <img 
-                                        src={editedDetails.profileImageURL || '/images/default-profile.png'} 
+                                        src={editedDetails.profileImageURL || 'https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png'} 
                                         alt="Profile" 
                                         style={{ 
                                             width: '100%', 

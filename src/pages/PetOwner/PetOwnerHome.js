@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react"; 
 import "./PetOwnerHome.css"; 
 import { db, auth } from "../../firebase"; 
-import { collection, query, where, getDocs, doc, addDoc, serverTimestamp, getDoc } from "firebase/firestore";
- 
+import { collection, query, where, getDocs, doc, addDoc, serverTimestamp, getDoc, updateDoc } from "firebase/firestore";
+import { FaCamera, FaPaw } from "react-icons/fa";
+
 const PetOwnerHome = () => { 
   const [activePanel, setActivePanel] = useState("petDetails"); 
   const [pets, setPets] = useState([]);
@@ -24,6 +25,10 @@ const PetOwnerHome = () => {
   const [addPetError, setAddPetError] = useState("");
   const [addPetSuccess, setAddPetSuccess] = useState(false);
   
+  // Add state for pet image
+  const [petImage, setPetImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  
   const [newAppointment, setNewAppointment] = useState({
     petId: "",
     serviceType: "Vaccination",
@@ -42,27 +47,38 @@ const PetOwnerHome = () => {
   ]);
   const [clinics, setClinics] = useState([]);
   const [loadingClinics, setLoadingClinics] = useState(true);
- 
+  
+  // Cloudinary upload preset
+  const UPLOAD_PRESET = "furwell";
+  const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
+
   // Function to safely format dates
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     
     if (dateValue && typeof dateValue.toDate === 'function') {
-      return dateValue.toDate().toLocaleString(); 
+      return dateValue.toDate().toLocaleDateString(); // Only date
     }
     
     if (typeof dateValue === 'string') {
       try {
-        return new Date(dateValue).toLocaleString(); 
+        return new Date(dateValue).toLocaleDateString(); // Only date
       } catch (e) {
         return dateValue;
       }
     }
     
-
     return String(dateValue);
   };
 
+  // Handle pet image change
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPetImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -71,7 +87,6 @@ const PetOwnerHome = () => {
       [name]: name === "Weight" ? (value === "" ? "" : parseFloat(value)) : value
     });
   };
-
 
   const handleAppointmentChange = (e) => {
     const { name, value } = e.target;
@@ -92,19 +107,55 @@ const PetOwnerHome = () => {
         throw new Error("Pet name, species, and gender are required");
       }
 
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
+      const currentUser  = auth.currentUser ;
+      if (!currentUser ) {
         throw new Error("You must be logged in to add a pet");
       }
 
-      const ownerRef = doc(db, "users", currentUser.uid);
+      // Upload pet image if one was selected
+      let petImageURL = "";
+      
+      if (petImage && (
+        petImage.type === "image/jpeg" ||
+        petImage.type === "image/jpg" ||
+        petImage.type === "image/png"
+      )) {
+        try {
+          const image = new FormData();
+          image.append("file", petImage);
+          image.append("cloud_name", "dfgnexrda");
+          image.append("upload_preset", UPLOAD_PRESET);
+
+          const response = await fetch(
+            "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
+            {
+              method: "post",
+              body: image
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Image upload failed");
+          }
+
+          const imgData = await response.json();
+          petImageURL = imgData.url.toString();
+          console.log("Pet image uploaded successfully:", petImageURL);
+        } catch (uploadError) {
+          console.error("Error uploading pet image:", uploadError);
+          setAddPetError("Failed to upload pet picture. Continuing with pet registration...");
+          // Continue with pet addition even if image upload fails
+        }
+      }
+
+      const ownerRef = doc(db, "users", currentUser .uid);
 
       await addDoc(collection(db, "pets"), {
         ...newPet,
+        petImageURL: petImageURL, // Store the image URL
         owner: ownerRef,
         createdAt: serverTimestamp()
       });
-
 
       setAddPetSuccess(true);
       
@@ -117,6 +168,10 @@ const PetOwnerHome = () => {
         Weight: "",
         dateofBirth: ""
       });
+      
+      // Reset image state
+      setPetImage(null);
+      setImagePreview(null);
 
       fetchPets();
       
@@ -143,8 +198,8 @@ const PetOwnerHome = () => {
         throw new Error("All fields are required");
       }
 
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
+      const currentUser  = auth.currentUser ;
+      if (!currentUser ) {
         throw new Error("You must be logged in to book an appointment");
       }
 
@@ -153,7 +208,7 @@ const PetOwnerHome = () => {
         throw new Error("Selected pet not found");
       }
 
-      const ownerRef = doc(db, "users", currentUser.uid);
+      const ownerRef = doc(db, "users", currentUser .uid);
       const petRef = doc(db, "pets", newAppointment.petId);
       const clinicRef = doc(db, "clinics", newAppointment.clinicId);
 
@@ -197,12 +252,12 @@ const PetOwnerHome = () => {
   const fetchPets = async () => {
     try {
       setLoading(true);
-      const currentUser = auth.currentUser;
+      const currentUser  = auth.currentUser ;
       
-      if (currentUser) {
+      if (currentUser ) {
         const petsQuery = query(
           collection(db, "pets"),
-          where("owner", "==", doc(db, "users", currentUser.uid))
+          where("owner", "==", doc(db, "users", currentUser .uid))
         );
         
         const querySnapshot = await getDocs(petsQuery);
@@ -247,90 +302,90 @@ const PetOwnerHome = () => {
     }
   };
 
-const fetchAppointments = async () => {
-  try {
-    const currentUser = auth.currentUser;
-    
-    if (currentUser) {
-      const appointmentsQuery = query(
-        collection(db, "appointments"),
-        where("owner", "==", doc(db, "users", currentUser.uid))
-      );
+  const fetchAppointments = async () => {
+    try {
+      const currentUser  = auth.currentUser ;
       
-      const querySnapshot = await getDocs(appointmentsQuery);
-      const appointmentsList = [];
-      
-      for (const appointmentDoc of querySnapshot.docs) {
-        const appointmentData = appointmentDoc.data();
-        let appointmentWithResolvedRefs = { 
-          id: appointmentDoc.id,
-          ...appointmentData
-        };
+      if (currentUser ) {
+        const appointmentsQuery = query(
+          collection(db, "appointments"),
+          where("owner", "==", doc(db, "users", currentUser .uid))
+        );
         
-        if (typeof appointmentData.petName === 'string') {
-        } 
-        else if (appointmentData.petName && appointmentData.petName.path) {
-          try {
-            const petDocRef = appointmentData.petName;
-            const petDoc = await getDoc(petDocRef);
-            
-            if (petDoc.exists()) {
-              const petData = petDoc.data();
-              appointmentWithResolvedRefs.petName = petData.petName || "Unknown Pet";
-            } else {
-              appointmentWithResolvedRefs.petName = "Pet Not Found";
+        const querySnapshot = await getDocs(appointmentsQuery);
+        const appointmentsList = [];
+        
+        for (const appointmentDoc of querySnapshot.docs) {
+          const appointmentData = appointmentDoc.data();
+          let appointmentWithResolvedRefs = { 
+            id: appointmentDoc.id,
+            ...appointmentData
+          };
+          
+          if (typeof appointmentData.petName === 'string') {
+          } 
+          else if (appointmentData.petName && appointmentData.petName.path) {
+            try {
+              const petDocRef = appointmentData.petName;
+              const petDoc = await getDoc(petDocRef);
+              
+              if (petDoc.exists()) {
+                const petData = petDoc.data();
+                appointmentWithResolvedRefs.petName = petData.petName || "Unknown Pet";
+              } else {
+                appointmentWithResolvedRefs.petName = "Pet Not Found";
+              }
+            } catch (error) {
+              console.error("Error fetching pet reference:", error);
+              appointmentWithResolvedRefs.petName = "Error Loading Pet";
             }
-          } catch (error) {
-            console.error("Error fetching pet reference:", error);
-            appointmentWithResolvedRefs.petName = "Error Loading Pet";
-          }
-        } 
-        else if (appointmentData.petId) {
-          try {
-            const petDocRef = doc(db, "pets", appointmentData.petId);
-            const petDoc = await getDoc(petDocRef);
-            
-            if (petDoc.exists()) {
-              const petData = petDoc.data();
-              appointmentWithResolvedRefs.petName = petData.petName || "Unknown Pet";
-            } else {
-              appointmentWithResolvedRefs.petName = "Pet Not Found";
+          } 
+          else if (appointmentData.petId) {
+            try {
+              const petDocRef = doc(db, "pets", appointmentData.petId);
+              const petDoc = await getDoc(petDocRef);
+              
+              if (petDoc.exists()) {
+                const petData = petDoc.data();
+                appointmentWithResolvedRefs.petName = petData.petName || "Unknown Pet";
+              } else {
+                appointmentWithResolvedRefs.petName = "Pet Not Found";
+              }
+            } catch (error) {
+              console.error("Error fetching pet by ID:", error);
+              appointmentWithResolvedRefs.petName = "Error Loading Pet";
             }
-          } catch (error) {
-            console.error("Error fetching pet by ID:", error);
-            appointmentWithResolvedRefs.petName = "Error Loading Pet";
+          } else {
+            appointmentWithResolvedRefs.petName = "Unknown Pet";
           }
-        } else {
-          appointmentWithResolvedRefs.petName = "Unknown Pet";
+          
+          // Resolve clinic name
+          if (appointmentData.clinic) {
+            try {
+              const clinicDoc = await getDoc(appointmentData.clinic);
+              if (clinicDoc.exists()) {
+                const clinicData = clinicDoc.data();
+                appointmentWithResolvedRefs.clinicName = clinicData.clinicName || "Unknown Clinic";
+              } else {
+                appointmentWithResolvedRefs.clinicName = "Clinic Not Found";
+              }
+            } catch (error) {
+              console.error("Error fetching clinic:", error);
+              appointmentWithResolvedRefs.clinicName = "Error Loading Clinic";
+            }
+          } else {
+            appointmentWithResolvedRefs.clinicName = "Unknown Clinic";
+          }
+          
+          appointmentsList.push(appointmentWithResolvedRefs);
         }
         
-        // Resolve clinic name
-        if (appointmentData.clinic) {
-          try {
-            const clinicDoc = await getDoc(appointmentData.clinic);
-            if (clinicDoc.exists()) {
-              const clinicData = clinicDoc.data();
-              appointmentWithResolvedRefs.clinicName = clinicData.clinicName || "Unknown Clinic";
-            } else {
-              appointmentWithResolvedRefs.clinicName = "Clinic Not Found";
-            }
-          } catch (error) {
-            console.error("Error fetching clinic:", error);
-            appointmentWithResolvedRefs.clinicName = "Error Loading Clinic";
-          }
-        } else {
-          appointmentWithResolvedRefs.clinicName = "Unknown Clinic";
-        }
-        
-        appointmentsList.push(appointmentWithResolvedRefs);
+        setAppointments(appointmentsList);
       }
-      
-      setAppointments(appointmentsList);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
     }
-  } catch (error) {
-    console.error("Error fetching appointments:", error);
-  }
-};
+  };
 
   // Fetch data when component mounts
   useEffect(() => {
@@ -364,8 +419,46 @@ const fetchAppointments = async () => {
       Weight: "",
       dateofBirth: ""
     });
+    setPetImage(null);
+    setImagePreview(null);
     setAddPetError("");
     setAddPetSuccess(false);
+  };
+
+  const handleImageChangeInModal = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        const image = new FormData();
+        image.append("file", file);
+        image.append("cloud_name", "dfgnexrda");
+        image.append("upload_preset", UPLOAD_PRESET);
+
+        const response = await fetch(
+          "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
+          {
+            method: "post",
+            body: image
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Image upload failed");
+        }
+
+        const imgData = await response.json();
+        const newImageURL = imgData.url.toString();
+
+        // Update the pet image URL in Firestore
+        const petRef = doc(db, "pets", selectedPet.id);
+        await updateDoc(petRef, { petImageURL: newImageURL });
+
+        // Update the state to reflect the new image
+        setSelectedPet({ ...selectedPet, petImageURL: newImageURL });
+      } catch (error) {
+        console.error("Error uploading pet image:", error);
+      }
+    }
   };
 
   return ( 
@@ -602,6 +695,16 @@ const fetchAppointments = async () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <span className="close-button" onClick={closeModal}>&times;</span>
+            
+            {/* Pet Image in modal */}
+            <div className="pet-image-container">
+              <img 
+                src={selectedPet.petImageURL || DEFAULT_PET_IMAGE} 
+                alt={`${selectedPet.petName}`} 
+                className="pet-image"
+              />
+            </div>
+            
             <h2>{selectedPet.petName}</h2>
             <div className="pet-info-grid">
               <div className="info-item">
@@ -623,6 +726,11 @@ const fetchAppointments = async () => {
                 <strong>Date of Birth:</strong> {formatDate(selectedPet.dateofBirth)}
               </div>
             </div>
+            <input 
+              type="file" 
+              accept="image/jpeg, image/jpg, image/png" 
+              onChange={handleImageChangeInModal} 
+            />
             <button className="modal-close-btn" onClick={closeModal}>Close</button>
           </div>
         </div>
@@ -648,6 +756,25 @@ const fetchAppointments = async () => {
             )}
             
             <form onSubmit={handleAddPet}>
+              {/* Pet Image Upload */}
+              <div className="pet-image-upload-container">
+                <label htmlFor="pet-image-upload" className="pet-image-upload" style={imagePreview ? {backgroundImage: `url(${imagePreview})`} : {}}>
+                  {!imagePreview && (
+                    <>
+                      <FaCamera className="camera-icon" />
+                      <p>Upload Pet Photo</p>
+                    </>
+                  )}
+                  <input 
+                    type="file" 
+                    id="pet-image-upload" 
+                    accept="image/jpeg, image/jpg, image/png" 
+                    onChange={handleImageChange} 
+                    style={{ display: 'none' }} 
+                  />
+                </label>
+              </div>
+              
               <div className="form-group">
                 <label htmlFor="petName">Pet Name *</label>
                 <input
