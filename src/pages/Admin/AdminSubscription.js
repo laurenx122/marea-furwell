@@ -32,13 +32,23 @@ const ClinicDashboard = () => {
   useEffect(() => {
     fetchClinics(displayClinics);
   }, [displayClinics]);
+  const handleAdminApproveClinicsButton = () => {
+    setDisplayClinics("registersClinics");
+    setSearchTerm("");
+  };
 
+  const handleAdminRegisteredClinicsButton = () => {
+    setDisplayClinics("clinics");
+    setSearchTerm("");
+  };
   // Search Functionality
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
-
   const filteredClinics = clinics.filter((clinic) => {
+    if (!searchTerm) {
+      return true; // Show all clinics if no search term
+    }
     if (!searchTerm) return true;
     const searchFields = [
       clinic.clinicName,
@@ -51,63 +61,122 @@ const ClinicDashboard = () => {
       clinic.ownerFirstName,
       clinic.ownerLastName,
     ];
+
     return searchFields.some((field) =>
       field?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
-
   // Approve Clinic
-  const handleApproveClinic = async () => {
-    if (!clinicToApprove) return;
-    try {
-      if (displayClinics === "registersClinics") {
-        await setDoc(doc(db, "clinics", clinicToApprove.id), { ...clinicToApprove });
-        await deleteDoc(doc(db, "registersClinics", clinicToApprove.id));
-      } else if (displayClinics === "clinics") {
-        await setDoc(doc(db, "registersClinics", clinicToApprove.id), { ...clinicToApprove });
-        await deleteDoc(doc(db, "clinics", clinicToApprove.id));
-      }
-      fetchClinics(displayClinics);
-      setAdminClinicRegistrationSuccessModalIsOpen(true);
-      setAdminClinicApprovalModalIsOpen(false);
-      setClinicToApprove(null);
-    } catch (error) {
-      console.error("Error approving/unsubscribing clinic:", error);
-    }
-  };
+// Approve Clinic
+const handleApproveClinic = async () => {
+  if (!clinicToApprove) return;
+  try {
+    if (displayClinics === "registersClinics") {
+      const clinicData = {
+        ...clinicToApprove,
+        Type: "Clinic", // Set type explicitly
+        // Status: "approved", // Mark as approved
+      };
 
-  // Delete Clinic
-  const handleDeleteClinic = async () => {
-    if (!clinicToDelete) return;
-    try {
-      await deleteDoc(doc(db, "registersClinics", clinicToDelete.id));
-      fetchClinics(displayClinics);
-      setClinicToDelete(null);
-      setDeleteConfirmationModalOpen(false);
-    } catch (error) {
-      console.error("Error deleting clinic:", error);
+      await Promise.all([
+        setDoc(doc(db, "users", clinicToApprove.id), clinicData), // Save to users with type "Clinic"
+        setDoc(doc(db, "clinics", clinicToApprove.id), clinicData), // Save to clinics
+      ]);
+      await deleteDoc(doc(db, "registersClinics", clinicToApprove.id));
+    } else if
+     (displayClinics === "clinics") {
+      await setDoc(doc(db, "registersClinics", clinicToApprove.id), {
+        ...clinicToApprove,
+      });
+      await deleteDoc(doc(db, "clinics", clinicToApprove.id));
     }
-  };
+    fetchClinics(displayClinics);
+    setAdminClinicRegistrationSuccessModalIsOpen(true);
+    setAdminClinicApprovalModalIsOpen(false);
+    setClinicToApprove(null);
+  } catch (error) {
+    console.error("Error approving/unsubscribing clinic:", error);
+  }
+};
 
-  return (
-    <div className="dashboard-container">
-      <div className="search-bar">
-        <input type="text" placeholder="Search" value={searchTerm} onChange={handleSearchChange} />
-        <div className="button-container">
-          <button
-            className={`adminApproveClinicsButton ${displayClinics === "registersClinics" ? "active" : ""}`}
-            onClick={() => setDisplayClinics("registersClinics")}
-          >
-            Review Clinics
-          </button>
-          <button
-            className={`adminRegisteredClinicsButton ${displayClinics === "clinics" ? "active" : ""}`}
-            onClick={() => setDisplayClinics("clinics")}
-          >
-            Registered Clinics
-          </button>
-        </div>
+// for modals
+const openAdminClinicApprovalModal = (clinic) => {
+  setClinicToApprove(clinic);
+  setAdminClinicApprovalModalIsOpen(true);
+};
+
+const closeAdminClinicApprovalModal = () => {
+  setAdminClinicApprovalModalIsOpen(false);
+  setClinicToApprove(null);
+};
+
+const closeAdminClinicRegistrationSuccessModal = () => {
+  setAdminClinicRegistrationSuccessModalIsOpen(false);
+};
+
+const handleConfirmApproveClinic = (clinic) => {
+  openAdminClinicApprovalModal(clinic);
+};
+
+const handleConfirmUnsubscribeClinic = (clinic) => {
+  openAdminClinicApprovalModal(clinic);
+};
+
+// deleting the clinic in the review clinic part (ADMIN)
+// Delete Clinic
+const handleDeleteClinic = async () => {
+  if (!clinicToDelete) return;
+  try {
+    await deleteDoc(doc(db, "registersClinics", clinicToDelete.id));
+    fetchClinics(displayClinics);
+    setClinicToDelete(null);
+    setDeleteConfirmationModalOpen(false); 
+    setDeleteConfirmationModalOpen(false);
+  } catch (error) {
+    console.error("Error deleting clinic:", error);
+  }
+};
+
+const handleConfirmDeleteClinic = (clinic) => {
+  setClinicToDelete(clinic);
+  setDeleteConfirmationModalOpen(true); 
+};
+
+const closeDeleteConfirmationModal = () => {
+  setDeleteConfirmationModalOpen(false);
+  setClinicToDelete(null);
+};
+
+return (
+  <div className="dashboard-container">
+    <div className="search-bar">
+      <input
+        type="text"
+        placeholder="Search"
+        value={searchTerm}
+        onChange={handleSearchChange}
+      />
+      {/* Filetered buttonsss */}
+    
+      <div className="button-container">
+        <button
+          className={`adminApproveClinicsButton ${displayClinics === "registersClinics" ? "active" : ""
+            }`}
+          onClick={handleAdminApproveClinicsButton}
+        
+        >
+          Review Clinics
+        </button>
+        <button
+          className={`adminRegisteredClinicsButton ${displayClinics === "clinics" ? "active" : ""
+            }`}
+          onClick={handleAdminRegisteredClinicsButton}
+          
+        >
+          Registered Clinics
+        </button>
       </div>
+    </div>
 
       <table className="clinic-table">
         <thead>
@@ -140,33 +209,47 @@ const ClinicDashboard = () => {
                   {clinic.ownerFirstName} {clinic.ownerLastName}
                 </td>
                 <td>
-                    {clinic.verificationDocs ? (
-                            <>
-                              {Object.values(clinic.verificationDocs).map((docUrl, index) => (
-                                <div key={index}>
-                                  <a href={docUrl} target="_blank" rel="noopener noreferrer">
-                                    {docUrl.length > 30 ? `${docUrl.substring(0, 30)}...` : docUrl}
-                                  </a>
-                                </div>
-                              ))}
-                            </>
+                  {clinic.verificationDocs && Object.keys(clinic.verificationDocs).length > 0 ? (
+                    <>
+                      {Object.values(clinic.verificationDocs).map((docUrl, index) => (
+                        <div key={index}>
+                          {docUrl ? (
+                            <a href={docUrl} target="_blank" rel="noopener noreferrer">
+                              {docUrl.length > 30 ? `${docUrl.substring(0, 30)}...` : docUrl}
+                            </a>
                           ) : (
-                            <span>No documents uploaded</span>
+                            <span>No document available</span>
                           )}
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <span>No documents uploaded</span>
+                  )}
+
                   </td>
                 <td>
                   <div className="actions">
                     {displayClinics === "registersClinics" ? (
                       <>
-                        <button className="icon-buttoncheck" onClick={() => setClinicToApprove(clinic)}>
+                             <button
+                          className="icon-buttoncheck"
+                          onClick={() => handleConfirmApproveClinic(clinic)}
+                        >
                           <FaCheck />
                         </button>
-                        <button className="icon-buttondelete" onClick={() => setClinicToDelete(clinic)}>
+                        <button 
+                          className="icon-buttondelete"
+                          onClick={() => handleConfirmDeleteClinic(clinic)} 
+                        >
                           <FaTrash />
                         </button>
                       </>
                     ) : (
-                      <button className="icon-buttondelete" onClick={() => setClinicToApprove(clinic)}>
+                      <button 
+                        className="icon-buttondelete"
+                        onClick={() => handleConfirmUnsubscribeClinic(clinic)}
+                      >
                         Unsubscribe
                       </button>
                     )}
@@ -176,9 +259,12 @@ const ClinicDashboard = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="8" style={{ textAlign: "center" }}>No search results found.</td>
+             <td colSpan="7" style={{ textAlign: "center" }}>
+                No search results found.
+              </td>
             </tr>
           )}
+         
         </tbody>
       </table>
 
@@ -186,22 +272,52 @@ const ClinicDashboard = () => {
       {adminClinicApprovalModalIsOpen && (
         <div className="adminClinicApprovalModal-overlay">
           <div className="adminClinicApprovalModal">
-            <h2>Confirm Clinic Registration</h2>
-            <p>Are you sure you want to approve {clinicToApprove?.clinicName}?</p>
+            <h2>
+              {displayClinics === "registersClinics" 
+                ? "Confirm Clinic Registration"
+                : "Confirm Clinic Unsubscription"}
+            </h2>
+            <p>
+              Are you sure you want to{" "}
+              {displayClinics === "registersClinics"
+                ? "register"
+                : "unsubscribe"}{" "}
+              {clinicToApprove?.clinicName}?
+            </p>
             <button onClick={handleApproveClinic}>Yes</button>
-            <button onClick={() => setAdminClinicApprovalModalIsOpen(false)}>Cancel</button>
+            <button onClick={closeAdminClinicApprovalModal}>Cancel</button>
           </div>
         </div>
       )}
-
+        
+           {/* Success Modal */}
+      {adminClinicRegistrationSuccessModalIsOpen && (
+        <div className="adminClinicRegistrationSuccessModal-overlay">
+          <div className="adminClinicRegistrationSuccessModal">
+            <h2>
+              {displayClinics === "registersClinics" 
+                ? "Clinic Registration Successful"
+                : "Clinic Unsubscription Successful"}
+            </h2>
+            <p>
+              Clinic has been successfully{" "}
+              {displayClinics === "registersClinics"
+                ? "registered"
+                : "unsubscribed"}
+              .
+            </p>
+            <button onClick={closeAdminClinicRegistrationSuccessModal}>OK</button>
+           
+          </div>
+        </div>
+      )}
       {/* Delete Confirmation Modal */}
       {deleteConfirmationModalOpen && (
         <div className="adminClinicApprovalModal-overlay">
           <div className="adminClinicApprovalModal">
             <h2>Confirm Clinic Deletion</h2>
-            <p>Are you sure you want to delete {clinicToDelete?.clinicName}?</p>
             <button onClick={handleDeleteClinic}>Yes, Delete</button>
-            <button onClick={() => setDeleteConfirmationModalOpen(false)}>Cancel</button>
+            <button onClick={closeDeleteConfirmationModal}>Cancel</button>
           </div>
         </div>
       )}

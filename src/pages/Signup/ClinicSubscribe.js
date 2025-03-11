@@ -32,6 +32,7 @@ const ClinicSubscribe = () => {
     postalCode: '',
     lat: 10.3157, // Default latitude for Cebu City
     lng: 123.8854,
+    password: ''
   });
 
   const [verificationDocs, setVerificationDocs] = useState({
@@ -129,7 +130,7 @@ const ClinicSubscribe = () => {
         const userCredential = await createUserWithEmailAndPassword(
           auth, 
           clinicInfo.email, 
-          'defaultPassword'
+          clinicInfo.password
         );
         
         // Step 2: Only proceed to database operation if authentication succeeds
@@ -152,11 +153,12 @@ const ClinicSubscribe = () => {
           verificationDocs,
           createdAt: new Date()
         };
+        
+        // Store user data in Firestore
+        await setDoc(doc(db, "registersClinics", user.uid), userData);   
         setShowModal(false);
         alert('Pending Account: Please wait for the admin to confirm the clinic information');
-        navigate('/Home');
-        // Store user data in Firestore
-        await setDoc(doc(db, "registersClinics", user.uid), userData);        
+        navigate('/Home');     
       } catch (error) {
         // Check for specific authentication errors
         if (error.code === 'auth/email-already-in-use') {
@@ -375,6 +377,7 @@ const ClinicSubscribe = () => {
                 type="password"
                 name="password"
                 placeholder="Enter your password"
+                value={clinicInfo.password}
                 onChange={handleInitialFormChange}
                 required
               />
