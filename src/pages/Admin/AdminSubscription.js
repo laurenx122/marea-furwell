@@ -72,11 +72,19 @@ const handleApproveClinic = async () => {
   if (!clinicToApprove) return;
   try {
     if (displayClinics === "registersClinics") {
-      await setDoc(doc(db, "clinics", clinicToApprove.id), {
+      const clinicData = {
         ...clinicToApprove,
-      });
+        Type: "Clinic", // Set type explicitly
+        // Status: "approved", // Mark as approved
+      };
+
+      await Promise.all([
+        setDoc(doc(db, "users", clinicToApprove.id), clinicData), // Save to users with type "Clinic"
+        setDoc(doc(db, "clinics", clinicToApprove.id), clinicData), // Save to clinics
+      ]);
       await deleteDoc(doc(db, "registersClinics", clinicToApprove.id));
-    } else if (displayClinics === "clinics") {
+    } else if
+     (displayClinics === "clinics") {
       await setDoc(doc(db, "registersClinics", clinicToApprove.id), {
         ...clinicToApprove,
       });
