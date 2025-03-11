@@ -4,6 +4,7 @@ import styles from './Navbar.module.css';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import Login from '../../pages/Login/Login'; 
 
 const Navbar = () => {
     const [scrollProgress, setScrollProgress] = useState(0);
@@ -24,6 +25,7 @@ const Navbar = () => {
         profileImageURL: ''
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // New state for login modal
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
@@ -74,6 +76,23 @@ const Navbar = () => {
     
         return () => unsubscribe();
     }, []);
+
+    
+
+    // Handle login modal open
+    const handleLoginClick = () => {
+        setIsLoginModalOpen(true);
+    };
+
+    // Handle login modal close
+    const handleLoginModalClose = () => {
+        setIsLoginModalOpen(false);
+    };
+
+    // Handle successful login
+    const handleLoginSuccess = () => {
+        setIsLoginModalOpen(false);
+    };
 
     const handleProfileImageChange = (e) => {
         const file = e.target.files[0];
@@ -268,7 +287,7 @@ const Navbar = () => {
                             </div>
                         ) : (
                             <>
-                                <button onClick={() => navigate('/Login')} className={styles.loginButton}>Login</button>
+                                <button onClick={handleLoginClick} className={styles.loginButton}>Login</button>
                                 <button onClick={() => navigate('/signup')} className={styles.signupButton}>Sign Up</button>
                             </>
                         )}
@@ -397,6 +416,30 @@ const Navbar = () => {
                                 Cancel
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* Login Modal */}
+            {isLoginModalOpen && (
+                <div className={styles.loginModalOverlay}>
+                    <div className={styles.loginModalContent}>
+                        <button 
+                            className={styles.closeLoginButton}
+                            onClick={handleLoginModalClose}
+                            style={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '18px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            ✕
+                        </button>
+                        <Login onClose={handleLoginModalClose} onLoginSuccess={handleLoginSuccess} />
                     </div>
                 </div>
             )}
