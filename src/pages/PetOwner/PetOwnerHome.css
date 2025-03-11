@@ -379,6 +379,12 @@ h2 {
   font-size: 30px;
   color: #666;
   margin-bottom: 8px;
+  background-image: url('https://www.freeiconspng.com/thumbs/camera-icon/camera-icon-21.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 30px;
+  height: 30px;
 }
 
 .pet-image-upload p {
@@ -395,6 +401,11 @@ h2 {
   margin-bottom: 20px;
 }
 
+.pet-image-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .pet-image {
   width: 100px;
   height: 100px;
@@ -402,6 +413,24 @@ h2 {
   object-fit: cover;
   border: 3px solid #007bff;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.edit-image-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: #ffffffa7;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
+  transition: all 0.2s ease;
 }
 
 .no-pet-image {
@@ -427,3 +456,31 @@ h2 {
   max-width: 500px;
 }
 
+/* Buttons for image edit actions */
+.save-image-btn, 
+.cancel-image-btn {
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  border: none;
+  margin-right: 8px;
+}
+
+.save-image-btn {
+  background-color: #5DB5A4;
+  color: white;
+  margin-left: 17%;
+}
+
+.save-image-btn:hover {
+  background-color: #4A9B8B;
+}
+
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}

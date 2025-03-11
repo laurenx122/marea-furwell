@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./PetOwnerHome.css"; 
 import { db, auth } from "../../firebase"; 
 import { collection, query, where, getDocs, doc, addDoc, serverTimestamp, getDoc, updateDoc } from "firebase/firestore";
-import { FaCamera, FaPaw } from "react-icons/fa";
+import { FaCamera, FaPaw, FaEdit } from "react-icons/fa";
 
 const PetOwnerHome = () => { 
   const [activePanel, setActivePanel] = useState("petDetails"); 
@@ -25,9 +25,14 @@ const PetOwnerHome = () => {
   const [addPetError, setAddPetError] = useState("");
   const [addPetSuccess, setAddPetSuccess] = useState(false);
   
-  // Add state for pet image
+  // Add states for pet image editing
   const [petImage, setPetImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [newPetImage, setNewPetImage] = useState(null);
+  const [newImagePreview, setNewImagePreview] = useState(null);
+  const [isEditingImage, setIsEditingImage] = useState(false);
+  const [isSavingImage, setIsSavingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState("");
   
   const [newAppointment, setNewAppointment] = useState({
     petId: "",
@@ -78,6 +83,73 @@ const PetOwnerHome = () => {
       setPetImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
+  };
+
+  // Handle editing pet image in modal
+  const handleModalImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewPetImage(file);
+      setNewImagePreview(URL.createObjectURL(file));
+      setIsEditingImage(true);
+      setImageUploadError("");
+    }
+  };
+
+  // Save the new pet image
+  const handleSaveImage = async () => {
+    if (!newPetImage || !selectedPet) return;
+
+    setIsSavingImage(true);
+    setImageUploadError("");
+
+    try {
+      // Upload image to Cloudinary
+      const image = new FormData();
+      image.append("file", newPetImage);
+      image.append("cloud_name", "dfgnexrda");
+      image.append("upload_preset", UPLOAD_PRESET);
+
+      const response = await fetch(
+        "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
+        {
+          method: "post",
+          body: image
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Image upload failed");
+      }
+
+      const imgData = await response.json();
+      const newImageURL = imgData.url.toString();
+
+      // Update the pet image URL in Firestore
+      const petRef = doc(db, "pets", selectedPet.id);
+      await updateDoc(petRef, { petImageURL: newImageURL });
+
+      // Update the state to reflect the new image
+      setSelectedPet({ ...selectedPet, petImageURL: newImageURL });
+      
+      // Reset editing state
+      setIsEditingImage(false);
+      setNewPetImage(null);
+      setNewImagePreview(null);
+    } catch (error) {
+      console.error("Error uploading pet image:", error);
+      setImageUploadError("Failed to upload image. Please try again.");
+    } finally {
+      setIsSavingImage(false);
+    }
+  };
+
+  // Cancel image editing
+  const handleCancelImageEdit = () => {
+    setIsEditingImage(false);
+    setNewPetImage(null);
+    setNewImagePreview(null);
+    setImageUploadError("");
   };
 
   const handleInputChange = (e) => {
@@ -397,11 +469,19 @@ const PetOwnerHome = () => {
   const handlePetClick = (pet) => {
     setSelectedPet(pet);
     setShowModal(true);
+    setIsEditingImage(false);
+    setNewPetImage(null);
+    setNewImagePreview(null);
+    setImageUploadError("");
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedPet(null);
+    setIsEditingImage(false);
+    setNewPetImage(null);
+    setNewImagePreview(null);
+    setImageUploadError("");
   };
 
   const openAddPetModal = () => {
@@ -423,42 +503,6 @@ const PetOwnerHome = () => {
     setImagePreview(null);
     setAddPetError("");
     setAddPetSuccess(false);
-  };
-
-  const handleImageChangeInModal = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      try {
-        const image = new FormData();
-        image.append("file", file);
-        image.append("cloud_name", "dfgnexrda");
-        image.append("upload_preset", UPLOAD_PRESET);
-
-        const response = await fetch(
-          "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
-          {
-            method: "post",
-            body: image
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Image upload failed");
-        }
-
-        const imgData = await response.json();
-        const newImageURL = imgData.url.toString();
-
-        // Update the pet image URL in Firestore
-        const petRef = doc(db, "pets", selectedPet.id);
-        await updateDoc(petRef, { petImageURL: newImageURL });
-
-        // Update the state to reflect the new image
-        setSelectedPet({ ...selectedPet, petImageURL: newImageURL });
-      } catch (error) {
-        console.error("Error uploading pet image:", error);
-      }
-    }
   };
 
   return ( 
@@ -690,20 +734,53 @@ const PetOwnerHome = () => {
         </div>
       </div>
 
-      {/* Pet Details Modal */}
+      {/* Pet Details Modal with Edit Image Icon */}
       {showModal && selectedPet && (
         <div className="modal-overlay">
           <div className="modal-content">
             <span className="close-button" onClick={closeModal}>&times;</span>
             
-            {/* Pet Image in modal */}
+            {/* Pet Image in modal with edit icon */}
             <div className="pet-image-container">
-              <img 
-                src={selectedPet.petImageURL || DEFAULT_PET_IMAGE} 
-                alt={`${selectedPet.petName}`} 
-                className="pet-image"
-              />
+              <div className="pet-image-wrapper">
+                {newImagePreview ? (
+                  <img 
+                    src={newImagePreview} 
+                    alt={`${selectedPet.petName}`} 
+                    className="pet-image"
+                  />
+                ) : (
+                  <img 
+                    src={selectedPet.petImageURL || DEFAULT_PET_IMAGE} 
+                    alt={`${selectedPet.petName}`} 
+                    className="pet-image"
+                  />
+                )}
+                <div 
+                  className="edit-image-icon" 
+                  onClick={() => document.getElementById('pet-image-edit').click()}
+                >
+                  <img 
+                    src="https://www.freeiconspng.com/thumbs/camera-icon/camera-icon-21.png" 
+                    alt="Edit" 
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                </div>
+                <input 
+                  type="file" 
+                  id="pet-image-edit"
+                  accept="image/jpeg, image/jpg, image/png" 
+                  onChange={handleModalImageChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
             </div>
+            
+            {imageUploadError && (
+              <div className="error-message">
+                {imageUploadError}
+              </div>
+            )}
             
             <h2>{selectedPet.petName}</h2>
             <div className="pet-info-grid">
@@ -726,12 +803,21 @@ const PetOwnerHome = () => {
                 <strong>Date of Birth:</strong> {formatDate(selectedPet.dateofBirth)}
               </div>
             </div>
-            <input 
-              type="file" 
-              accept="image/jpeg, image/jpg, image/png" 
-              onChange={handleImageChangeInModal} 
-            />
-            <button className="modal-close-btn" onClick={closeModal}>Close</button>
+            
+            <div className="modal-actions">
+              {isEditingImage && (
+                <>
+                  <button 
+                    className="save-image-btn" 
+                    onClick={handleSaveImage}
+                    disabled={isSavingImage}
+                  >
+                    {isSavingImage ? "Saving..." : "Save Image"}
+                  </button>
+                </>
+              )}
+              <button className="modal-close-btn" onClick={closeModal}>Close</button>
+            </div>
           </div>
         </div>
       )}
