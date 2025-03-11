@@ -12,7 +12,7 @@ import './Login.css';
 import { CiUser, CiUnlock } from "react-icons/ci";
 import { FcGoogle } from "react-icons/fc";
 
-const Login = () => {
+const Login = ({ onClose, onLoginSuccess }) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,6 +55,11 @@ const Login = () => {
         // Show success modal
         setShowSuccessModal(true);
         
+        // Call the onLoginSuccess callback to notify parent component
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+        
         // Auto close modal after 2 seconds and navigate
         setTimeout(() => {
           setShowSuccessModal(false);
@@ -96,6 +101,11 @@ const Login = () => {
         // Show success modal
         setShowSuccessModal(true);
         
+        // Call the onLoginSuccess callback to notify parent component
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+        
         // Auto close modal after 2 seconds and navigate
         setTimeout(() => {
           setShowSuccessModal(false);
@@ -128,6 +138,11 @@ const Login = () => {
         // Show success modal
         setShowSuccessModal(true);
         
+        // Call the onLoginSuccess callback to notify parent component
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+        
         // Auto close modal and navigate to Pet Owner Home (default)
         setTimeout(() => {
           setShowSuccessModal(false);
@@ -158,7 +173,7 @@ const Login = () => {
   };
 
   return (
-      <div className="login-container">
+      <div className="login-container-modal"> {/* Update class name for modal styling */}
         <div className="login-box">
           <img src='/images/baby_doggy.png' alt="Dog" className="dog-img" />
           <img src='/images/furwell_logo.png' alt="FurWell Logo" className="logo-furwell" />
@@ -194,16 +209,11 @@ const Login = () => {
           </p>
         </div>
         
-        {/* Redirect buttons */}
-        <button className="clinic-home-btn" onClick={() => navigate('/ClinicHome')}>
-          Go to Clinic Home
-        </button>
-        <button className="petowner-home-button" onClick={() => navigate('/VeterinaryHome')}>
-          Go to Vet Home
-        </button>
-      {/* Success Modal */}
-      <SuccessModal />
-    </div>
+        {/* Remove redirect buttons as they're not needed in the modal */}
+        
+        {/* Success Modal */}
+        <SuccessModal />
+      </div>
   );
 };
 
