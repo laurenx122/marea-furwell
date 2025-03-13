@@ -7,11 +7,12 @@
   padding: 20px;
   font-family: 'Arial', sans-serif;
   background-color: #CDEDF6;
+  min-height: 100vh; 
+  padding-top: 30px;
 }
 
 .search-bar-container {
   margin-top: 100px; 
-
   display: flex;
   justify-content: flex-end; 
   margin-bottom: 20px;
@@ -116,26 +117,25 @@ button.selected {
 }
 
 /* Clinic Card Styling */
+/* Clinic Card Styling */
 .clinic-list {
-  width: 70%;
+  width: 70%; /* Ensure the container uses full width */
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
-  margin-left: 30px;
-  margin-top: 30px;
+  grid-template-columns: repeat(3, 1fr); /* 3 cards per row */
+  gap: 20px; /* Add spacing between cards */
+  margin-left: 430px; /* Ensure space from the left edge */
+  margin-top: -390px;
 }
 
 .clinic-card {
-  margin-top: -430px;
   background-color: #cfe9ed;
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(2, 93, 105, 0.875);
   cursor: pointer;
   transition: transform 0.3s ease;
-  margin-left: 120%;
   width: 260px;
-  height: 330px;
+  height: 330px;;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -160,17 +160,6 @@ button.selected {
   margin-bottom: 3px;
 }
 
-.clinic-card ul {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 3px;
-}
-
-.clinic-card li {
-  color: #113B57;
-  font-size: 0.9rem;
-}
-
 .clinic-card .price {
   margin-top: auto;
   color: #4D9DE0;
@@ -185,6 +174,7 @@ button.selected {
 .clinic-card.selected {
   border: 2px solid #d3e9f7;
 }
+
 
 /* Modal Overlay */
 .modal-overlay {
