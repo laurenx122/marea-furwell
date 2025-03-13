@@ -1,12 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=ADLaM+Display&display=swap');
 
+
+
 .home-container {
     font-family: 'Albert Sans', sans-serif;
     color: #333;
     margin: 0;
     padding: 0;
+    cursor: url('../../images/pawCursorAny.png'), auto;
 }
+
+
 
 #home {
     background: url('https://images.unsplash.com/photo-1608744882201-52a7f7f3dd60?q=80&w=1936&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fA%3D%3D') 
@@ -19,6 +24,7 @@
     justify-content: flex-end;
     padding: 0 100px;
     
+
     background-size: cover;
     background-position: 18% 60%; 
     
@@ -168,6 +174,7 @@
 /* Hover effect */
 .service-button:hover {
     background-color: #e0e4e8;
+    cursor: url('../../images/pawCursorPoint.png'), auto;
 }
 
 /* Staggered Delays for Wave Effect */
@@ -266,6 +273,7 @@
     border-radius: 30px;
     cursor: pointer;
     transition: background-color 0.3s;
+    cursor: url('../../images/pawCursorPoint.png'), auto;
 }
 
 .search-button:hover {
@@ -292,6 +300,7 @@
     height: 30px;
     margin-left: 10px;
     cursor: pointer;
+    cursor: url('../../images/pawCursorPoint.png'), auto;
     transition: transform 0.3s ease;
 }
 

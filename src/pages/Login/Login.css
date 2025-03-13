@@ -1,5 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
 /* Background Styling */
+.Login{
+  cursor: url('../../images/pawCursorPoint.png'), auto;
+}
 .login-container {
     background-image: url('/public/images/loginBG.png');
     height: 100vh;
@@ -10,7 +13,7 @@
     position: relative;
     z-index: 1000;
   }
-  
+
   /* Login Box */
   .login-box {
     background-color: #d3f0f7;
