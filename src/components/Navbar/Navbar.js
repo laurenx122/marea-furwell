@@ -244,7 +244,12 @@ const Navbar = () => {
                 <div className={styles.navbarContent}>
                     {/* Left: Logo */}
                     <div className={styles.logoContainer}>
-                        <img src='/images/furwell_logo.png' alt="FurWell Logo" className={styles.logo} />
+                        <a href="#" onClick={(e)=>{
+                            e.preventDefault();
+                            window.location.reload(true);
+                        }}>
+                            <img src='/images/furwell_logo.png' alt="FurWell Logo" className={styles.logo} />
+                        </a>
                     </div>
 
                     {/* Center: Navigation Links */}
