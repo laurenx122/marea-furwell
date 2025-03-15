@@ -79,7 +79,7 @@ const handleApproveClinic = async () => {
       };
 
       await Promise.all([
-        setDoc(doc(db, "users", clinicToApprove.id), clinicData), // Save to users with type "Clinic"
+        // setDoc(doc(db, "users", clinicToApprove.id), clinicData), // Save to users with type "Clinic"
         setDoc(doc(db, "clinics", clinicToApprove.id), clinicData), // Save to clinics
       ]);
       await deleteDoc(doc(db, "registersClinics", clinicToApprove.id));

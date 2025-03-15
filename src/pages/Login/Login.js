@@ -40,50 +40,62 @@ const Login = ({ onClose, onLoginSuccess }) => {
         return;
       }
 
-      // Proceed with normal email/password sign in
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+  
+    // Proceed with normal email/password sign in
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-      const userDocRef = doc(db, "users", user.uid);
-      const userDocSnap = await getDoc(userDocRef);
+    // Check both 'users' and 'clinics' collections
+    const userDocRef = doc(db, "users", user.uid);
+    const clinicDocRef = doc(db, "clinics", user.uid);
 
-      if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        setEmail('');
-        setPassword('');
-        
-        // Show success modal
-        setShowSuccessModal(true);
-        
-        // Call the onLoginSuccess callback to notify parent component
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        }
-        
-        // Auto close modal after 2 seconds and navigate
-        setTimeout(() => {
-          setShowSuccessModal(false);
-          if (userData.Type === "Admin") {
-            navigate("/AdminHome"); 
-          } else if (userData.Type === "Pet owner") {
-            navigate("/PetOwnerHome"); 
-          } else if (userData.Type === "Clinic") {
-            navigate("/ClinicHome"); 
-          }
-        }, 2000);
-      } else {
-        console.error("User data not found in Firestore.");
-        setEmail('');
-        setPassword('');
-        alert("Login failed: User data not found.");
-        setError("User data not found in Firestore.");
-      }
-    } catch (error) {
-      setError(error.message);
-      alert("Login failed: " + error.message);
+    const [userDocSnap, clinicDocSnap] = await Promise.all([
+      getDoc(userDocRef),
+      getDoc(clinicDocRef),
+    ]);
+
+    let userData = null;
+
+    if (userDocSnap.exists()) {
+      userData = userDocSnap.data();
+    } else if (clinicDocSnap.exists()) {
+      userData = clinicDocSnap.data();
     }
-  };
 
+    if (userData) {
+      setEmail('');
+      setPassword('');
+
+      // Show success modal
+      setShowSuccessModal(true);
+
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      }
+
+      // Auto close modal after 2 seconds and navigate
+      setTimeout(() => {
+        setShowSuccessModal(false);
+        if (userData.Type === "Admin") {
+          navigate("/AdminHome");
+        } else if (userData.Type === "Pet owner") {
+          navigate("/PetOwnerHome");
+        } else if (userData.Type === "Clinic") {
+          navigate("/ClinicHome");
+        }
+      }, 2000);
+    } else {
+      console.error("User data not found in Firestore.");
+      setEmail('');
+      setPassword('');
+      alert("Login failed: User data not found.");
+      setError("User data not found in Firestore.");
+    }
+  } catch (error) {
+    setError(error.message);
+    alert("Login failed: " + error.message);
+  }
+};
   const handleGoogleSignIn = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
