@@ -81,6 +81,15 @@ html, body {
 }
 
 /* Input Fields */
+/* .CS_input-container {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 2px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+} */
 .CS_input-container {
     display: flex;
     align-items: center;
@@ -89,7 +98,9 @@ html, body {
     border-radius: 8px;
     margin: 2px;
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-}
+    position: relative; /* Ensure positioning works */
+  
+  }
 
 .CS_input-container input {
     width: 100%;
@@ -373,3 +384,15 @@ html, body {
         height: 250px;
     }
 }
+.cpassword-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+  }
+  
+  .ceye-icon {
+    width: 20px;
+    height: 20px;
+  }

@@ -15,7 +15,13 @@ const ClinicSubscribe = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // to show password
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
   // Add this state outside of useEffect
   const [selectedServices, setSelectedServices] = useState([]);
 
@@ -112,10 +118,22 @@ const ClinicSubscribe = () => {
       console.error("Error updating Firestore:", error);
     }
   };
-
+  const isValidPhilippinesNumber = (number) => {
+    const phRegex = /^(\+63|0)9\d{9}$/;
+    return phRegex.test(number);
+  };
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!isValidPhilippinesNumber(clinicInfo.phone)) {
+      setError("Invalid Philippines contact number");
+      return;
+    }
+    if (clinicInfo.password !== clinicInfo.confirmPassword) {
+      setError('Passwords do not match');
+        return;
+    } 
+    setError('');
     setShowModal(true);
   };
 
@@ -374,10 +392,28 @@ const ClinicSubscribe = () => {
             <div className="CS_input-container">
               <CiUnlock className="icon" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"} 
                 name="password"
                 placeholder="Enter your password"
                 value={clinicInfo.password}
+                onChange={handleInitialFormChange}
+                required
+              />
+               <div className="cpassword-toggle" onClick={togglePasswordVisibility}>
+                {showPassword ? (
+                  <img src="https://www.freeiconspng.com/thumbs/eye-icon/eyeball-icon-png-eye-icon-1.png" alt="Hide" className="ceye-icon" />
+                ) : (
+                  <img src="https://static.thenounproject.com/png/22249-200.png" alt="Show" className="eye-icon" />
+                )}
+              </div>
+            </div>
+            <div className="CS_input-container">
+              <CiUnlock className="icon" />
+              <input
+                type={showPassword ? "text" : "password"} 
+                name="confirmPassword"
+                placeholder="Enter your password"
+                value={clinicInfo.confirmPassword}
                 onChange={handleInitialFormChange}
                 required
               />
@@ -399,7 +435,7 @@ const ClinicSubscribe = () => {
               />
             </div>
 
-
+            {error && <p style={{ color: 'red' }}>{error}</p>}
             {/* Create Account Button */}
             <button type="submit" className="get-started">
               <FaPaw className="paw-icon" /> Get Started
@@ -594,7 +630,7 @@ const ClinicSubscribe = () => {
                 {currentStep > 1 ? 'Back' : 'Cancel'}
               </button>
               <button className="btn btn-next" onClick={nextStep}>
-                {currentStep < 3 ? `Next step: ${currentStep === 1 ? 'Address' : 'Payment'}` : 'Submit'}
+                {currentStep < 3 ? `Next step: ${currentStep === 1 ? 'Address' : 'Verifications'}` : 'Submit'}
               </button>
             </div>
           </div>
