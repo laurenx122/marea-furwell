@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../../firebase'; // Import Firestore from firebase.js
 import { collection, getDocs } from 'firebase/firestore'; // Firestore functions
 import './FindClinic.css';
@@ -10,9 +11,11 @@ const FindClinic = () => {
   const [selectedService, setSelectedService] = useState([]);
   const [selectedPrice, setSelectedPrice] = useState('');
   const [selectedSort, setSelectedSort] = useState('Relevance');
-  const [selectedClinic, setSelectedClinic] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal visibility
-  const [clinicDetails, setClinicDetails] = useState(null); // To store selected clinic's details
+  const [isModalOpen, setIsModalOpen] = useState(false); 
+  const [clinicDetails, setClinicDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   // Function to categorize the price into ₱, ₱₱, and ₱₱₱
   const categorizePrice = (price) => {
@@ -23,30 +26,53 @@ const FindClinic = () => {
 
   // Fetch clinics from Firestore
   const fetchClinics = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const clinicSnapshot = await getDocs(collection(db, "clinics"));  // Fetch from the 'clinics' collection
+      const clinicSnapshot = await getDocs(collection(db, "clinics")); // Fetch from the 'clinics' collection
+      if (clinicSnapshot.empty) {
+        setError("No clinics found. Please try again later.");
+        setClinics([]);
+        return;
+      }
+      
       const clinicList = clinicSnapshot.docs.map(doc => ({
         id: doc.id,
-        clinicName: doc.data().clinicName,
-        streetAddress: doc.data().streetAddress,
-        city: doc.data().province,  // Using `province` as city
-        price: doc.data().price,
-        priceCategory: categorizePrice(doc.data().price), // Categorize the price
-        services: doc.data().services,
-        image: doc.data().imgURL || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',  // Use imgURL if present
+        clinicName: doc.data().clinicName || 'Unknown Clinic',
+        streetAddress: doc.data().streetAddress || 'Address not provided',
+        city: doc.data().city || '',
+        province: doc.data().province || 'Location not specified',
+        postalCode: doc.data().postalCode || '',
+        price: doc.data().price || 0,
+        priceCategory: categorizePrice(doc.data().price || 0), // Categorize the price
+        services: doc.data().services || [],
+        description: doc.data().description || 'No description available',
+        image: doc.data().imgURL || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
+        phone: doc.data().phone || 'Not available',
+        email: doc.data().email || 'Not available',
+        hours: doc.data().operatingHours || 'Not available',
       }));
-      setClinics(clinicList);  // Update state with fetched clinics
+      
+      setClinics(clinicList); // Update state with fetched clinics
     } catch (error) {
       console.error("Error fetching clinic data: ", error);
+      setError("Failed to load clinics. Please try refreshing the page.");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchClinics();  // Fetch data on component mount
+    fetchClinics(); // Fetch data on component mount
   }, []);
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    // You could implement additional search logic here if needed
   };
 
   const handleClinicClick = (clinic) => {
@@ -67,208 +93,293 @@ const FindClinic = () => {
   };
 
   const handlePriceChange = (price) => {
-    setSelectedPrice(price);
+    setSelectedPrice(prev => prev === price ? '' : price); // Toggle price selection
   };
 
   const handleSortChange = (e) => {
     setSelectedSort(e.target.value);
   };
 
+  const viewClinicDetails = (clinic) => {
+    navigate(`/clinic/${clinic.id}`, { state: { clinicData: clinic } });
+  };
+
   // Filtering the clinics based on the search, services, and price selected
   const filteredClinics = clinics.filter(clinic => {
-    return (
-      (clinic.clinicName.toLowerCase().includes(searchQuery.toLowerCase()) || clinic.city.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      (selectedService.length ? selectedService.every(service => clinic.services && clinic.services.includes(service)) : true) &&
-      (selectedPrice ? clinic.priceCategory === selectedPrice : true)
-    );
+    const matchesSearch = 
+      clinic.clinicName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      clinic.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      clinic.province?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const matchesServices = selectedService.length === 0 || 
+      selectedService.every(service => clinic.services && clinic.services.includes(service));
+      
+    const matchesPrice = !selectedPrice || clinic.priceCategory === selectedPrice;
+    
+    return matchesSearch && matchesServices && matchesPrice;
+  });
+
+  // Sorting the filtered clinics
+  const sortedClinics = [...filteredClinics].sort((a, b) => {
+    if (selectedSort === 'PriceAsc') {
+      return a.price - b.price;
+    } else if (selectedSort === 'PriceDesc') {
+      return b.price - a.price;
+    }
+    // Default to relevance (name sort)
+    return a.clinicName.localeCompare(b.clinicName);
   });
 
   return (
     <div className="find-clinic-container">
       {/* Search Bar */}
-      <div className="search-bar-container">
+      <form className="search-bar-container" onSubmit={handleSearchSubmit}>
         <input
           type="text"
           value={searchQuery}
           onChange={handleSearchChange}
-          placeholder="Search Clinics"
+          placeholder="Search by clinic name or location"
         />
-        <button onClick={() => alert("Search clicked!")}>Search</button>
-      </div>
+        <button type="submit">Search</button>
+      </form>
 
-      {/* Filters */}
-      <div className="filters-container">
-        <h2>Filters</h2>
-        {/* Sort By Radio Buttons */}
-        <div className="filter">
-          <p>Sort by:</p>
-          <label>
-            <input
-              type="radio"
-              name="sort"
-              value="Relevance"
-              checked={selectedSort === 'Relevance'}
-              onChange={handleSortChange}
-            />
-            Relevance
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="sort"
-              value="Lorem Ipsum"
-              checked={selectedSort === 'Lorem Ipsum'}
-              onChange={handleSortChange}
-            />
-            Lorem Ipsum
-          </label>
-        </div>
-
-        {/* Quick Filter */}
-        <div className="quick-filter">
-          <button>Nearby Clinics</button>
-        </div>
-
-        {/* Services Filter with checkboxes */}
-        <div className="filter">
-          <p>Services:</p>
-          <label>
-            <input
-              type="checkbox"
-              value="Vaccination"
-              checked={selectedService.includes('Vaccination')}
-              onChange={handleServiceChange}
-            />
-            Vaccination
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              value="Pet Surgery"
-              checked={selectedService.includes('Pet Surgery')}
-              onChange={handleServiceChange}
-            />
-            Pet Surgery
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              value="Consultation"
-              checked={selectedService.includes('Consultation')}
-              onChange={handleServiceChange}
-            />
-            Consultation
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              value="Ultrasound"
-              checked={selectedService.includes('Ultrasound')}
-              onChange={handleServiceChange}
-            />
-            Ultrasound
-          </label>
-          <label>
-             <input
-               type="checkbox"
-               value="Pet Anesthesia"
-               checked={selectedService.includes('Pet Anesthesia')}
-               onChange={handleServiceChange}
-             />
-             Pet Anesthesia
-           </label>
-           <label>
-             <input
-               type="checkbox"
-               value="Orthopedic Pet Surgery"
-               checked={selectedService.includes('Orthopedic Pet Surgery')}
-               onChange={handleServiceChange}
-             />
-            Orthopedic Pet Surgery
-           </label>
-           <label>
-             <input
-               type="checkbox"
-               value="Urgent Care"
-               checked={selectedService.includes('Urgent Care')}
-               onChange={handleServiceChange}
-             />
-            Urgent Care
-           </label>
-           <label>
-             <input
-               type="checkbox"
-               value="Behavioral Consultation"
-               checked={selectedService.includes('Behavioral Consultation')}
-               onChange={handleServiceChange}
-             />
-            Behavioral Consultation
-           </label>
-           <label>
-             <input
-               type="checkbox"
-               value="Nutritional Counseling"
-               checked={selectedService.includes('Nutritional Counseling')}
-               onChange={handleServiceChange}
-             />
-            Nutritional Counseling
-           </label>
-           <label>
-             <input
-               type="checkbox"
-               value="Geriatric Care"
-               checked={selectedService.includes('Geriatric Care')}
-               onChange={handleServiceChange}
-             />
-           Geriatric Care
-           </label>
-        </div>
-
-        {/* Price Filter */}
-        {/* <div className="filter">
-          <p>Price:</p>
-          <button className={selectedPrice === '₱' ? 'selected' : ''} onClick={() => handlePriceChange('₱')}>₱</button>
-          <button className={selectedPrice === '₱₱' ? 'selected' : ''} onClick={() => handlePriceChange('₱₱')}>₱₱</button>
-          <button className={selectedPrice === '₱₱₱' ? 'selected' : ''} onClick={() => handlePriceChange('₱₱₱')}>₱₱₱</button>
-        </div> */}
-      </div>
-
-      {/* Clinic List */}
-      <div className="clinic-list">
-        {filteredClinics.length === 0 ? (
-          <div className="no-clinics">
-          <p>No clinics found. Try a different search or filter.</p>
+      {/* Main content area */}
+      <div className="clinic-content-area">
+        {/* Filters */}
+        <div className="filters-container">
+          <h2>Filters</h2>
+          
+          {/* Sort By Radio Buttons */}
+          <div className="filter">
+            <p>Sort by:</p>
+            <label>
+              <input
+                type="radio"
+                name="sort"
+                value="Relevance"
+                checked={selectedSort === 'Relevance'}
+                onChange={handleSortChange}
+              />
+              Relevance
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="sort"
+                value="PriceAsc"
+                checked={selectedSort === 'PriceAsc'}
+                onChange={handleSortChange}
+              />
+              Price: Low to High
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="sort"
+                value="PriceDesc"
+                checked={selectedSort === 'PriceDesc'}
+                onChange={handleSortChange}
+              />
+              Price: High to Low
+            </label>
           </div>
-        ) : (
-          filteredClinics.map(clinic => (
-            <div
-              key={clinic.id}
-              className={`clinic-card ${selectedClinic === clinic.id ? 'selected' : ''}`}
-              onClick={() => handleClinicClick(clinic)}
-            >
-              <img src={clinic.image || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp'} alt={clinic.clinicName} />
-              <h3>{clinic.clinicName}</h3>
-              <p>{clinic.streetAddress}, {clinic.city}</p> {/* Display streetAddress first */}
-              <p className="price">Price: {clinic.price}</p>
+
+          {/* Quick Filter */}
+          <div className="quick-filter">
+            <button type="button">Nearby Clinics</button>
+          </div>
+
+          {/* Services Filter with checkboxes */}
+          <div className="filter">
+            <p>Services:</p>
+            <label>
+              <input
+                type="checkbox"
+                value="Vaccination"
+                checked={selectedService.includes('Vaccination')}
+                onChange={handleServiceChange}
+              />
+              Vaccination
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                value="Pet Surgery"
+                checked={selectedService.includes('Pet Surgery')}
+                onChange={handleServiceChange}
+              />
+              Pet Surgery
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                value="Consultation"
+                checked={selectedService.includes('Consultation')}
+                onChange={handleServiceChange}
+              />
+              Consultation
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                value="Ultrasound"
+                checked={selectedService.includes('Ultrasound')}
+                onChange={handleServiceChange}
+              />
+              Ultrasound
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                value="Grooming"
+                checked={selectedService.includes('Grooming')}
+                onChange={handleServiceChange}
+              />
+              Grooming
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                value="Laboratory"
+                checked={selectedService.includes('Laboratory')}
+                onChange={handleServiceChange}
+              />
+              Laboratory
+            </label>
+          </div>
+
+          {/* Price Filter */}
+          <div className="filter">
+            <p>Price:</p>
+            <div className="price-buttons">
+              <button 
+                type="button" 
+                className={selectedPrice === '₱' ? 'selected' : ''} 
+                onClick={() => handlePriceChange('₱')}
+              >
+                ₱
+              </button>
+              <button 
+                type="button" 
+                className={selectedPrice === '₱₱' ? 'selected' : ''} 
+                onClick={() => handlePriceChange('₱₱')}
+              >
+                ₱₱
+              </button>
+              <button 
+                type="button" 
+                className={selectedPrice === '₱₱₱' ? 'selected' : ''} 
+                onClick={() => handlePriceChange('₱₱₱')}
+              >
+                ₱₱₱
+              </button>
             </div>
-          ))
-        )}
+          </div>
+
+          {/* Reset Filters Button */}
+          <button 
+            className="reset-filters"
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedService([]);
+              setSelectedPrice('');
+              setSelectedSort('Relevance');
+            }}
+          >
+            Reset Filters
+          </button>
+        </div>
+
+        {/* Clinic List */}
+        <div className="clinic-list">
+          {loading ? (
+            <div className="loading-container">
+              <p>Loading clinics...</p>
+            </div>
+          ) : error ? (
+            <div className="error-container">
+              <p>{error}</p>
+              <button onClick={fetchClinics}>Try Again</button>
+            </div>
+          ) : sortedClinics.length === 0 ? (
+            <div className="no-results">
+              <p>No clinics found matching your criteria.</p>
+              <p>Try adjusting your filters or search term.</p>
+            </div>
+          ) : (
+            <div className="clinics-grid">
+              {sortedClinics.map(clinic => (
+                <div
+                  key={clinic.id}
+                  className="clinic-card"
+                  onClick={() => handleClinicClick(clinic)}
+                >
+                  <div className="clinic-image-container">
+                    <img src={clinic.image} alt={clinic.clinicName} />
+                  </div>
+                  <div className="clinic-card-content">
+                    <h3>{clinic.clinicName}</h3>
+                    <p className="clinic-location">{clinic.streetAddress}, {clinic.province}</p>
+                    <div className="clinic-tags">
+                      <span className="price-tag">{clinic.priceCategory}</span>
+                      {clinic.services && clinic.services.slice(0, 2).map((service, idx) => (
+                        <span key={idx} className="service-tag">{service}</span>
+                      ))}
+                      {clinic.services && clinic.services.length > 2 && (
+                        <span className="more-tag">+{clinic.services.length - 2} more</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal to show clinic details */}
       {isModalOpen && clinicDetails && (
-        <div className="modal-overlay">
-          <div className="modal">
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
             <button className="close-modal" onClick={closeModal}>X</button>
-            <h3>{clinicDetails.clinicName}</h3>
-            <p>{clinicDetails.streetAddress}, {clinicDetails.city}</p> {/* Display streetAddress first */}
-            <img src={clinicDetails.image || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp'} alt={clinicDetails.clinicName} />
-            <ul>
-              {clinicDetails.services && clinicDetails.services.map(service => (
-                <li key={service}>{service}</li>
-              ))}
-            </ul>
-            <p className="price">Price: {clinicDetails.price}</p>
+            
+            <div className="modal-image-container">
+              <img src={clinicDetails.image} alt={clinicDetails.clinicName} />
+            </div>
+            
+            <div className="modal-content">
+              <h3>{clinicDetails.clinicName}</h3>
+              <p className="modal-address">{clinicDetails.streetAddress}, {clinicDetails.province}</p>
+              
+              <div className="price-services-container">
+                <span className="modal-price">{clinicDetails.priceCategory}</span>
+                <div className="modal-services">
+                  {clinicDetails.services && clinicDetails.services.slice(0, 3).map((service, idx) => (
+                    <span key={idx}>{service}</span>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Show a truncated description */}
+              <p className="clinic-short-description">
+                {clinicDetails.description && 
+                  (clinicDetails.description.length > 150 
+                    ? clinicDetails.description.substring(0, 150) + '...' 
+                    : clinicDetails.description)
+                }
+              </p>
+              
+              {/* Action Buttons */}
+              <div className="modal-actions">
+                <button 
+                  className="see-more-button"
+                  onClick={() => viewClinicDetails(clinicDetails)}
+                >
+                  See More Details
+                </button>
+                <button className="book-now-button">Book Now</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -276,10 +387,10 @@ const FindClinic = () => {
   );
 };
 
-// Footer placed outside the FindClinic container
+// Combined component with Footer
 const FindClinicWithFooter = () => {
   return (
-    <div>
+    <div className="page-container">
       <FindClinic />
       <Footer />
     </div>
