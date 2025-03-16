@@ -98,7 +98,7 @@ const FindClinic = () => {
 
       {/* Filters */}
       <div className="filters-container">
-        <h2>Filters</h2>
+        <h2>Filtersssss</h2>
         {/* Sort By Radio Buttons */}
         <div className="filter">
           <p>Sort by:</p>
