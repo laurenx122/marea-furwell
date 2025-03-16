@@ -17,10 +17,22 @@ const Home = () => {
     const mapRef = useRef(null);
 
     const navigate = useNavigate();
-    const handleFindClinicClick = () => { navigate('/FindClinic'); };
-    const handleServicesClick = () => { navigate('/services'); };
-    const handleSetAppointmentClick = () => { navigate('/appointments'); };
-    const handleSearchClick = () => { navigate('/ClinicLocator', { state: { searchQuery: searchInputValue } }); };
+    const handleFindClinicClick = () => { 
+        window.scrollTo(0, 0);
+        navigate('/FindClinic'); 
+    };
+    const handleServicesClick = () => {
+        window.scrollTo(0, 0);
+         navigate('/services'); 
+        };
+    const handleClinicSignUpClick = () => { 
+        window.scrollTo(0, 0);
+        navigate('/ClinicSubscribe'); 
+    };
+    const handleSearchClick = () => { 
+        window.scrollTo(0, 0);
+        navigate('/ClinicLocator', { state: { searchQuery: searchInputValue } }); 
+    };
 
     // Scroll event listener to trigger animations when elements come into view
     React.useEffect(() => {
@@ -108,9 +120,9 @@ const Home = () => {
                     <img src="https://cdn-icons-png.freepik.com/256/12641/12641101.png" alt="Find Clinic" />
                     Find Clinic
                 </button>
-                <button className="service-button" onClick={handleSetAppointmentClick}>
+                <button className="service-button" onClick={handleClinicSignUpClick}>
                     <img src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQwly9ieoqBhPisnyYoY9619JiA1gFq8nmmwVUTkWlJMOUG4fgX" alt="Set Appointment" />
-                    Set Appointment
+                    Grow with Us
                 </button>
             </div>
 
