@@ -406,7 +406,9 @@ const fetchAppointments = async () => {
                 <table> 
                   <thead> 
                     <tr> 
-                      <th>Date & Time</th> 
+                      <th>Pet ID</th>
+                      <th>Date</th>
+                      <th>Time</th> 
                       <th>Pet Name</th> 
                       <th>Owner</th> 
                       <th>Species</th> 
