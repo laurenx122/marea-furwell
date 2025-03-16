@@ -82,6 +82,8 @@ const Login = ({ onClose, onLoginSuccess }) => {
           navigate("/PetOwnerHome");
         } else if (userData.Type === "Clinic") {
           navigate("/ClinicHome");
+        } else if (userData.Type === "Veterinarian") {
+          navigate("/VeterinaryHome");
         }
       }, 2000);
     } else {
