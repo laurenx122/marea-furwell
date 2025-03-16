@@ -148,7 +148,7 @@ const FindClinic = () => {
               checked={selectedService.includes('Pet Surgery')}
               onChange={handleServiceChange}
             />
-            Pet Dental Surgery
+            Pet Surgery
           </label>
           <label>
             <input
@@ -168,77 +168,21 @@ const FindClinic = () => {
             />
             Ultrasound
           </label>
-          <label>
-            <input
-              type="checkbox"
-              value="Pet Anesthesia"
-              checked={selectedService.includes('Pet Anesthesia')}
-              onChange={handleServiceChange}
-            />
-            Pet Anesthesia
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              value="Orthopedic Pet Surgery"
-              checked={selectedService.includes('Orthopedic Pet Surgery')}
-              onChange={handleServiceChange}
-            />
-           Orthopedic Pet Surgery
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              value="Urgent Care"
-              checked={selectedService.includes('Urgent Care')}
-              onChange={handleServiceChange}
-            />
-           Urgent Care
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              value="Behavioral Consultation"
-              checked={selectedService.includes('Behavioral Consultation')}
-              onChange={handleServiceChange}
-            />
-           Behavioral Consultation
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              value="Nutritional Counseling"
-              checked={selectedService.includes('Nutritional Counseling')}
-              onChange={handleServiceChange}
-            />
-           Nutritional Counseling
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              value="Geriatric Care"
-              checked={selectedService.includes('Geriatric Care')}
-              onChange={handleServiceChange}
-            />
-          Geriatric Care
-          </label>
         </div>
 
         {/* Price Filter */}
-        {/* <div className="filter">
+        <div className="filter">
           <p>Price:</p>
           <button className={selectedPrice === '₱' ? 'selected' : ''} onClick={() => handlePriceChange('₱')}>₱</button>
           <button className={selectedPrice === '₱₱' ? 'selected' : ''} onClick={() => handlePriceChange('₱₱')}>₱₱</button>
           <button className={selectedPrice === '₱₱₱' ? 'selected' : ''} onClick={() => handlePriceChange('₱₱₱')}>₱₱₱</button>
-        </div> */}
+        </div>
       </div>
 
       {/* Clinic List */}
       <div className="clinic-list">
         {filteredClinics.length === 0 ? (
-          <div className="no-clinics">
           <p>No clinics found. Try a different search or filter.</p>
-          </div>
         ) : (
           filteredClinics.map(clinic => (
             <div
