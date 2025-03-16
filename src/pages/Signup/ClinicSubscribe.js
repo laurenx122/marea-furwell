@@ -477,13 +477,12 @@ const ClinicSubscribe = () => {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                   {/* Pre-defined services */}
                   {[
-                    "Wellness & Prevention", 
-                    "Testing & Diagnostics", 
-                    "Advanced Care", 
+                    "Vaccination", 
+                    "Consultation", 
+                    "Ultrasound", 
                     "Pet Anesthesia", 
                     "Pet Dental Surgery", 
                     "Orthopedic Pet Surgery", 
-                    "Pet Surgery", 
                     "Urgent Care",
                     "Behavioral Consultation",
                     "Nutritional Counseling",

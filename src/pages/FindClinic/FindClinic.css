@@ -124,7 +124,15 @@ button.selected {
   grid-template-columns: repeat(3, 1fr); /* 3 cards per row */
   gap: 20px; /* Add spacing between cards */
   margin-left: 430px; /* Ensure space from the left edge */
-  margin-top: -390px;
+  margin-top: -425px;
+}
+.no-clinics p{
+  background-color: #cfe9ed;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(2, 93, 105, 0.875);
+  font-weight:bold;
+  color: #113B57;
 }
 
 .clinic-card {
