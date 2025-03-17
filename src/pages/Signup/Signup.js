@@ -7,7 +7,7 @@ import { auth, db } from '../../firebase'; // Ensure this path is correct
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 
-const Signup = () => {
+const Signup = ({ onClose, onSwitchToLogin }) => {
   const navigate = useNavigate(); // For navigation
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -131,7 +131,8 @@ const Signup = () => {
 
   const closeSuccessModal = () => {
     setShowSuccessModal(false);
-    navigate('/Login');
+    onClose(); 
+    onSwitchToLogin(); 
   };
 
   const togglePasswordVisibility = () => {
@@ -144,7 +145,8 @@ const Signup = () => {
 
   // Function to navigate to login page
   const goToLogin = () => {
-    navigate('/Login');
+    onClose(); 
+    onSwitchToLogin(); 
   };
 
   return (
