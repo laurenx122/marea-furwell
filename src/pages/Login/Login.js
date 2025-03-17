@@ -12,7 +12,7 @@ import './Login.css';
 import { CiUser, CiUnlock } from "react-icons/ci";
 import { FcGoogle } from "react-icons/fc";
 
-const Login = ({ onClose, onLoginSuccess }) => {
+const Login = ({ onClose, onSwitchToSignUp, onLoginSuccess }) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,6 +24,17 @@ const Login = ({ onClose, onLoginSuccess }) => {
     setShowPassword(!showPassword);
   };
   
+  const goToSignUp = () => {
+    onClose(); 
+    onSwitchToSignUp(); 
+  };
+
+  const closeSuccessModal = () => {
+    setShowSuccessModal(false);
+    onClose(); 
+    onSwitchToSignUp(); 
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError(null);
@@ -219,7 +230,7 @@ const Login = ({ onClose, onLoginSuccess }) => {
           <p>or continue with</p>
           <button className="google-btn" onClick={handleGoogleSignIn}><FcGoogle size={24}/> Google</button>
           <p className="signup-text">
-            Don't have an account yet? <a href="/signup">Sign Up for Free</a>
+            Don't have an account yet? <a onClick={goToSignUp} className="signup-link">Sign Up for Free</a>
           </p>
         </div>
         
