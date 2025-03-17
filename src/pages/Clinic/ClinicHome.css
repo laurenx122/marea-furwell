@@ -9,7 +9,7 @@
 }
 
 /* Sidebar Styling */
-.sidebar {
+.sidebar_clinicHome {
   width: 250px;
   background-color: #EDBFC6;
   padding: 20px;
@@ -17,12 +17,13 @@
   flex-direction: column;
   gap: 15px;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: space-between;
   height: auto;
-  min-height: 100vh;
+  max-height: 100vh;
 }
 
-.sidebar button {
+
+.sidebar_clinicHome button {
   width: 100%;
   padding: 12px;
   font-size: 16px;
@@ -37,15 +38,18 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.sidebar button:hover {
+.sidebar_clinicHome button:hover {
   background-color: #ffcdd2;
   transform: translateY(-2px);
 }
 
-.sidebar button.active {
+.sidebar_clinicHome button.active {
   background-color: #ff8c94;
   color: #fff;
   font-weight: bold;
+}
+.sidebar-buttons {
+  margin-top: -150px;
 }
 
 /* Content Area */
@@ -140,21 +144,26 @@
   text-decoration: underline;
 }
 
-/* Clinic Profile Image Container */
-.clinic-image-container {
+.clinic-img-container {
   position: relative;
   display: flex;
   justify-content: center;
-  align-items: center;
-  width: 80px; /* Reduced from 100px */
-  height: 80px; /* Reduced from 100px */
+  width: 150px; /* Reduced from 100px */
+  height: 150px; /* Reduced from 100px */
   margin: 0 auto 20px; /* Center horizontally and add some bottom margin */
+}
+
+.clinic-sidebar-panel {
+  width: 100%;
 }
 
 /* Clinic Profile Image */
 .clinic-profile-image {
-  width: 80px; /* Reduced from 100px */
-  height: 80px; /* Reduced from 100px */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 150px; /* Reduced from 100px */
+  height: 150px; /* Reduced from 100px */
   border-radius: 50%;
   object-fit: cover; /* Maintain aspect ratio and cover the area */
   border: 3px solid #ffb6c1;
@@ -287,8 +296,8 @@ tr:hover {
   border-radius: 5px;
   text-align: left;
   transition: background-color 0.3s, transform 0.3s;
-  margin-top: 190px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* flex-grow: 1; */
 }
 
 .signout-btn:hover {

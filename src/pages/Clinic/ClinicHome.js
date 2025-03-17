@@ -354,10 +354,10 @@ const ClinicHome = () => {
   return (
     <div className="clinic-container">
 
-      <div className="sidebar">
+      <div className="sidebar_clinicHome">
         {clinicInfo && (
           <div className="clinic-sidebar-panel">
-            <div className="clinic-image-container">
+            <div className="clinic-img-container">
               <img
                 src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
                 alt="Clinic Profile"
