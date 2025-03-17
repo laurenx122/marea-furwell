@@ -117,20 +117,31 @@ const Navbar = () => {
         setIsLoginModalOpen(false);
     };
 
-    // Handle signup modal open
-    const handleSignUpClick = () => {
-        setIsSignUpModalOpen(true);
-    };
-
-    const handleSignUpModalClose = () => {
-        setIsSignUpModalOpen(false);
-    };
-
     // Handle successful login
     const handleLoginSuccess = () => {
         setIsLoginModalOpen(false);
     };
 
+        // Handle signup modal open
+        const handleSignUpClick = () => {
+            setIsSignUpModalOpen(true);
+        };
+    
+        const handleSignUpModalClose = () => {
+            setIsSignUpModalOpen(false);
+        };
+    
+        const switchToLoginModal = () => {
+            setIsSignUpModalOpen(false); 
+            setIsLoginModalOpen(true); 
+        };
+    
+        const switchToSignUpModal = () => {
+            setIsLoginModalOpen(false); 
+            setIsSignUpModalOpen(true); 
+        };
+    
+ 
     const handleOutsideClick = (e) => {
         if (e.target.className === styles.loginModalOverlay) {
           handleSignUpModalClose();
@@ -474,7 +485,7 @@ const Navbar = () => {
             {isLoginModalOpen && (
                 <div className={styles.loginModalOverlay} onClick={handleOutsideClick}>
                     <div className={styles.loginModalContent}>
-                        <Login onClose={handleLoginModalClose} onLoginSuccess={handleLoginSuccess} />
+                        <Login onClose={handleLoginModalClose} onSwitchToSignUp={switchToSignUpModal} onLoginSuccess={handleLoginSuccess} />
                     </div>
                 </div>
             )}
@@ -483,7 +494,7 @@ const Navbar = () => {
             {isSignUpModalOpen && (
                 <div className={styles.loginModalOverlay} onClick={handleOutsideClick}>
                     <div className={styles.loginModalContent}>
-                        <Signup onClose={handleSignUpModalClose} onLoginSuccess={handleLoginSuccess} />
+                        <Signup onClose={handleSignUpModalClose} onSwitchToLogin={switchToLoginModal} onLoginSuccess={handleLoginSuccess} />
                     </div>
                 </div>
             )}

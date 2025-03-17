@@ -159,3 +159,11 @@
   width: 20px;
   height: 20px;
 }
+
+.signup-link {
+  color: #45a049;
+  text-decoration: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
