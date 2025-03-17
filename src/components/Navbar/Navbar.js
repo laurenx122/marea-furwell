@@ -5,12 +5,14 @@ import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import Login from '../../pages/Login/Login'; 
+import Signup from '../../pages/Signup/Signup';
 
 const Navbar = () => {
     const [scrollProgress, setScrollProgress] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isSignedUp, setIsSignedUp] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [userDetails, setUserDetails] = useState({ 
         firstName: '', 
@@ -26,6 +28,7 @@ const Navbar = () => {
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // New state for login modal
+    const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
@@ -114,10 +117,26 @@ const Navbar = () => {
         setIsLoginModalOpen(false);
     };
 
+    // Handle signup modal open
+    const handleSignUpClick = () => {
+        setIsSignUpModalOpen(true);
+    };
+
+    const handleSignUpModalClose = () => {
+        setIsSignUpModalOpen(false);
+    };
+
     // Handle successful login
     const handleLoginSuccess = () => {
         setIsLoginModalOpen(false);
     };
+
+    const handleOutsideClick = (e) => {
+        if (e.target.className === styles.loginModalOverlay) {
+          handleSignUpModalClose();
+          handleLoginModalClose();
+        }
+      };
 
     const handleProfileImageChange = (e) => {
         const file = e.target.files[0];
@@ -318,7 +337,8 @@ const Navbar = () => {
                         ) : (
                             <>
                                 <button onClick={handleLoginClick} className={styles.loginButton}>Login</button>
-                                <button onClick={() => navigate('/signup')} className={styles.signupButton}>Sign Up</button>
+                                <button onClick={handleSignUpClick} className={styles.signupButton}>Sign Up</button>
+                                {/* <button onClick={() => navigate('/signup')} className={styles.signupButton}>Sign Up</button> */}
                             </>
                         )}
                     </div>
@@ -452,24 +472,18 @@ const Navbar = () => {
             
             {/* Login Modal */}
             {isLoginModalOpen && (
-                <div className={styles.loginModalOverlay}>
+                <div className={styles.loginModalOverlay} onClick={handleOutsideClick}>
                     <div className={styles.loginModalContent}>
-                        <button 
-                            className={styles.closeLoginButton}
-                            onClick={handleLoginModalClose}
-                            style={{
-                                position: 'absolute',
-                                top: '10px',
-                                right: '10px',
-                                background: 'none',
-                                border: 'none',
-                                fontSize: '18px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            ✕
-                        </button>
                         <Login onClose={handleLoginModalClose} onLoginSuccess={handleLoginSuccess} />
+                    </div>
+                </div>
+            )}
+
+            {/* SignUp Modal */}
+            {isSignUpModalOpen && (
+                <div className={styles.loginModalOverlay} onClick={handleOutsideClick}>
+                    <div className={styles.loginModalContent}>
+                        <Signup onClose={handleSignUpModalClose} onLoginSuccess={handleLoginSuccess} />
                     </div>
                 </div>
             )}

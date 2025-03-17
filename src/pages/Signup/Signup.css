@@ -7,7 +7,7 @@
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background: url('/public/images/loginBG.png') no-repeat center center/cover;
+    /* background: url('/public/images/loginBG.png') no-repeat center center/cover; */
     position: relative;
     z-index: 1000;
     overflow-y: auto; /* Allow scrolling if needed */
@@ -16,8 +16,8 @@
 
 /* Box */
 .signup-box {
-    background: rgba(255, 255, 255, 0.9);
-    padding: 10px 20px 20px 20px; /* Reduced padding */
+  background-color: #d3f0f7;
+  padding: 10px 20px 20px 20px; /* Reduced padding */
     border-radius: 10px;
     width: 350px; /* Reduced width */
     text-align: center;
