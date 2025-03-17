@@ -17,8 +17,9 @@
   flex-direction: column;
   gap: 15px;
   align-items: flex-start;
-  justify-content: space-between;
-  height: 100%;
+  justify-content: flex-start;
+  height: auto;
+  min-height: 100vh;
 }
 
 .sidebar button {
@@ -125,7 +126,7 @@
 
 /* Old Clinic Header (Hidden) */
 .clinic-header {
-  display: none; /* Hidden since replaced by clinic-header-static */
+  display: none;
 }
 
 .clinic-name-link {
@@ -139,27 +140,28 @@
   text-decoration: underline;
 }
 
-/* Clinic Profile (if needed elsewhere) */
-.clinic-profile {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
+/* Clinic Profile Image Container */
 .clinic-image-container {
   position: relative;
-  display: inline-block;
-  width: 100px;
-  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 80px; /* Reduced from 100px */
+  height: 80px; /* Reduced from 100px */
+  margin: 0 auto 20px; /* Center horizontally and add some bottom margin */
 }
 
+/* Clinic Profile Image */
 .clinic-profile-image {
-  width: 100%;
-  height: 100%;
+  width: 80px; /* Reduced from 100px */
+  height: 80px; /* Reduced from 100px */
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: cover; /* Maintain aspect ratio and cover the area */
   border: 3px solid #ffb6c1;
+  display: block; /* Ensure it behaves as a block element for centering */
 }
 
+/* Edit Icon */
 .edit-icon {
   position: absolute;
   bottom: 0;
@@ -169,15 +171,36 @@
   padding: 5px;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  width: 18px; /* Smaller to match reduced image size */
+  height: 18px; /* Smaller to match reduced image size */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .edit-icon .edit-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 100%;
+  height: 100%;
   color: #ff4081;
+  font-size: 14px; /* Adjust icon size if needed */
+}
+
+.edit-clinic-btn {
+  margin-top: 15px;
+  background-color: #ff4081;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.edit-clinic-btn:hover {
+  background-color: #f50057;
 }
 
 /* Panel Container */
@@ -264,14 +287,13 @@ tr:hover {
   border-radius: 5px;
   text-align: left;
   transition: background-color 0.3s, transform 0.3s;
-  margin-top: auto;
+  margin-top: 190px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .signout-btn:hover {
   background-color: #ff5555;
   transform: translateY(-2px);
-  color: white;
 }
 
 /* Modal Styling */

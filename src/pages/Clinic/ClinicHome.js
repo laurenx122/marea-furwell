@@ -7,13 +7,12 @@ import {
   where,
   getDocs,
   doc,
-  addDoc,
+  setDoc,
   serverTimestamp,
   getDoc,
-  setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { getAuth, signOut, createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signOut } from "firebase/auth";
 import { FaCamera } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -25,7 +24,7 @@ const ClinicHome = () => {
   const [services, setServices] = useState([]);
   const [veterinarians, setVeterinarians] = useState([]);
   const [clinicInfo, setClinicInfo] = useState(null);
-  const [userFirstName, setUserFirstName] = useState(""); // New state for user's FirstName
+  const [userFirstName, setUserFirstName] = useState("");
   const [loading, setLoading] = useState(true);
   const [showClinicModal, setShowClinicModal] = useState(false);
   const [showAddVetModal, setShowAddVetModal] = useState(false);
@@ -130,7 +129,6 @@ const ClinicHome = () => {
           setClinicInfo(clinicData);
           setEditedClinicInfo(clinicData);
         } else {
-          // Set default clinic info if not found
           setClinicInfo({
             clinicName: `Clinic of ${userFirstName}`,
             profileImageURL: DEFAULT_CLINIC_IMAGE,
@@ -161,7 +159,7 @@ const ClinicHome = () => {
     setAddingVet(true);
     setAddVetError("");
     setAddVetSuccess(false);
-
+  
     try {
       const { FirstName, LastName, contactNumber, email, password, confirmPassword } = newVet;
       if (!FirstName || !LastName || !email || !password || !confirmPassword) {
@@ -170,20 +168,17 @@ const ClinicHome = () => {
       if (password !== confirmPassword) {
         throw new Error("Passwords do not match");
       }
-
+  
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("You must be logged in to add a veterinarian");
-
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const vetUser = userCredential.user;
-
+  
       let profileImageURL = DEFAULT_VET_IMAGE;
       if (vetImage && ["image/jpeg", "image/jpg", "image/png"].includes(vetImage.type)) {
         const image = new FormData();
         image.append("file", vetImage);
         image.append("cloud_name", "dfgnexrda");
         image.append("upload_preset", UPLOAD_PRESET);
-
+  
         const response = await fetch(
           "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
           {
@@ -191,26 +186,31 @@ const ClinicHome = () => {
             body: image,
           }
         );
-
+  
         if (!response.ok) throw new Error("Image upload failed");
-
+  
         const imgData = await response.json();
         profileImageURL = imgData.url.toString();
       }
-
+  
       const clinicRef = doc(db, "clinics", currentUser.uid);
-      await setDoc(doc(db, "users", vetUser.uid), {
+      const vetDocRef = doc(collection(db, "users")); // Generate a new document ID
+      
+      // Just store the veterinarian data without authentication
+      await setDoc(vetDocRef, {
         FirstName,
         LastName,
         contactNumber,
         email,
+        // Store password as plain text (not used for auth)
+        password,
         profileImageURL,
         Type: "Veterinarian",
         clinic: clinicRef,
-        uid: vetUser.uid,
+        uid: vetDocRef.id,
         createdAt: serverTimestamp(),
       });
-
+  
       setAddVetSuccess(true);
       setNewVet({
         FirstName: "",
@@ -250,7 +250,7 @@ const ClinicHome = () => {
           image.append("upload_preset", UPLOAD_PRESET);
 
           const response = await fetch(
-           "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
+            "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
             {
               method: "post",
               body: image,
@@ -340,8 +340,8 @@ const ClinicHome = () => {
 
   useEffect(() => {
     const initializeData = async () => {
-      await fetchUserFirstName(); // Fetch FirstName first
-      await fetchClinicInfo(); // Then fetch clinic info with FirstName
+      await fetchUserFirstName();
+      await fetchClinicInfo();
       fetchPatients();
       fetchAppointments();
       fetchRecords();
@@ -349,10 +349,11 @@ const ClinicHome = () => {
       fetchVeterinarians();
     };
     initializeData();
-  }, [userFirstName]); // Re-run if userFirstName changes
+  }, [userFirstName]);
 
   return (
     <div className="clinic-container">
+
       <div className="sidebar">
         {clinicInfo && (
           <div className="clinic-sidebar-panel">
@@ -381,36 +382,38 @@ const ClinicHome = () => {
             </button>
           </div>
         )}
-        <button
-          className={activePanel === "patients" ? "active" : ""}
-          onClick={() => setActivePanel("patients")}
-        >
-          Patients
-        </button>
-        <button
-          className={activePanel === "appointments" ? "active" : ""}
-          onClick={() => setActivePanel("appointments")}
-        >
-          Appointments
-        </button>
-        <button
-          className={activePanel === "records" ? "active" : ""}
-          onClick={() => setActivePanel("records")}
-        >
-          Records
-        </button>
-        <button
-          className={activePanel === "services" ? "active" : ""}
-          onClick={() => setActivePanel("services")}
-        >
-          Services
-        </button>
-        <button
-          className={activePanel === "veterinarians" ? "active" : ""}
-          onClick={() => setActivePanel("veterinarians")}
-        >
-          Veterinarians
-        </button>
+        <div className="sidebar-buttons">
+          <button
+            className={activePanel === "patients" ? "active" : ""}
+            onClick={() => setActivePanel("patients")}
+          >
+            Patients
+          </button>
+          <button
+            className={activePanel === "appointments" ? "active" : ""}
+            onClick={() => setActivePanel("appointments")}
+          >
+            Appointments
+          </button>
+          <button
+            className={activePanel === "records" ? "active" : ""}
+            onClick={() => setActivePanel("records")}
+          >
+            Records
+          </button>
+          <button
+            className={activePanel === "services" ? "active" : ""}
+            onClick={() => setActivePanel("services")}
+          >
+            Services
+          </button>
+          <button
+            className={activePanel === "veterinarians" ? "active" : ""}
+            onClick={() => setActivePanel("veterinarians")}
+          >
+            Veterinarians
+          </button>
+        </div>
         <button className="signout-btn" onClick={handleSignOut}>
           Sign Out
         </button>
@@ -418,30 +421,30 @@ const ClinicHome = () => {
 
       <div className="content">
         <div className="panel-container">
-          {activePanel === "clinic" && clinicInfo && (
-            <div className="panel clinic-panel">
-              <h3>Clinic Information</h3>
-              <div className="clinic-details">
-                <img
-                  src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
-                  alt="Clinic"
-                  className="clinic-info-img"
-                />
-                <p><strong>Name:</strong> {clinicInfo.clinicName}</p>
-                <p><strong>Phone:</strong> {clinicInfo.phone || "N/A"}</p>
-                <p><strong>Address:</strong> {clinicInfo.streetAddress || "N/A"}, {clinicInfo.city || "N/A"}</p>
-                <button
-                  className="edit-clinic-btn"
-                  onClick={() => {
-                    setShowClinicModal(true);
-                    setIsEditingClinic(true);
-                  }}
-                >
-                  Edit Clinic Info
-                </button>
-              </div>
+        {activePanel === "clinic" && clinicInfo && (
+          <div className="panel clinic-panel">
+            <h3>Clinic Information</h3>
+            <div className="clinic-details">
+              <img
+                src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
+                alt="Clinic"
+                className="clinic-info-img"
+              />
+              <p><strong>Name:</strong> {clinicInfo.clinicName}</p>
+              <p><strong>Phone:</strong> {clinicInfo.phone || "N/A"}</p>
+              <p><strong>Address:</strong> {clinicInfo.streetAddress || "N/A"}, {clinicInfo.city || "N/A"}</p>
+              <button
+                className="edit-clinic-btn"
+                onClick={() => {
+                  setShowClinicModal(true);
+                  setIsEditingClinic(true);
+                }}
+              >
+                Edit Clinic Info
+              </button>
             </div>
-          )}
+          </div>
+        )}
           {activePanel === "patients" && (
             <div className="panel patients-panel">
               <h3>Patients</h3>
