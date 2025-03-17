@@ -170,8 +170,9 @@ const Signup = ({ onClose, onSwitchToLogin }) => {
         )}
         
         <form onSubmit={handleSignup}>
-          {/* Profile Picture Upload
-          <div className="profile-picture-container">
+
+          {/* Profile Picture Upload */}
+          {/* <div className="profile-picture-container">
             <label htmlFor="profile-upload" className="profile-picture-upload" style={imagePreview ? {backgroundImage: `url(${imagePreview})`} : {}}>
               {!imagePreview && (
                 <>

@@ -5,14 +5,14 @@ import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import Login from '../../pages/Login/Login'; 
-import Signup from '../../pages/Signup/Signup'; 
-
+import Signup from '../../pages/Signup/Signup';
 
 const Navbar = () => {
     const [scrollProgress, setScrollProgress] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isSignedUp, setIsSignedUp] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [userDetails, setUserDetails] = useState({ 
         firstName: '', 
@@ -28,7 +28,7 @@ const Navbar = () => {
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // New state for login modal
-    const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false); 
+    const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
@@ -117,6 +117,15 @@ const Navbar = () => {
         setIsLoginModalOpen(false);
     };
 
+    // Handle signup modal open
+    const handleSignUpClick = () => {
+        setIsSignUpModalOpen(true);
+    };
+
+    const handleSignUpModalClose = () => {
+        setIsSignUpModalOpen(false);
+    };
+
     // Handle successful login
     const handleLoginSuccess = () => {
         setIsLoginModalOpen(false);
@@ -140,6 +149,13 @@ const Navbar = () => {
         setIsLoginModalOpen(false); 
         setIsSignUpModalOpen(true); 
     };
+
+    const handleOutsideClick = (e) => {
+        if (e.target.className === styles.loginModalOverlay) {
+          handleSignUpModalClose();
+          handleLoginModalClose();
+        }
+      };
 
     const handleOutsideClick = (e) => {
         if (e.target.className === styles.loginModalOverlay) {
@@ -493,6 +509,16 @@ const Navbar = () => {
                 <div className={styles.loginModalOverlay} onClick={handleOutsideClick}>
                     <div className={styles.loginModalContent}>
                         <Signup onClose={handleLoginModalClose} onSwitchToLogin={switchToLoginModal} onLoginSuccess={handleLoginSuccess} />
+
+                    </div>
+                </div>
+            )}
+
+            {/* SignUp Modal */}
+            {isSignUpModalOpen && (
+                <div className={styles.loginModalOverlay} onClick={handleOutsideClick}>
+                    <div className={styles.loginModalContent}>
+                        <Signup onClose={handleSignUpModalClose} onLoginSuccess={handleLoginSuccess} />
                     </div>
                 </div>
             )}
