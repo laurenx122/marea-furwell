@@ -18,7 +18,7 @@
   display: flex;
   justify-content: center;
   padding: 0 2rem;
-  z-index: 1001;
+  z-index: 100;
   cursor: url('../../images/pawCursorAny.png'), auto;
 }
 
@@ -166,7 +166,7 @@
 
 /* Modal Styles */
 .modalOverlay, .loginModalOverlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -184,6 +184,7 @@
 
 .loginModalOverlay {
   background: rgba(17, 17, 17, 0.271);
+  z-index: 1000;
 }
 
 .modalContent {

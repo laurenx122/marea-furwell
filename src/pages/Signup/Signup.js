@@ -169,7 +169,7 @@ const Signup = () => {
         
         <form onSubmit={handleSignup}>
           {/* Profile Picture Upload */}
-          <div className="profile-picture-container">
+          {/* <div className="profile-picture-container">
             <label htmlFor="profile-upload" className="profile-picture-upload" style={imagePreview ? {backgroundImage: `url(${imagePreview})`} : {}}>
               {!imagePreview && (
                 <>
@@ -185,7 +185,7 @@ const Signup = () => {
                 style={{ display: 'none' }} 
               />
             </label>
-          </div>
+          </div> */}
           
           <div className="name-container">
             {/* setting the values of the field */}
