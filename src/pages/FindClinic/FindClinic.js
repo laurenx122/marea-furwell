@@ -16,6 +16,7 @@ const FindClinic = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [services, setServices] = useState([]);
 
   // Function to categorize the price into ₱, ₱₱, and ₱₱₱
   const categorizePrice = (price) => {
@@ -65,7 +66,20 @@ const FindClinic = () => {
   useEffect(() => {
     fetchClinics(); // Fetch data on component mount
   }, []);
+  //fetchServices function to fetch services from Firestore
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "services"));
+        const serviceList = querySnapshot.docs.map(doc => doc.id); // Fetching document IDs as service names
+        setServices(serviceList);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      }
+    };
 
+    fetchServices();
+  }, []);
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
@@ -109,15 +123,18 @@ const FindClinic = () => {
     const matchesSearch = 
       clinic.clinicName.toLowerCase().includes(searchQuery.toLowerCase()) || 
       clinic.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      clinic.province?.toLowerCase().includes(searchQuery.toLowerCase());
-      
+      clinic.province?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (clinic.services && clinic.services.some(service => 
+        service.toLowerCase().includes(searchQuery.toLowerCase()) // Fix applied here
+      ));
+
     const matchesServices = selectedService.length === 0 || 
       selectedService.every(service => clinic.services && clinic.services.includes(service));
-      
+
     const matchesPrice = !selectedPrice || clinic.priceCategory === selectedPrice;
-    
+
     return matchesSearch && matchesServices && matchesPrice;
-  });
+});
 
   // Sorting the filtered clinics
   const sortedClinics = [...filteredClinics].sort((a, b) => {
@@ -133,14 +150,13 @@ const FindClinic = () => {
   return (
     <div className="find-clinic-container">
       {/* Search Bar */}
-      <form className="search-bar-container" onSubmit={handleSearchSubmit}>
+      <form className="fsearch-bar-container" onSubmit={handleSearchSubmit}>
         <input
           type="text"
           value={searchQuery}
           onChange={handleSearchChange}
-          placeholder="Search by clinic name or location"
+          placeholder="Search "
         />
-        <button type="submit">Search</button>
       </form>
 
       {/* Main content area */}
@@ -191,62 +207,19 @@ const FindClinic = () => {
 
           {/* Services Filter with checkboxes */}
           <div className="filter">
-            <p>Services:</p>
-            <label>
+          <p>Services:</p>
+          {services.map((service) => (
+            <label key={service}>
               <input
                 type="checkbox"
-                value="Vaccination"
-                checked={selectedService.includes('Vaccination')}
+                value={service}
+                checked={selectedService.includes(service)}
                 onChange={handleServiceChange}
               />
-              Vaccination
+              {service}
             </label>
-            <label>
-              <input
-                type="checkbox"
-                value="Pet Surgery"
-                checked={selectedService.includes('Pet Surgery')}
-                onChange={handleServiceChange}
-              />
-              Pet Surgery
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                value="Consultation"
-                checked={selectedService.includes('Consultation')}
-                onChange={handleServiceChange}
-              />
-              Consultation
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                value="Ultrasound"
-                checked={selectedService.includes('Ultrasound')}
-                onChange={handleServiceChange}
-              />
-              Ultrasound
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                value="Grooming"
-                checked={selectedService.includes('Grooming')}
-                onChange={handleServiceChange}
-              />
-              Grooming
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                value="Laboratory"
-                checked={selectedService.includes('Laboratory')}
-                onChange={handleServiceChange}
-              />
-              Laboratory
-            </label>
-          </div>
+          ))}
+              </div>
 
           {/* Price Filter */}
           <div className="filter">
@@ -303,7 +276,6 @@ const FindClinic = () => {
             </div>
           ) : sortedClinics.length === 0 ? (
             <div className="no-results">
-              <p>No clinics found matching your criteria.</p>
               <p>Try adjusting your filters or search term.</p>
             </div>
           ) : (
@@ -314,7 +286,7 @@ const FindClinic = () => {
                   className="clinic-card"
                   onClick={() => handleClinicClick(clinic)}
                 >
-                  <div className="clinic-image-container">
+                  <div className="fclinic-image-container">
                     <img src={clinic.image} alt={clinic.clinicName} />
                   </div>
                   <div className="clinic-card-content">
