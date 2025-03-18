@@ -4,12 +4,15 @@ import styles from './Navbar.module.css';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import Login from '../../pages/Login/Login'; 
+import Signup from '../../pages/Signup/Signup';
 
 const Navbar = () => {
     const [scrollProgress, setScrollProgress] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isSignedUp, setIsSignedUp] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [userDetails, setUserDetails] = useState({ 
         firstName: '', 
@@ -24,6 +27,8 @@ const Navbar = () => {
         profileImageURL: ''
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // New state for login modal
+    const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
@@ -35,6 +40,31 @@ const Navbar = () => {
     
     // Cloudinary upload preset - same as in Signup component
     const UPLOAD_PRESET = "furwell";
+
+    // Add scroll event listener to track scroll progress
+    useEffect(() => {
+        const calculateScrollProgress = () => {
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Calculate the scroll percentage
+            const scrollPercentage = (scrollTop / (documentHeight - windowHeight)) * 100;
+            
+            setScrollProgress(scrollPercentage);
+        };
+
+        // Add scroll event listener
+        window.addEventListener('scroll', calculateScrollProgress);
+        
+        // Initial calculation
+        calculateScrollProgress();
+        
+        // Clean up the event listener on component unmount
+        return () => {
+            window.removeEventListener('scroll', calculateScrollProgress);
+        };
+    }, []);
 
     useEffect(() => {
         const auth = getAuth();
@@ -74,6 +104,50 @@ const Navbar = () => {
     
         return () => unsubscribe();
     }, []);
+
+    
+
+    // Handle login modal open
+    const handleLoginClick = () => {
+        setIsLoginModalOpen(true);
+    };
+
+    // Handle login modal close
+    const handleLoginModalClose = () => {
+        setIsLoginModalOpen(false);
+    };
+
+    // Handle successful login
+    const handleLoginSuccess = () => {
+        setIsLoginModalOpen(false);
+    };
+
+        // Handle signup modal open
+        const handleSignUpClick = () => {
+            setIsSignUpModalOpen(true);
+        };
+    
+        const handleSignUpModalClose = () => {
+            setIsSignUpModalOpen(false);
+        };
+    
+        const switchToLoginModal = () => {
+            setIsSignUpModalOpen(false); 
+            setIsLoginModalOpen(true); 
+        };
+    
+        const switchToSignUpModal = () => {
+            setIsLoginModalOpen(false); 
+            setIsSignUpModalOpen(true); 
+        };
+    
+ 
+    const handleOutsideClick = (e) => {
+        if (e.target.className === styles.loginModalOverlay) {
+          handleSignUpModalClose();
+          handleLoginModalClose();
+        }
+      };
 
     const handleProfileImageChange = (e) => {
         const file = e.target.files[0];
@@ -200,7 +274,12 @@ const Navbar = () => {
                 <div className={styles.navbarContent}>
                     {/* Left: Logo */}
                     <div className={styles.logoContainer}>
-                        <img src='/images/furwell_logo.png' alt="FurWell Logo" className={styles.logo} />
+                        <a href="#" onClick={(e)=>{
+                            e.preventDefault();
+                            window.location.reload(true);
+                        }}>
+                            <img src='/images/furwell_logo.png' alt="FurWell Logo" className={styles.logo} />
+                        </a>
                     </div>
 
                     {/* Center: Navigation Links */}
@@ -268,8 +347,9 @@ const Navbar = () => {
                             </div>
                         ) : (
                             <>
-                                <button onClick={() => navigate('/Login')} className={styles.loginButton}>Login</button>
-                                <button onClick={() => navigate('/signup')} className={styles.signupButton}>Sign Up</button>
+                                <button onClick={handleLoginClick} className={styles.loginButton}>Login</button>
+                                <button onClick={handleSignUpClick} className={styles.signupButton}>Sign Up</button>
+                                {/* <button onClick={() => navigate('/signup')} className={styles.signupButton}>Sign Up</button> */}
                             </>
                         )}
                     </div>
@@ -311,7 +391,7 @@ const Navbar = () => {
                                     />
                                 ) : (
                                     <img 
-                                        src={editedDetails.profileImageURL || '/images/default-profile.png'} 
+                                        src={editedDetails.profileImageURL || 'https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png'} 
                                         alt="Profile" 
                                         style={{ 
                                             width: '100%', 
@@ -397,6 +477,24 @@ const Navbar = () => {
                                 Cancel
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* Login Modal */}
+            {isLoginModalOpen && (
+                <div className={styles.loginModalOverlay} onClick={handleOutsideClick}>
+                    <div className={styles.loginModalContent}>
+                        <Login onClose={handleLoginModalClose} onSwitchToSignUp={switchToSignUpModal} onLoginSuccess={handleLoginSuccess} />
+                    </div>
+                </div>
+            )}
+
+            {/* SignUp Modal */}
+            {isSignUpModalOpen && (
+                <div className={styles.loginModalOverlay} onClick={handleOutsideClick}>
+                    <div className={styles.loginModalContent}>
+                        <Signup onClose={handleSignUpModalClose} onSwitchToLogin={switchToLoginModal} onLoginSuccess={handleLoginSuccess} />
                     </div>
                 </div>
             )}

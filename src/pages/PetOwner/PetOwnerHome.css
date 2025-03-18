@@ -5,7 +5,7 @@
   display: flex;
   height: 100vh;
   background-color: #d3f0f7;
-  font-family: 'Albert Sans';
+  font-family: 'Albert Sans', sans-serif;
 }
 
 /* Sidebar Styling */
@@ -17,17 +17,21 @@
   flex-direction: column;
   gap: 15px;
   align-items: flex-start;
-  font-family: 'Albert Sans';
+  justify-content: flex-start;
+  min-height: 100vh;
 }
 
 .sidebar h2 {
   font-size: 24px;
-  margin-bottom: 15px;
+  color: #ff4081;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #ffb6c1;
+  padding-bottom: 10px;
 }
 
 .sidebar button {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   font-size: 16px;
   border: none;
   cursor: pointer;
@@ -35,7 +39,14 @@
   border-radius: 5px;
   text-align: left;
   transition: 0.3s;
-  font-family: 'Albert Sans';
+  font-family: 'Albert Sans', sans-serif;
+  margin-bottom: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar button:hover {
+  background-color: #ffcdd2;
+  transform: translateY(-2px);
 }
 
 .sidebar button.active {
@@ -49,7 +60,7 @@
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  margin-top: 60px;
+  margin-top: 0; /* Removed margin-top to align with ClinicHome */
 }
 
 /* Panel Container */
@@ -58,6 +69,9 @@
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Table Styling */
@@ -65,92 +79,166 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
 }
 
 th, td {
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #FF7B7B;
   text-align: left;
 }
 
 th {
   background-color: #ffb6c1;
+  color: #333;
+  font-weight: bold;
 }
 
-td button {
-  background-color: #ff69b4;
-  color: white;
-  padding: 5px 10px;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
+tr:nth-child(even) {
+  background-color: #fff5f6;
 }
 
-td button:hover {
-  background-color: #ff1493;
+tr:hover {
+  background-color: #fce4ec;
 }
 
 /* Panel Colors */
-.pet-details-panel {
-  background-color: #ffe4e6;
+.pet-details-panel { background-color: #ffe4e6; }
+.appointments-panel { background-color: #fdf6c2; }
+.book-appointment-panel { background-color: #c2f0d1; }
+
+/* Panel Headers */
+.panel h3 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #ff4081;
+  border-bottom: 2px solid #ffb6c1;
+  padding-bottom: 10px;
 }
 
-.appointments-panel {
-  background-color: #fdf6c2;
+/* Pet Name Link */
+.pet-name-link {
+  color: #ff4081;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
-.book-appointment-panel {
-  background-color: #c2f0d1;
+.pet-name-link:hover {
+  color: #f50057;
+}
+
+/* Pet Details Header */
+.pet-details-header {
+  display: flex;
+  justify-content: space-between;
+
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.pet-details-header h3 {
+  margin: 0;
+  font-size: 24px;
+  color: #ff4081;
+}
+
+.addpetbutt {
+  background-color: #ff69b4;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.addpetbutt:hover {
+  background-color: #ff1493;
 }
 
 /* Form Styling */
 form {
   display: flex;
   flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+  font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #ff4081;
+  outline: none;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
   gap: 10px;
 }
 
-form input,
-form select {
-  padding: 8px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-form button {
-  padding: 10px;
-  background-color: #ff8c94;
+.submit-btn {
+  background-color: #ff4081;
   color: white;
+  padding: 10px 20px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-form button:hover {
-  background-color: #ff1493;
+.submit-btn:hover {
+  background-color: #f50057;
 }
 
-/* Pet name link styling */
-.pet-name-link {
-  color: #000;
-  text-decoration: none;
-  font-weight: bold;
+.submit-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background-color: #999;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-.pet-name-link:hover {
-  color: #555;
+.cancel-btn:hover {
+  background-color: #666;
 }
 
-/* Updated Modal Styles */
+/* Modal Styling */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -158,33 +246,30 @@ form button:hover {
 }
 
 .modal-content {
-  background-color: #E3F2FD;
-  border-radius: 8px;
-  padding: 20px;
+  background-color: #d3f0f7;
+  border-radius: 10px;
   width: 500px;
   max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  padding: 20px;
   position: relative;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
 }
 
 .close-button {
   position: absolute;
   top: 10px;
-  right: 15px;
+  right: 10px;
   font-size: 24px;
   cursor: pointer;
-  color: #5C9EBC;
-}
-
-.close-button:hover {
-  color: #2F7A99;
-}
-
-h2 {
-  margin-top: 0;
   color: #333;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+}
+
+.modal-content h2 {
+  font-size: 24px;
+  color: #ff4081;
   margin-bottom: 20px;
 }
 
@@ -197,148 +282,156 @@ h2 {
 
 .info-item {
   padding: 10px;
-  background-color: #f9f9f9;
+  background-color: #fff5f6;
   border-radius: 4px;
+  text-align: left;
 }
 
 .info-item strong {
   color: #555;
 }
 
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
 .modal-close-btn {
-  background-color: #5DB5A4;
+  background-color: #ff4081;
   color: white;
+  padding: 10px 20px;
   border: none;
-  padding: 10px 15px;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
-  display: block;
-  margin: 0 auto;
-  font-weight: bold;
+  transition: background-color 0.3s;
 }
 
 .modal-close-btn:hover {
-  background-color: #4A9B8B;
+  background-color: #f50057;
 }
 
-/* Pet details header */
-.pet-details-header {
+/* Pet Image Upload */
+.pet-image-upload-container {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  padding: 20px;
+  background-image: url("https://us.123rf.com/450wm/pliskova/pliskova1706/pliskova170600317/81354009-pet-seamless-pattern-on-a-blue-background-illustration.jpg");
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.pet-image-upload {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  margin-bottom: 15px;
-}
-
-.pet-details-header h3 {
-  margin: 0;
-}
-
-.addpetbutt {
-  background-color: #ff8c94;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 15px;
+  justify-content: center;
   cursor: pointer;
-  font-family: 'Albert Sans';
+  background-size: cover;
+  background-position: center;
+  border: 3px solid #fff;
+  transition: transform 0.3s;
 }
 
-.addpetbutt:hover {
-  background-color: #ff1493;
+.pet-image-upload:hover {
+  transform: scale(1.05);
 }
 
-/* Add Pet Modal - SMALLER FORM */
-.add-pet-modal {
-  width: 400px;
-  max-width: 85%;
-  margin-top: 60px;
+.pet-image-upload .camera-icon {
+  font-size: 24px;
+  color: #ff4081;
 }
 
-.form-group {
-  margin-bottom: 5px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 4px;
-  font-weight: 500;
-  color: #555;
-  font-size: 13px;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #4A9B8B;
-  border-radius: 4px;
-  font-size: 13px;
-  box-sizing: border-box;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.cancel-btn {
-  background-color: #FFCDD2;
+.pet-image-upload p {
+  margin: 5px 0 0;
+  font-size: 14px;
   color: #333;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
+}
+
+/* Pet Image in Modal */
+.pet-image-container {
+  display: flex;
+  justify-content: center;
+  background-image: url("https://us.123rf.com/450wm/pliskova/pliskova1706/pliskova170600317/81354009-pet-seamless-pattern-on-a-blue-background-illustration.jpg");
+  margin-bottom: 20px;
+}
+
+.pet-image-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.pet-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffb6c1;
+}
+
+.edit-image-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  padding: 5px;
   cursor: pointer;
-  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.cancel-btn:hover {
-  background-color: #F8BBD0;
-}
-
-.submit-btn {
-  background-color: #5DB5A4;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.submit-btn:hover {
-  background-color: #4A9B8B;
-}
-
-.submit-btn:disabled {
-  background-color: #95a5a6;
-  cursor: not-allowed;
-}
-
+/* Success and Error Messages */
 .success-message {
-  background-color: #C8E6C9;
-  color: #155724;
+  color: #4caf50;
+  margin-bottom: 15px;
   padding: 8px;
   border-radius: 4px;
-  margin-bottom: 12px;
-  text-align: center;
-  font-size: 13px;
+  background-color: #e8f5e9;
 }
 
 .error-message {
-  background-color: #FFEBEE;
-  color: #721c24;
+  color: #ff1744;
+  margin-bottom: 15px;
   padding: 8px;
   border-radius: 4px;
-  margin-bottom: 12px;
-  text-align: center;
-  font-size: 13px;
+  background-color: #ffebee;
+}
+
+/* Image Edit Buttons */
+.save-image-btn {
+  background-color: #ff4081;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.save-image-btn:hover {
+  background-color: #f50057;
+}
+
+.save-image-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Add Pet Modal */
+.add-pet-modal {
+  padding: 0;
+}
+
+.add-pet-modal form {
+  padding: 20px;
 }

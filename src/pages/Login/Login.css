@@ -1,5 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
 /* Background Styling */
+.Login{
+  cursor: url('../../images/pawCursorPoint.png'), auto;
+}
 .login-container {
     background-image: url('/public/images/loginBG.png');
     height: 100vh;
@@ -10,10 +13,10 @@
     position: relative;
     z-index: 1000;
   }
-  
+
   /* Login Box */
   .login-box {
-    background: rgba(255, 255, 255, 0.9);
+    background-color: #d3f0f7;
     padding: 30px;
     border-radius: 10px;
     text-align: center;
@@ -155,4 +158,12 @@
 .eye-icon {
   width: 20px;
   height: 20px;
+}
+
+.signup-link {
+  color: #45a049;
+  text-decoration: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }

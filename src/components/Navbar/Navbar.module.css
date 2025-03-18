@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;700&display=swap');
 
+/* Base Styles */
+* {
+  font-family: 'Albert Sans', sans-serif;
+
+}
+
+/* Navbar Structure */
 .navbar {
   position: fixed;
   top: 0;
@@ -11,7 +18,8 @@
   display: flex;
   justify-content: center;
   padding: 0 2rem;
-  z-index: 1001;
+  z-index: 100;
+  cursor: url('../../images/pawCursorAny.png'), auto;
 }
 
 .navbarContent {
@@ -23,6 +31,7 @@
   padding: 0.1rem 1rem;
 }
 
+/* Logo */
 .logoContainer {
   display: flex;
   align-items: center;
@@ -30,13 +39,14 @@
 
 .logo {
   height: 120px; 
+  cursor: url('../../images/pawCursorPoint.png'), auto;
   width: auto;
 }
 
+/* Navigation Menu */
 .navbarList {
   list-style: none;
   display: flex;
-
   margin: 0;
   padding: 0;
   margin-left: auto;
@@ -45,18 +55,19 @@
 }
 
 .navbarItem {
-  position:relative;
+  position: relative;
   margin: 0 1.2rem;
   cursor: pointer;
   font-size: 1.2rem;
   color: #333;
-  transition: color 0.3s;
-  font-family: 'Albert Sans', sans-serif;
+  transition: color 0.3s, transform 0.3s;
 }
 
 .navbarItem:hover {
   color: #3E6680;
+  transform: scale(1.1);
 }
+
 .navbarItem::after {
   content: '';
   position: absolute;
@@ -79,66 +90,69 @@
   text-decoration: none;
   color: #333;
   transition: color 0.3s;
-  font-family: 'Albert Sans', sans-serif;
 }
 
 .navbarLink:hover {
+  cursor: url('../../images/pawCursorPoint.png'), auto;
   color: #3E6680;
 }
 
+/* Right Section */
 .rightSection {
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-left: auto;
+  margin-left: auto; 
 }
 
-.loginButton {
+/* Buttons */
+.loginButton, .logoutButton {
   background-color: #3E6680;
   color: #AEF0FF;
   padding: 0.5rem 1rem;
   border: 2px solid #3E6680;
   border-radius: 20px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-family: 'Albert Sans', sans-serif;
+  cursor: url('../../images/pawCursorPoint.png'), auto;
+  transition: background-color 0.3s, transform 0.3s;
+
 }
 
-.loginButton:hover {
+.loginButton:hover, .logoutButton:hover {
   background-color: #CDEDF6;
   color: #3E6680;
-}
-.logoutButton {
-  background-color: #3E6680;
-  color: #AEF0FF;
-  padding: 0.5rem 1rem;
-  border: 2px solid #3E6680;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-family: 'Albert Sans', sans-serif;
+  transform: scale(1.2);
 }
 
-.logoutButton:hover {
-  background-color: #CDEDF6;
-  color: #3E6680;
-}
 .signupButton {
   background-color: transparent;
   color: #3E6680;
   padding: 0.4rem 1rem;
   border: 2px solid #3E6680;
   border-radius: 20px;
-  cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
-  font-family: 'Albert Sans', sans-serif;
+  cursor: url('../../images/pawCursorPoint.png'), auto;
+  transition: background-color 0.3s, color 0.3s, transform 0.3s;
 }
 
 .signupButton:hover {
   background-color: #3E6680;
   color: #AEF0FF;
+  transform: scale(1.2);
 }
 
+/* User Menu */
+.userMenu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.username {
+  font-size: 1.2rem;
+  color: #3E6680;
+  font-weight: bold;
+}
+
+/* Scroll Progress Bar */
 .scrollProgressBar {
   position: fixed;
   top: 80px;
@@ -150,115 +164,44 @@
   z-index: 1002;
 }
 
-.userMenu {
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Adjust the spacing */
-}
-
-.username {
-  font-size: 1.2rem;
-  color: #3E6680;
-  font-family: 'Albert Sans';
-  font-weight: bold;
-}
-
-/* Modal Overlay */
-.modalOverlay {
-  position: absolute;
+/* Modal Styles */
+.modalOverlay, .loginModalOverlay {
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 182, 193, 0.5); 
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1002;
 }
 
-/* Modal Content */
-.modalContent {
-  background: #E3F2FD; /* Light blue pastel */
-  padding: 20px;
-  border-radius: 20px;
-  width: 350px;
-  text-align: center;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-  
-}
-
-/* User Avatar */
-.modalContent .avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: #B3E5FC; /* Lighter blue */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40px;
-  margin: 0 auto 0px;
-  position: relative;
-}
-
-/* Camera Icon */
-.modalContent .avatar .camera-icon {
-  position: absolute;
-  bottom: 5px;
-  right: 0;
-  background: white;
-  border-radius: 50%;
-  padding: 0px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-/* Input Fields */
-.modalContent input {
-  width: 90%;
-  padding: 10px;
-  margin: 0;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-  text-align: center;
-}
-
-.modalContent img{
-  position: center;
-}
-/* Modal Overlay */
 .modalOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 182, 193, 0.5); 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1002;
+  background: rgb(255, 255, 255, 0.271);
 
 }
 
-/* Modal Content */
+.loginModalOverlay {
+  background: rgba(17, 17, 17, 0.271);
+  z-index: 1000;
+}
+
 .modalContent {
-  background: #E3F2FD; /* Light blue pastel */
+  background: #E3F2FD;
   padding: 20px;
   border-radius: 20px;
   width: 350px;
   text-align: left;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-  font-family: 'Albert Sans';
 }
 
-/* User Avatar */
+/* Avatar and Image */
 .modalContent .avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: #B3E5FC; /* Lighter blue */
+  background: #B3E5FC;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -267,7 +210,6 @@
   position: relative;
 }
 
-/* Camera Icon */
 .modalContent .avatar .camera-icon {
   position: absolute;
   bottom: 5px;
@@ -278,7 +220,11 @@
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Labels */
+.modalContent img {
+  position: center;
+}
+
+/* Form Elements */
 .modalContent p {
   margin: 10px 0 5px;
   font-size: 14px;
@@ -286,10 +232,9 @@
   color: #333;
 }
 
-/* Input Fields */
 .modalContent input {
   width: 93%;
-  padding: 12px; /* Adjusted padding for better spacing */
+  padding: 12px;
   margin-bottom: 10px;
   border-radius: 10px;
   border: 1px solid #ccc;
@@ -297,7 +242,8 @@
   text-align: left;
   background: white;
 }
-/* Modal Buttons Container */
+
+/* Modal Buttons */
 .modalButtons {
   display: flex;
   justify-content: center;
@@ -306,7 +252,6 @@
   width: 100%;
 }
 
-/* Styling for both buttons */
 .modalButtons button {
   padding: 12px;
   border-radius: 10px;
@@ -319,9 +264,8 @@
   width: auto;
 }
 
-/* Save Button */
 .saveButton {
-  background-color: #164155; /* Light blue */
+  background-color: #164155;
   color: black;
 }
 
@@ -329,9 +273,8 @@
   background-color: #ffffff;
 }
 
-/* Cancel Button */
 .cancelButton {
-  background-color: #FFCDD2; /* Light red */
+  background-color: #FFCDD2;
   color: black;
 }
 

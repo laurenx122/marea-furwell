@@ -5,6 +5,7 @@
     padding: 20px;
     text-align: center;
     height: 175px;
+    cursor: url('../../images/pawCursorAny.png'), auto;
 }
 
 .email-link {
@@ -15,6 +16,7 @@
 
 .email-link:hover {
     text-decoration: underline;
+    cursor: url('../../images/pawCursorPoint.png'), auto;
 }
 
 .footer-content {

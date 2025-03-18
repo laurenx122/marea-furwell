@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../../firebase';
+import { 
+  signInWithEmailAndPassword, 
+  signInWithPopup,
+  fetchSignInMethodsForEmail,
+  GoogleAuthProvider
+} from 'firebase/auth';
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db, provider } from '../../firebase';
 import { useNavigate } from 'react-router-dom';
 import './Login.css'; 
 import { CiUser, CiUnlock } from "react-icons/ci";
 import { FcGoogle } from "react-icons/fc";
 
-const Login = () => {
+const Login = ({ onClose, onSwitchToSignUp, onLoginSuccess }) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,49 +20,165 @@ const Login = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const goToSignUp = () => {
+    onClose(); 
+    onSwitchToSignUp(); 
+  };
+
+  const closeSuccessModal = () => {
+    setShowSuccessModal(false);
+    onClose(); 
+    onSwitchToSignUp(); 
+  };
+  
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+  
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError(null);
 
     try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-  
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
+      // Check sign-in methods for the email
+      const signInMethods = await fetchSignInMethodsForEmail(auth, email);
+      
+      // If the user signed up with Google and is trying to use password login
+      if (signInMethods.includes(GoogleAuthProvider.GOOGLE_SIGN_IN_METHOD) &&
+          !signInMethods.includes('password')) {
+        // Prompt the user to use Google Sign In instead
+        alert("This email is registered with Google. Please sign in with Google.");
+        return;
+      }
 
-        if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            setEmail('');
-            setPassword('');
-            
-            // Show success modal
-            setShowSuccessModal(true);
-            
-            // Auto close modal after 2 seconds and navigate
-            setTimeout(() => {
-                setShowSuccessModal(false);
-                if (userData.Type === "Admin") {
-                    navigate("/AdminHome"); 
-                } else if (userData.Type === "Pet owner") {
-                    navigate("/PetOwnerHome"); 
-                } else if (userData.Type === "Clinic") {
-                    navigate("/ClinicHome"); 
-                }
-            }, 2000);
-        } else {
-            console.error("User data not found in Firestore.");
-            setEmail('');
-            setPassword('');
-            alert("Login failed: User data not found.");
-            setError("User data not found in Firestore.");
+  
+    // Proceed with normal email/password sign in
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Check both 'users' and 'clinics' collections
+    const userDocRef = doc(db, "users", user.uid);
+    // const clinicDocRef = doc(db, "clinics", user.uid);
+
+    const [userDocSnap, clinicDocSnap] = await Promise.all([
+      getDoc(userDocRef),
+      // getDoc(clinicDocRef),
+    ]);
+
+    let userData = null;
+
+    if (userDocSnap.exists()) {
+      userData = userDocSnap.data();
+    }
+    // } else if (clinicDocSnap.exists()) {
+    //   userData = clinicDocSnap.data();
+    // }
+
+    if (userData) {
+      setEmail('');
+      setPassword('');
+
+      // Show success modal
+      setShowSuccessModal(true);
+
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      }
+
+      // Auto close modal after 2 seconds and navigate
+      setTimeout(() => {
+        setShowSuccessModal(false);
+        if (userData.Type === "Admin") {
+          navigate("/AdminHome");
+        } else if (userData.Type === "Pet owner") {
+          navigate("/PetOwnerHome");
+        } else if (userData.Type === "Clinic") {
+          navigate("/ClinicHome");
+        } else if (userData.Type === "Veterinarian") {
+          navigate("/VeterinaryHome");
         }
+      }, 2000);
+    } else {
+      console.error("User data not found in Firestore.");
+      setEmail('');
+      setPassword('');
+      alert("Login failed: User data not found.");
+      setError("User data not found in Firestore.");
+    }
+  } catch (error) {
+    setError(error.message);
+    alert("Login failed: " + error.message);
+  }
+};
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      
+      // Check if the user already exists in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        // User exists, get their type and navigate accordingly
+        const userData = userDocSnap.data();
+        
+        // Show success modal
+        setShowSuccessModal(true);
+        
+        // Call the onLoginSuccess callback to notify parent component
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+        
+        // Auto close modal after 2 seconds and navigate
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          if (userData.Type === "Admin") {
+            navigate("/AdminHome");
+          } else if (userData.Type === "Pet owner") {
+            navigate("/PetOwnerHome");
+          } else if (userData.Type === "Clinic") {
+            navigate("/ClinicHome");
+          }
+        }, 2000);
+      } else {
+        // New user, create a record with the specified fields
+        // Extract first and last name from the Google displayName
+        const displayName = user.displayName || "";
+        const nameParts = displayName.split(" ");
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+        
+        await setDoc(userDocRef, {
+          Type: "Pet owner",
+          FirstName: firstName,
+          LastName: lastName,
+          email: user.email,
+          contactNumber: "", 
+          profileImageURL: user.photoURL || "", // Google profile photo
+          uid: user.uid
+        });
+        
+        // Show success modal
+        setShowSuccessModal(true);
+        
+        // Call the onLoginSuccess callback to notify parent component
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+        
+        // Auto close modal and navigate to Pet Owner Home (default)
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          navigate("/PetOwnerHome");
+        }, 2000);
+      }
     } catch (error) {
-        setError(error.message);
-        alert("Login failed: " + error.message);
+      console.error("Google Sign-In Error:", error);
+      setError(error.message);
+      alert("Google Sign-In failed: " + error.message);
     }
   };
 
@@ -78,7 +199,7 @@ const Login = () => {
   };
 
   return (
-      <div className="login-container">
+      <div className="login-container-modal"> {/* Update class name for modal styling */}
         <div className="login-box">
           <img src='/images/baby_doggy.png' alt="Dog" className="dog-img" />
           <img src='/images/furwell_logo.png' alt="FurWell Logo" className="logo-furwell" />
@@ -108,22 +229,17 @@ const Login = () => {
             <button className="sign-in-btn">Sign In</button>
           </form>
           <p>or continue with</p>
-          <button className="google-btn"><FcGoogle size={24}/> Google</button>
+          <button className="google-btn" onClick={handleGoogleSignIn}><FcGoogle size={24}/> Google</button>
           <p className="signup-text">
-            Don't have an account yet? <a href="/signup">Sign Up for Free</a>
+            Don't have an account yet? <a onClick={goToSignUp} className="signup-link">Sign Up for Free</a>
           </p>
         </div>
         
-        {/* Redirect to ClinicHome */}
-        <button className="clinic-home-btn" onClick={() => navigate('/ClinicHome')}>
-          Go to Clinic Home
-        </button>
-        <button className="petowner-home-button" onClick={() => navigate('/VeterinaryHome')}>
-          Go to Vet Home
-        </button>
-      {/* Success Modal */}
-      <SuccessModal />
-    </div>
+        {/* Remove redirect buttons as they're not needed in the modal */}
+        
+        {/* Success Modal */}
+        <SuccessModal />
+      </div>
   );
 };
 
