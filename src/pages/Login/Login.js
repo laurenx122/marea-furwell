@@ -58,20 +58,21 @@ const Login = ({ onClose, onSwitchToSignUp, onLoginSuccess }) => {
 
     // Check both 'users' and 'clinics' collections
     const userDocRef = doc(db, "users", user.uid);
-    const clinicDocRef = doc(db, "clinics", user.uid);
+    // const clinicDocRef = doc(db, "clinics", user.uid);
 
     const [userDocSnap, clinicDocSnap] = await Promise.all([
       getDoc(userDocRef),
-      getDoc(clinicDocRef),
+      // getDoc(clinicDocRef),
     ]);
 
     let userData = null;
 
     if (userDocSnap.exists()) {
       userData = userDocSnap.data();
-    } else if (clinicDocSnap.exists()) {
-      userData = clinicDocSnap.data();
     }
+    // } else if (clinicDocSnap.exists()) {
+    //   userData = clinicDocSnap.data();
+    // }
 
     if (userData) {
       setEmail('');

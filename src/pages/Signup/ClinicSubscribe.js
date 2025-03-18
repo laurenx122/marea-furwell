@@ -5,7 +5,7 @@ import { FiUser, FiLock, FiMail, FiPhone, FiUpload } from "react-icons/fi";
 import { BiClinic, BiBuilding } from "react-icons/bi";
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db } from '../../firebase'; // Ensure this path is correct
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { confirmPasswordReset, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { CiUser, CiUnlock } from "react-icons/ci";
 import L from 'leaflet';
@@ -38,7 +38,8 @@ const ClinicSubscribe = () => {
     postalCode: '',
     lat: 10.3157, // Default latitude for Cebu City
     lng: 123.8854,
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
 
   const [verificationDocs, setVerificationDocs] = useState({

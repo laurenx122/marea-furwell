@@ -67,37 +67,53 @@ const ClinicDashboard = () => {
     );
   });
   // Approve Clinic
-// Approve Clinic
-const handleApproveClinic = async () => {
-  if (!clinicToApprove) return;
-  try {
-    if (displayClinics === "registersClinics") {
-      const clinicData = {
-        ...clinicToApprove,
-        Type: "Clinic", // Set type explicitly
-        // Status: "approved", // Mark as approved
-      };
-
-      await Promise.all([
-        // setDoc(doc(db, "users", clinicToApprove.id), clinicData), // Save to users with type "Clinic"
-        setDoc(doc(db, "clinics", clinicToApprove.id), clinicData), // Save to clinics
-      ]);
-      await deleteDoc(doc(db, "registersClinics", clinicToApprove.id));
-    } else if
-     (displayClinics === "clinics") {
-      await setDoc(doc(db, "registersClinics", clinicToApprove.id), {
-        ...clinicToApprove,
-      });
-      await deleteDoc(doc(db, "clinics", clinicToApprove.id));
+  const handleApproveClinic = async () => {
+    if (!clinicToApprove) return;
+    try {
+      if (displayClinics === "registersClinics") {
+        const clinicData = {
+          clinicName: clinicToApprove.clinicName,
+          streetAddress: clinicToApprove.streetAddress,
+          city: clinicToApprove.city,
+          province: clinicToApprove.province,
+          postalCode: clinicToApprove.postalCode,
+          lat: clinicToApprove.lat,
+          lng: clinicToApprove.lng,
+          services: clinicToApprove.services,
+          verificationDocs: clinicToApprove.verificationDocs,
+          createdAt: clinicToApprove.createdAt,
+        };
+  
+        const userData = {
+          uid: clinicToApprove.id, // Store the uid
+          clinicName: clinicToApprove.clinicName,
+          FirstName: clinicToApprove.ownerFirstName,
+          LastName: clinicToApprove.ownerLastName,
+          email: clinicToApprove.email,
+          contactNumber: clinicToApprove.phone,
+          Type: "Clinic", // Set type explicitly
+          clinicRegistered: doc(db,`clinics/${clinicToApprove.id}`),
+        };
+  
+        await Promise.all([
+          setDoc(doc(db, "users", clinicToApprove.id), userData), // Save to users with limited fields
+          setDoc(doc(db, "clinics", clinicToApprove.id), clinicData), // Save to clinics with all fields
+        ]);
+        await deleteDoc(doc(db, "registersClinics", clinicToApprove.id));
+      } else if (displayClinics === "clinics") {
+        await setDoc(doc(db, "registersClinics", clinicToApprove.id), {
+          ...clinicToApprove,
+        });
+        await deleteDoc(doc(db, "clinics", clinicToApprove.id));
+      }
+      fetchClinics(displayClinics);
+      setAdminClinicRegistrationSuccessModalIsOpen(true);
+      setAdminClinicApprovalModalIsOpen(false);
+      setClinicToApprove(null);
+    } catch (error) {
+      console.error("Error approving/unsubscribing clinic:", error);
     }
-    fetchClinics(displayClinics);
-    setAdminClinicRegistrationSuccessModalIsOpen(true);
-    setAdminClinicApprovalModalIsOpen(false);
-    setClinicToApprove(null);
-  } catch (error) {
-    console.error("Error approving/unsubscribing clinic:", error);
-  }
-};
+  };
 
 // for modals
 const openAdminClinicApprovalModal = (clinic) => {
