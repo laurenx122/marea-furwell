@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./ClinicHome.css";
-import { db, auth } from "../../firebase";
+import { db, auth, secondaryAuth, createUserWithEmailAndPassword, signOut } from "../../firebase";
 import {
   collection,
   query,
@@ -12,9 +12,14 @@ import {
   getDoc,
   updateDoc,
 } from "firebase/firestore";
-import { getAuth, signOut } from "firebase/auth";
+//import { getAuth, signOut, initializeApp } from "firebase/auth"; // Removed createUserWithEmailAndPassword
 import { FaCamera } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+
+// Secondary Firebase app for user creation
+//import firebaseConfig from "../../firebase"; // Assuming this is your config file
+//const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+//const secondaryAuth = getAuth(secondaryApp);
 
 const ClinicHome = () => {
   const [activePanel, setActivePanel] = useState("patients");
@@ -159,7 +164,7 @@ const ClinicHome = () => {
     setAddingVet(true);
     setAddVetError("");
     setAddVetSuccess(false);
-  
+
     try {
       const { FirstName, LastName, contactNumber, email, password, confirmPassword } = newVet;
       if (!FirstName || !LastName || !email || !password || !confirmPassword) {
@@ -168,17 +173,17 @@ const ClinicHome = () => {
       if (password !== confirmPassword) {
         throw new Error("Passwords do not match");
       }
-  
+
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("You must be logged in to add a veterinarian");
-  
+
       let profileImageURL = DEFAULT_VET_IMAGE;
       if (vetImage && ["image/jpeg", "image/jpg", "image/png"].includes(vetImage.type)) {
         const image = new FormData();
         image.append("file", vetImage);
         image.append("cloud_name", "dfgnexrda");
         image.append("upload_preset", UPLOAD_PRESET);
-  
+
         const response = await fetch(
           "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
           {
@@ -186,31 +191,36 @@ const ClinicHome = () => {
             body: image,
           }
         );
-  
+
         if (!response.ok) throw new Error("Image upload failed");
-  
+
         const imgData = await response.json();
         profileImageURL = imgData.url.toString();
       }
-  
+
+      // Use secondaryAuth which is imported from firebase.js
+      const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+      const vetUid = userCredential.user.uid;
+
+      // Sign out from secondary auth to clean up
+      await signOut(secondaryAuth);
+
+      // Reference to the clinic
       const clinicRef = doc(db, "clinics", currentUser.uid);
-      const vetDocRef = doc(collection(db, "users")); // Generate a new document ID
-      
-      // Just store the veterinarian data without authentication
-      await setDoc(vetDocRef, {
+
+      // Create veterinarian document in Firestore
+      await setDoc(doc(db, "users", vetUid), {
+        uid: vetUid,
         FirstName,
         LastName,
         contactNumber,
         email,
-        // Store password as plain text (not used for auth)
-        password,
         profileImageURL,
         Type: "Veterinarian",
-        clinic: clinicRef,
-        uid: vetDocRef.id,
+        clinicRegistered: clinicRef,
         createdAt: serverTimestamp(),
       });
-  
+
       setAddVetSuccess(true);
       setNewVet({
         FirstName: "",
@@ -229,11 +239,17 @@ const ClinicHome = () => {
       }, 2000);
     } catch (error) {
       console.error("Error adding veterinarian:", error);
-      setAddVetError(error.message || "Failed to add veterinarian");
+      if (error.code === "auth/email-already-in-use") {
+        setAddVetError("This email is already registered");
+      } else {
+        setAddVetError(error.message || "Failed to add veterinarian");
+      }
     } finally {
       setAddingVet(false);
     }
   };
+
+  // ... rest of your component code remains the same ...
 
   const handleSaveClinicInfo = async () => {
     try {
@@ -290,7 +306,7 @@ const ClinicHome = () => {
 
   const confirmSignOut = async () => {
     try {
-      await signOut(getAuth());
+      await signOut(auth);
       setIsSignOutSuccessOpen(true);
     } catch (error) {
       console.error("Error signing out:", error);
@@ -317,7 +333,7 @@ const ClinicHome = () => {
         const vetsQuery = query(
           collection(db, "users"),
           where("Type", "==", "Veterinarian"),
-          where("clinic", "==", doc(db, "clinics", currentUser.uid))
+          where("clinicRegistered", "==", doc(db, "clinics", currentUser.uid))
         );
         const querySnapshot = await getDocs(vetsQuery);
         const vetList = [];
@@ -353,7 +369,6 @@ const ClinicHome = () => {
 
   return (
     <div className="clinic-container">
-
       <div className="sidebar_clinicHome">
         {clinicInfo && (
           <div className="clinic-sidebar-panel">
@@ -421,30 +436,30 @@ const ClinicHome = () => {
 
       <div className="content">
         <div className="panel-container">
-        {activePanel === "clinic" && clinicInfo && (
-          <div className="panel clinic-panel">
-            <h3>Clinic Information</h3>
-            <div className="clinic-details">
-              <img
-                src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
-                alt="Clinic"
-                className="clinic-info-img"
-              />
-              <p><strong>Name:</strong> {clinicInfo.clinicName}</p>
-              <p><strong>Phone:</strong> {clinicInfo.phone || "N/A"}</p>
-              <p><strong>Address:</strong> {clinicInfo.streetAddress || "N/A"}, {clinicInfo.city || "N/A"}</p>
-              <button
-                className="edit-clinic-btn"
-                onClick={() => {
-                  setShowClinicModal(true);
-                  setIsEditingClinic(true);
-                }}
-              >
-                Edit Clinic Info
-              </button>
+          {activePanel === "clinic" && clinicInfo && (
+            <div className="panel clinic-panel">
+              <h3>Clinic Information</h3>
+              <div className="clinic-details">
+                <img
+                  src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
+                  alt="Clinic"
+                  className="clinic-info-img"
+                />
+                <p><strong>Name:</strong> {clinicInfo.clinicName}</p>
+                <p><strong>Phone:</strong> {clinicInfo.phone || "N/A"}</p>
+                <p><strong>Address:</strong> {clinicInfo.streetAddress || "N/A"}, {clinicInfo.city || "N/A"}</p>
+                <button
+                  className="edit-clinic-btn"
+                  onClick={() => {
+                    setShowClinicModal(true);
+                    setIsEditingClinic(true);
+                  }}
+                >
+                  Edit Clinic Info
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
           {activePanel === "patients" && (
             <div className="panel patients-panel">
               <h3>Patients</h3>
