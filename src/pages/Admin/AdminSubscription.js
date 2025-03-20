@@ -3,6 +3,8 @@ import { FaTrash, FaCheck } from "react-icons/fa";
 import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import "./AdminSubscription.css";
+//npm install emailjs-com
+import emailjs from "emailjs-com"; 
 
 const ClinicDashboard = () => {
   const [clinics, setClinics] = useState([]);
@@ -79,6 +81,9 @@ const ClinicDashboard = () => {
     );
   });
   // Approve Clinic
+  useEffect(() => {
+    emailjs.init("59--iStzN3U4AfD9O");
+  }, []);
   const handleApproveClinic = async () => {
     if (!clinicToApprove) return;
     try {
@@ -112,6 +117,33 @@ const ClinicDashboard = () => {
           setDoc(doc(db, "clinics", clinicToApprove.id), clinicData), // Save to clinics with all fields
         ]);
         await deleteDoc(doc(db, "registersClinics", clinicToApprove.id));
+
+        // Send email notification using EmailJS
+        const emailParams = {
+          to_email: clinicToApprove.email, 
+          clinic_name: clinicToApprove.clinicName,
+          admin_email: "mareafurwell@gmail.com",
+          logo_url: "https://furwell.vercel.app/images/furwell_logo.png", 
+          company_name: "Furwell", 
+          website_link: "https://furwell.vercel.app", 
+          company_email: "mareafurwell@gmail.com", 
+        };
+
+        console.log("About to send email with params:", emailParams);
+        
+        await emailjs.send(
+          "service_Furwell", // Service ID
+          "template_qw84tt5", // Template ID 
+          emailParams,
+          "59--iStzN3U4AfD9O" // public API key 
+        ).then(
+          (response) => {
+            console.log("Email sent successfully:", response.status, response.text);
+          },
+          (error) => {
+            console.error("Failed to send email:", error);
+          }
+        );
       } else if (displayClinics === "clinics") {
         await setDoc(doc(db, "registersClinics", clinicToApprove.id), {
           ...clinicToApprove,
