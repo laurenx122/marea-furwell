@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { db } from '../../firebase';
 import { collection, getDocs } from 'firebase/firestore';
@@ -11,6 +11,7 @@ import './ClinicLocator.css';
 
 const ClinicLocator = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const [clinicSearchQuery, setClinicSearchQuery] = useState('');
 
     const [userLat, setUserLat] = useState(null);
@@ -185,10 +186,22 @@ const ClinicLocator = () => {
                         <p><strong>Address:</strong> ${fullAddress || 'No address available'}</p>
                         <p><strong>Distance:</strong> ${distance.toFixed(2)} km</p>
                         <p><strong>Phone:</strong> ${clinic.phone || 'No phone available'}</p>
-                        ${clinic.website ? `<p><a href="${clinic.website}" target="_blank">Website</a></p>` : ''}
+                        <button class="see-details-button" data-clinic-id="${clinic.id}">See Details</button>
                     </div>
                 `;
                 marker.bindPopup(popupContent);
+
+                // "See Details" button
+                marker.on('popupopen', () => {
+                    const button = document.querySelector(`.see-details-button[data-clinic-id="${clinic.id}"]`);
+                    if (button) {
+                        button.addEventListener('click', () => {
+                            navigate('/FindClinic', { state: { selectedClinicId: clinic.id } });
+                        });
+                    }
+                });
+
+
                 nearbyClinicMarkers.push(marker);
             }
         });
