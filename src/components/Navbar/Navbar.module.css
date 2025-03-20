@@ -3,7 +3,6 @@
 /* Base Styles */
 * {
   font-family: 'Albert Sans', sans-serif;
-
 }
 
 /* Navbar Structure */
@@ -114,7 +113,6 @@
   border-radius: 20px;
   cursor: url('../../images/pawCursorPoint.png'), auto;
   transition: background-color 0.3s, transform 0.3s;
-
 }
 
 .loginButton:hover, .logoutButton:hover {
@@ -179,7 +177,6 @@
 
 .modalOverlay {
   background: rgb(255, 255, 255, 0.271);
-
 }
 
 .loginModalOverlay {
@@ -264,20 +261,53 @@
   width: auto;
 }
 
-.saveButton {
-  background-color: #164155;
-  color: black;
+.signOutSuccessModal {
+  text-align: center;
 }
 
-.saveButton:hover {
-  background-color: #ffffff;
+.successContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.cancelButton {
-  background-color: #FFCDD2;
-  color: black;
+.successImage {
+  width: 40px;
+  height: 40px;
+  margin-right: 15px;
 }
 
-.cancelButton:hover {
-  background-color: #EF9A9A;
+.signOutSuccessModal p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.submitBtn {
+  background-color: #ff4081; 
+  color: white;
+  padding: 10px 20px; 
+  border: none;
+  border-radius: 5px; 
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.submitBtn:hover {
+  background-color: #f50057;
+}
+
+.cancelBtn {
+  background-color: #999; 
+  color: white;
+  padding: 10px 20px; 
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s; 
+}
+
+.cancelBtn:hover {
+  background-color: #666; 
 }
