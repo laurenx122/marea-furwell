@@ -354,7 +354,7 @@ const FindClinic = () => {
             </div>
           </div>
         </div>
-      )}  
+      )}
     </div>
   );
 };

@@ -303,6 +303,7 @@ const ClinicLocator = () => {
 
                 <button onClick={handleClinicSearch} className="clinicSearchButton">Search</button>
             </div>
+            <div id="mapClinicLocator" className="mapClinicLocatorContainer" style={{ height: '420px' }}></div>
 
             {clinics.length > 0 && (
                 <div className="clinicListContainer">
@@ -327,9 +328,6 @@ const ClinicLocator = () => {
                     </ul> */}
                 </div>
             )}
-
-            <div id="mapClinicLocator" className="mapClinicLocatorContainer" style={{ height: '420px' }}></div>
-
 
         </div>
     );
