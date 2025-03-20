@@ -12,7 +12,14 @@ import {
   getDoc,
   updateDoc,
 } from "firebase/firestore";
-import { getAuth, signOut } from "firebase/auth";
+import {
+  getAuth,
+  signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+} from "firebase/auth";
 import { FaCamera } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -50,6 +57,16 @@ const ClinicHome = () => {
   const [isSignOutSuccessOpen, setIsSignOutSuccessOpen] = useState(false);
   const [showVetInfoModal, setShowVetInfoModal] = useState(false);
   const [selectedVet, setSelectedVet] = useState(null);
+  const [clinicServices, setClinicServices] = useState([]);
+  const [newVetServices, setNewVetServices] = useState([]);
+  const [vetSchedules, setVetSchedules] = useState([]);
+  const [newSchedule, setNewSchedule] = useState({
+    day: "",
+    startTime: "",
+    endTime: "",
+  });
+  const [clinicEmail, setClinicEmail] = useState("");
+  const [clinicPasswordInput, setClinicPasswordInput] = useState("");
 
   const navigate = useNavigate();
   const UPLOAD_PRESET = "furwell";
@@ -59,11 +76,23 @@ const ClinicHome = () => {
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     if (dateValue && typeof dateValue.toDate === "function") {
-      return dateValue.toDate().toLocaleDateString();
+      return dateValue.toDate().toLocaleString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
     }
     if (typeof dateValue === "string") {
       try {
-        return new Date(dateValue).toLocaleDateString();
+        return new Date(dateValue).toLocaleString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        });
       } catch (e) {
         return dateValue;
       }
@@ -99,6 +128,30 @@ const ClinicHome = () => {
     setEditedClinicInfo({ ...editedClinicInfo, [name]: value });
   };
 
+  const handleServiceToggle = (serviceName) => {
+    setNewVetServices((prev) =>
+      prev.includes(serviceName)
+        ? prev.filter((name) => name !== serviceName)
+        : [...prev, serviceName]
+    );
+  };
+
+  const handleScheduleChange = (e) => {
+    const { name, value } = e.target;
+    setNewSchedule((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const addSchedule = () => {
+    if (newSchedule.day && newSchedule.startTime && newSchedule.endTime) {
+      setVetSchedules((prev) => [...prev, newSchedule]);
+      setNewSchedule({ day: "", startTime: "", endTime: "" });
+    }
+  };
+
+  const removeSchedule = (index) => {
+    setVetSchedules((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const fetchUserFirstName = async () => {
     try {
       const currentUser = auth.currentUser;
@@ -108,6 +161,7 @@ const ClinicHome = () => {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setUserFirstName(userData.FirstName || "Unknown");
+          setClinicEmail(currentUser.email);
         } else {
           setUserFirstName("Unknown");
         }
@@ -125,9 +179,33 @@ const ClinicHome = () => {
         const clinicRef = doc(db, "clinics", currentUser.uid);
         const clinicDoc = await getDoc(clinicRef);
         if (clinicDoc.exists()) {
-          const clinicData = { id: clinicDoc.id, ...clinicDoc.data() };
-          setClinicInfo(clinicData);
-          setEditedClinicInfo(clinicData);
+          const clinicData = clinicDoc.data();
+          setClinicInfo({
+            id: clinicDoc.id,
+            clinicName: clinicData.clinicName || `Clinic of ${userFirstName}`,
+            phone: clinicData.phone || "",
+            streetAddress: clinicData.streetAddress || "",
+            city: clinicData.city || "",
+            profileImageURL: clinicData.profileImageURL || DEFAULT_CLINIC_IMAGE,
+          });
+          setEditedClinicInfo({
+            id: clinicDoc.id,
+            clinicName: clinicData.clinicName || `Clinic of ${userFirstName}`,
+            phone: clinicData.phone || "",
+            streetAddress: clinicData.streetAddress || "",
+            city: clinicData.city || "",
+            profileImageURL: clinicData.profileImageURL || DEFAULT_CLINIC_IMAGE,
+          });
+
+          const servicePricesMap = clinicData.servicePrices || {};
+          const servicesArray = Object.entries(servicePricesMap).map(
+            ([serviceName, price]) => ({
+              Type: serviceName,
+              Price: price,
+            })
+          );
+          setClinicServices(servicesArray);
+          setServices(servicesArray);
         } else {
           setClinicInfo({
             clinicName: `Clinic of ${userFirstName}`,
@@ -137,6 +215,8 @@ const ClinicHome = () => {
             clinicName: `Clinic of ${userFirstName}`,
             profileImageURL: DEFAULT_CLINIC_IMAGE,
           });
+          setClinicServices([]);
+          setServices([]);
         }
       }
     } catch (error) {
@@ -149,6 +229,8 @@ const ClinicHome = () => {
         clinicName: `Clinic of ${userFirstName}`,
         profileImageURL: DEFAULT_CLINIC_IMAGE,
       });
+      setClinicServices([]);
+      setServices([]);
     } finally {
       setLoading(false);
     }
@@ -159,7 +241,7 @@ const ClinicHome = () => {
     setAddingVet(true);
     setAddVetError("");
     setAddVetSuccess(false);
-  
+
     try {
       const { FirstName, LastName, contactNumber, email, password, confirmPassword } = newVet;
       if (!FirstName || !LastName || !email || !password || !confirmPassword) {
@@ -168,49 +250,63 @@ const ClinicHome = () => {
       if (password !== confirmPassword) {
         throw new Error("Passwords do not match");
       }
-  
+      if (!clinicPasswordInput) {
+        throw new Error("Please enter your clinic password");
+      }
+
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("You must be logged in to add a veterinarian");
-  
+      const clinicUid = currentUser.uid;
+
+      const credential = EmailAuthProvider.credential(clinicEmail, clinicPasswordInput);
+      try {
+        await reauthenticateWithCredential(currentUser, credential);
+      } catch (reAuthError) {
+        setAddVetError("Incorrect clinic password. Please try again.");
+        setAddingVet(false);
+        return;
+      }
+
+      await createUserWithEmailAndPassword(auth, email, password);
+      const vetUid = auth.currentUser.uid;
+
+      await signInWithEmailAndPassword(auth, clinicEmail, clinicPasswordInput);
+
       let profileImageURL = DEFAULT_VET_IMAGE;
       if (vetImage && ["image/jpeg", "image/jpg", "image/png"].includes(vetImage.type)) {
         const image = new FormData();
         image.append("file", vetImage);
         image.append("cloud_name", "dfgnexrda");
         image.append("upload_preset", UPLOAD_PRESET);
-  
+
         const response = await fetch(
           "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
-          {
-            method: "post",
-            body: image,
-          }
+          { method: "post", body: image }
         );
-  
+
         if (!response.ok) throw new Error("Image upload failed");
-  
+
         const imgData = await response.json();
         profileImageURL = imgData.url.toString();
       }
-  
-      const clinicRef = doc(db, "clinics", currentUser.uid);
-      const vetDocRef = doc(collection(db, "users")); // Generate a new document ID
-      
-      // Just store the veterinarian data without authentication
+
+      const clinicRef = doc(db, "clinics", clinicUid);
+      const vetDocRef = doc(db, "users", vetUid);
+
       await setDoc(vetDocRef, {
         FirstName,
         LastName,
         contactNumber,
         email,
-        // Store password as plain text (not used for auth)
-        password,
         profileImageURL,
         Type: "Veterinarian",
         clinic: clinicRef,
-        uid: vetDocRef.id,
+        uid: vetUid,
+        services: newVetServices,
+        schedule: vetSchedules,
         createdAt: serverTimestamp(),
       });
-  
+
       setAddVetSuccess(true);
       setNewVet({
         FirstName: "",
@@ -222,6 +318,10 @@ const ClinicHome = () => {
       });
       setVetImage(null);
       setImagePreview(null);
+      setNewVetServices([]);
+      setVetSchedules([]);
+      setNewSchedule({ day: "", startTime: "", endTime: "" });
+      setClinicPasswordInput("");
       fetchVeterinarians();
       setTimeout(() => {
         setShowAddVetModal(false);
@@ -229,8 +329,18 @@ const ClinicHome = () => {
       }, 2000);
     } catch (error) {
       console.error("Error adding veterinarian:", error);
-      setAddVetError(error.message || "Failed to add veterinarian");
-    } finally {
+      if (error.code === "auth/email-already-in-use") {
+        setAddVetError("This email is already in use. Please use a different email.");
+        await signInWithEmailAndPassword(auth, clinicEmail, clinicPasswordInput).catch(
+          (signInError) => {
+            console.error("Failed to restore clinic session:", signInError);
+            setAddVetError("Failed to restore session. Please re-login.");
+            navigate("/login");
+          }
+        );
+      } else if (error.code !== "auth/wrong-password") {
+        setAddVetError(error.message || "Failed to add veterinarian");
+      }
       setAddingVet(false);
     }
   };
@@ -251,10 +361,7 @@ const ClinicHome = () => {
 
           const response = await fetch(
             "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
-            {
-              method: "post",
-              body: image,
-            }
+            { method: "post", body: image }
           );
 
           if (!response.ok) throw new Error("Image upload failed");
@@ -287,28 +394,102 @@ const ClinicHome = () => {
   const handleSignOut = () => {
     setIsSignOutConfirmOpen(true);
   };
-
+  
   const confirmSignOut = async () => {
     try {
       await signOut(getAuth());
-      setIsSignOutSuccessOpen(true);
+      setIsSignOutConfirmOpen(false); 
+      setIsSignOutSuccessOpen(true); 
+      setTimeout(() => {
+        setIsSignOutSuccessOpen(false); 
+        navigate("/Home"); 
+      }, 2000); 
     } catch (error) {
       console.error("Error signing out:", error);
+      setIsSignOutConfirmOpen(false); 
     }
-    setIsSignOutConfirmOpen(false);
   };
 
   const fetchPatients = async () => {
     setLoading(false);
   };
-  const fetchAppointments = async () => {};
-  const fetchRecords = async () => {};
-  const fetchServices = async () => {
-    setServices([
-      { id: "1", Type: "Vaccination", Price: 50, Description: "Annual vaccination" },
-      { id: "2", Type: "Grooming", Price: 30, Description: "Full grooming service" },
-    ]);
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const clinicRef = doc(db, "clinics", currentUser.uid);
+        const appointmentsQuery = query(
+          collection(db, "appointments"),
+          where("clinic", "==", clinicRef)
+        );
+        const querySnapshot = await getDocs(appointmentsQuery);
+        const appointmentsList = [];
+
+        for (const appointmentDoc of querySnapshot.docs) {
+          const appointmentData = appointmentDoc.data();
+          let ownerName = "Unknown Owner";
+          let petName = appointmentData.petName || "Unknown Pet";
+
+          if (appointmentData.owner && typeof appointmentData.owner === "object") {
+            try {
+              const ownerDoc = await getDoc(appointmentData.owner);
+              if (ownerDoc.exists()) {
+                const ownerData = ownerDoc.data();
+                ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "Unknown Owner";
+              }
+            } catch (error) {
+              console.error("Error fetching owner:", error);
+              ownerName = "Error Loading Owner";
+            }
+          }
+
+          if (!appointmentData.petName && appointmentData.petRef) {
+            try {
+              const petDoc = await getDoc(appointmentData.petRef);
+              if (petDoc.exists()) {
+                petName = petDoc.data().petName || "Unknown Pet";
+              }
+            } catch (error) {
+              console.error("Error fetching pet:", error);
+              petName = "Error Loading Pet";
+            }
+          }
+
+          appointmentsList.push({
+            id: appointmentDoc.id,
+            dateofAppointment: appointmentData.dateofAppointment,
+            ownerName,
+            petName,
+            serviceType: appointmentData.serviceType || "N/A",
+            veterinarian: appointmentData.veterinarian || "N/A",
+          });
+        }
+
+        // Sort appointments by dateofAppointment in ascending order
+        appointmentsList.sort((a, b) => {
+          const dateA = a.dateofAppointment && typeof a.dateofAppointment.toDate === "function"
+            ? a.dateofAppointment.toDate()
+            : new Date(a.dateofAppointment || 0);
+          const dateB = b.dateofAppointment && typeof b.dateofAppointment.toDate === "function"
+            ? b.dateofAppointment.toDate()
+            : new Date(b.dateofAppointment || 0);
+          return dateA - dateB;
+        });
+
+        setAppointments(appointmentsList);
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      setAppointments([]);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const fetchRecords = async () => {};
+
   const fetchVeterinarians = async () => {
     try {
       setLoading(true);
@@ -345,7 +526,6 @@ const ClinicHome = () => {
       fetchPatients();
       fetchAppointments();
       fetchRecords();
-      fetchServices();
       fetchVeterinarians();
     };
     initializeData();
@@ -353,7 +533,6 @@ const ClinicHome = () => {
 
   return (
     <div className="clinic-container">
-
       <div className="sidebar_clinicHome">
         {clinicInfo && (
           <div className="clinic-sidebar-panel">
@@ -421,30 +600,33 @@ const ClinicHome = () => {
 
       <div className="content">
         <div className="panel-container">
-        {activePanel === "clinic" && clinicInfo && (
-          <div className="panel clinic-panel">
-            <h3>Clinic Information</h3>
-            <div className="clinic-details">
-              <img
-                src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
-                alt="Clinic"
-                className="clinic-info-img"
-              />
-              <p><strong>Name:</strong> {clinicInfo.clinicName}</p>
-              <p><strong>Phone:</strong> {clinicInfo.phone || "N/A"}</p>
-              <p><strong>Address:</strong> {clinicInfo.streetAddress || "N/A"}, {clinicInfo.city || "N/A"}</p>
-              <button
-                className="edit-clinic-btn"
-                onClick={() => {
-                  setShowClinicModal(true);
-                  setIsEditingClinic(true);
-                }}
-              >
-                Edit Clinic Info
-              </button>
+          {activePanel === "clinic" && clinicInfo && (
+            <div className="panel clinic-panel">
+              <h3>Clinic Information</h3>
+              <div className="clinic-details">
+                <img
+                  src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
+                  alt="Clinic"
+                  className="clinic-info-img"
+                />
+                <p><strong>Name:</strong> {clinicInfo.clinicName}</p>
+                <p><strong>Phone:</strong> {clinicInfo.phone || "N/A"}</p>
+                <p>
+                  <strong>Address:</strong> {clinicInfo.streetAddress || "N/A"},{" "}
+                  {clinicInfo.city || "N/A"}
+                </p>
+                <button
+                  className="edit-clinic-btn"
+                  onClick={() => {
+                    setShowClinicModal(true);
+                    setIsEditingClinic(true);
+                  }}
+                >
+                  Edit Clinic Info
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
           {activePanel === "patients" && (
             <div className="panel patients-panel">
               <h3>Patients</h3>
@@ -453,6 +635,38 @@ const ClinicHome = () => {
           {activePanel === "appointments" && (
             <div className="panel appointments-panel">
               <h3>Appointments</h3>
+              {loading ? (
+                <p>Loading appointments...</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date & Time</th>
+                      <th>Owner</th>
+                      <th>Pet</th>
+                      <th>Service</th>
+                      <th>Veterinarian</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {appointments.length > 0 ? (
+                      appointments.map((appointment) => (
+                        <tr key={appointment.id}>
+                          <td>{formatDate(appointment.dateofAppointment)}</td>
+                          <td>{appointment.ownerName}</td>
+                          <td>{appointment.petName}</td>
+                          <td>{appointment.serviceType}</td>
+                          <td>{appointment.veterinarian}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5">No appointments found</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
           {activePanel === "records" && (
@@ -468,21 +682,19 @@ const ClinicHome = () => {
                   <tr>
                     <th>Type</th>
                     <th>Price</th>
-                    <th>Description</th>
                   </tr>
                 </thead>
                 <tbody>
                   {services.length > 0 ? (
-                    services.map((service) => (
-                      <tr key={service.id}>
+                    services.map((service, index) => (
+                      <tr key={index}>
                         <td>{service.Type}</td>
-                        <td>${service.Price}</td>
-                        <td>{service.Description}</td>
+                        <td>{service.Price}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="3">No services found</td>
+                      <td colSpan="2">No services found</td>
                     </tr>
                   )}
                 </tbody>
@@ -501,6 +713,8 @@ const ClinicHome = () => {
                       <th>Name</th>
                       <th>Contact</th>
                       <th>Email</th>
+                      <th>Services</th>
+                      <th>Schedule</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -517,11 +731,21 @@ const ClinicHome = () => {
                           </td>
                           <td>{vet.contactNumber || "N/A"}</td>
                           <td>{vet.email}</td>
+                          <td>
+                            {vet.services?.length > 0 ? vet.services.join(", ") : "None"}
+                          </td>
+                          <td>
+                            {vet.schedule?.length > 0
+                              ? vet.schedule
+                                  .map((s) => `${s.day}: ${s.startTime}-${s.endTime}`)
+                                  .join(", ")
+                              : "Not set"}
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="3">No veterinarians found</td>
+                        <td colSpan="5">No veterinarians found</td>
                       </tr>
                     )}
                   </tbody>
@@ -664,17 +888,12 @@ const ClinicHome = () => {
       {showAddVetModal && (
         <div className="modal-overlay">
           <div className="modal-content add-vet-modal">
-            <span
-              className="close-button"
-              onClick={() => setShowAddVetModal(false)}
-            >
+            <span className="close-button" onClick={() => setShowAddVetModal(false)}>
               ×
             </span>
             <h2>Add New Veterinarian</h2>
             {addVetSuccess && (
-              <div className="success-message">
-                Veterinarian added successfully!
-              </div>
+              <div className="success-message">Veterinarian added successfully!</div>
             )}
             {addVetError && <div className="error-message">{addVetError}</div>}
             <form onSubmit={handleAddVet}>
@@ -682,9 +901,7 @@ const ClinicHome = () => {
                 <label
                   htmlFor="vet-image-upload"
                   className="vet-image-upload"
-                  style={
-                    imagePreview ? { backgroundImage: `url(${imagePreview})` } : {}
-                  }
+                  style={imagePreview ? { backgroundImage: `url(${imagePreview})` } : {}}
                 >
                   {!imagePreview && (
                     <>
@@ -766,6 +983,87 @@ const ClinicHome = () => {
                   required
                 />
               </div>
+              <div className="form-group vet-services-left">
+                <label>Specializations</label>
+                <div className="services-checkboxes-left">
+                  {clinicServices.length > 0 ? (
+                    clinicServices.map((service, index) => (
+                      <div key={index} className="checkbox-item-left">
+                        <input
+                          type="checkbox"
+                          id={`service-${index}`}
+                          checked={newVetServices.includes(service.Type)}
+                          onChange={() => handleServiceToggle(service.Type)}
+                        />
+                        <label htmlFor={`service-${index}`}>{service.Type}</label>
+                      </div>
+                    ))
+                  ) : (
+                    <p>No services available</p>
+                  )}
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Schedule</label>
+                <div className="schedule-inputs">
+                  <select name="day" value={newSchedule.day} onChange={handleScheduleChange}>
+                    <option value="">Select Day</option>
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                    <option value="Sunday">Sunday</option>
+                  </select>
+                  <input
+                    type="time"
+                    name="startTime"
+                    value={newSchedule.startTime}
+                    onChange={handleScheduleChange}
+                    placeholder="Start Time"
+                  />
+                  <input
+                    type="time"
+                    name="endTime"
+                    value={newSchedule.endTime}
+                    onChange={handleScheduleChange}
+                    placeholder="End Time"
+                  />
+                  <button type="button" className="add-schedule-btn" onClick={addSchedule}>
+                    Add
+                  </button>
+                </div>
+                {vetSchedules.length > 0 && (
+                  <div className="schedule-list">
+                    {vetSchedules.map((schedule, index) => (
+                      <div key={index} className="schedule-item">
+                        <span>{`${schedule.day}: ${schedule.startTime}-${schedule.endTime}`}</span>
+                        <button
+                          type="button"
+                          className="remove-schedule-btn"
+                          onClick={() => removeSchedule(index)}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="form-group">
+                <label htmlFor="clinicPasswordInput">
+                  Your Clinic Password (Required to Continue) *
+                </label>
+                <input
+                  type="password"
+                  id="clinicPasswordInput"
+                  name="clinicPasswordInput"
+                  value={clinicPasswordInput}
+                  onChange={(e) => setClinicPasswordInput(e.target.value)}
+                  required
+                />
+              </div>
               <div className="form-actions">
                 <button
                   type="button"
@@ -774,11 +1072,7 @@ const ClinicHome = () => {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="submit-btn"
-                  disabled={addingVet}
-                >
+                <button type="submit" className="submit-btn" disabled={addingVet}>
                   {addingVet ? "Adding..." : "Add Veterinarian"}
                 </button>
               </div>
@@ -789,7 +1083,7 @@ const ClinicHome = () => {
 
       {isSignOutConfirmOpen && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content signout-confirm-modal">
             <p>Are you sure you want to sign out?</p>
             <div className="form-actions">
               <button className="submit-btn" onClick={confirmSignOut}>
@@ -808,17 +1102,15 @@ const ClinicHome = () => {
 
       {isSignOutSuccessOpen && (
         <div className="modal-overlay">
-          <div className="modal-content">
-            <p>Signed out successfully!</p>
-            <button
-              className="modal-close-btn"
-              onClick={() => {
-                setIsSignOutSuccessOpen(false);
-                navigate("/Home");
-              }}
-            >
-              OK
-            </button>
+          <div className="modal-content signout-success-modal">
+            <div className="success-content">
+              <img
+                src="/images/check.gif"
+                alt="Success Checkmark"
+                className="success-image"
+              />
+              <p>Signed Out Successfully</p>
+            </div>
           </div>
         </div>
       )}
@@ -826,10 +1118,7 @@ const ClinicHome = () => {
       {showVetInfoModal && selectedVet && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <span
-              className="close-button"
-              onClick={() => setShowVetInfoModal(false)}
-            >
+            <span className="close-button" onClick={() => setShowVetInfoModal(false)}>
               ×
             </span>
             <img
@@ -840,7 +1129,9 @@ const ClinicHome = () => {
             <h2>{`${selectedVet.FirstName} ${selectedVet.LastName}`}</h2>
             <p><strong>First Name:</strong> {selectedVet.FirstName}</p>
             <p><strong>Last Name:</strong> {selectedVet.LastName}</p>
-            <p><strong>Contact Number:</strong> {selectedVet.contactNumber || "N/A"}</p>
+            <p>
+              <strong>Contact Number:</strong> {selectedVet.contactNumber || "N/A"}
+            </p>
             <p><strong>Email:</strong> {selectedVet.email}</p>
             <button
               className="modal-close-btn"

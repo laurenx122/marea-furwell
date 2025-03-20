@@ -51,65 +51,65 @@ const Login = ({ onClose, onSwitchToSignUp, onLoginSuccess }) => {
         return;
       }
 
-  
-    // Proceed with normal email/password sign in
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+      // Proceed with normal email/password sign in
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-    // Check both 'users' and 'clinics' collections
-    const userDocRef = doc(db, "users", user.uid);
-    // const clinicDocRef = doc(db, "clinics", user.uid);
+      // Check both 'users' and 'clinics' collections
+      const userDocRef = doc(db, "users", user.uid);
+      // const clinicDocRef = doc(db, "clinics", user.uid);
 
-    const [userDocSnap, clinicDocSnap] = await Promise.all([
-      getDoc(userDocRef),
-      // getDoc(clinicDocRef),
-    ]);
+      const [userDocSnap, clinicDocSnap] = await Promise.all([
+        getDoc(userDocRef),
+        // getDoc(clinicDocRef),
+      ]);
 
-    let userData = null;
+      let userData = null;
 
-    if (userDocSnap.exists()) {
-      userData = userDocSnap.data();
-    }
-    // } else if (clinicDocSnap.exists()) {
-    //   userData = clinicDocSnap.data();
-    // }
-
-    if (userData) {
-      setEmail('');
-      setPassword('');
-
-      // Show success modal
-      setShowSuccessModal(true);
-
-      if (onLoginSuccess) {
-        onLoginSuccess();
+      if (userDocSnap.exists()) {
+        userData = userDocSnap.data();
       }
+      // } else if (clinicDocSnap.exists()) {
+      //   userData = clinicDocSnap.data();
+      // }
 
-      // Auto close modal after 2 seconds and navigate
-      setTimeout(() => {
-        setShowSuccessModal(false);
-        if (userData.Type === "Admin") {
-          navigate("/AdminHome");
-        } else if (userData.Type === "Pet owner") {
-          navigate("/PetOwnerHome");
-        } else if (userData.Type === "Clinic") {
-          navigate("/ClinicHome");
-        } else if (userData.Type === "Veterinarian") {
-          navigate("/VeterinaryHome");
+      if (userData) {
+        setEmail('');
+        setPassword('');
+
+        // Show success modal
+        setShowSuccessModal(true);
+
+        if (onLoginSuccess) {
+          onLoginSuccess();
         }
-      }, 2000);
-    } else {
-      console.error("User data not found in Firestore.");
-      setEmail('');
-      setPassword('');
-      alert("Login failed: User data not found.");
-      setError("User data not found in Firestore.");
+
+        // Auto close modal after 2 seconds and navigate
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          if (userData.Type === "Admin") {
+            navigate("/AdminHome");
+          } else if (userData.Type === "Pet owner") {
+            navigate("/PetOwnerHome");
+          } else if (userData.Type === "Clinic") {
+            navigate("/ClinicHome");
+          } else if (userData.Type === "Veterinarian") {
+            navigate("/VeterinaryHome");
+          }
+        }, 2000);
+      } else {
+        console.error("User data not found in Firestore.");
+        setEmail('');
+        setPassword('');
+        alert("Login failed: User data not found.");
+        setError("User data not found in Firestore.");
+      }
+    } catch (error) {
+      setError(error.message);
+      alert("Login failed: " + error.message);
     }
-  } catch (error) {
-    setError(error.message);
-    alert("Login failed: " + error.message);
-  }
-};
+  };
+
   const handleGoogleSignIn = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
@@ -190,8 +190,8 @@ const Login = ({ onClose, onSwitchToSignUp, onLoginSuccess }) => {
       <div className="success-modal-overlay">
         <div className="success-modal">
           <div className="success-content">
-            <img src="https://cliply.co/wp-content/uploads/2021/03/372103860_CHECK_MARK_400px.gif" alt="Success" className="success-gif" />
-            <h3>Logged In Successfully</h3>
+            <img src="/images/check.gif" alt="Success" className="success-gif" />
+            <h3>Logged-In Successfully</h3>
           </div>
         </div>
       </div>
