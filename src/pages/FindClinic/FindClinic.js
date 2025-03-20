@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { db } from '../../firebase'; // Import Firestore from firebase.js
 import { collection, getDocs } from 'firebase/firestore'; // Firestore functions
 import './FindClinic.css';
 import Footer from '../../components/Footer/Footer'; // Import Footer component
+
 
 const FindClinic = () => {
   const [clinics, setClinics] = useState([]);
@@ -16,7 +17,26 @@ const FindClinic = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const [services, setServices] = useState([]);
+  const [services, setServices] = useState([]);const location = useLocation(); //automatic click from ClinicLocator
+
+  //automatic click from ClinicLocator
+  useEffect(() => {
+    console.log("Location State:", location.state);
+    if (location.state?.selectedClinicId) {
+      console.log("Received Clinic ID:", location.state.selectedClinicId);
+
+      const clinicToShow = clinics.find(clinic => clinic.id === location.state.selectedClinicId);
+
+      if (clinicToShow) {
+        console.log("Clinic Found:", clinicToShow);
+        setClinicDetails(clinicToShow);
+        setIsModalOpen(true);
+      } else {
+        console.log("Clinic not found in the list.");
+      }
+    }
+  }, [clinics, location. State]);
+
 
   // Function to categorize the price into ₱, ₱₱, and ₱₱₱
   const categorizePrice = (price) => {
@@ -37,22 +57,31 @@ const FindClinic = () => {
         return;
       }
       
-      const clinicList = clinicSnapshot.docs.map(doc => ({
-        id: doc.id,
-        clinicName: doc.data().clinicName || 'Unknown Clinic',
-        streetAddress: doc.data().streetAddress || 'Address not provided',
-        city: doc.data().city || '',
-        province: doc.data().province || 'Location not specified',
-        postalCode: doc.data().postalCode || '',
-        price: doc.data().price || 0,
-        priceCategory: categorizePrice(doc.data().price || 0), // Categorize the price
-        services: doc.data().services || [],
-        description: doc.data().description || 'No description available',
-        image: doc.data().imgURL || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
-        phone: doc.data().phone || 'Not available',
-        email: doc.data().email || 'Not available',
-        hours: doc.data().operatingHours || 'Not available',
-      }));
+      const clinicList = clinicSnapshot.docs.map(doc => {
+        const data = doc.data();
+        // Extract services from servicePrices object keys
+        const servicesFromPrices = data.servicePrices ? Object.keys(data.servicePrices) : [];
+        
+        return {
+          id: doc.id,
+          clinicName: data.clinicName || 'Unknown Clinic',
+          streetAddress: data.streetAddress || 'Address not provided',
+          city: data.city || '',
+          province: data.province || 'Location not specified',
+          postalCode: data.postalCode || '',
+          price: data.price || 0,
+          priceCategory: categorizePrice(data.price || 0), // Categorize the price
+          // Combine existing services with services from servicePrices
+          services: [...(data.services || []), ...servicesFromPrices],
+          description: data.description || 'No description available',
+          image: data.imgURL || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
+          phone: data.phone || 'Not available',
+          email: data.email || 'Not available',
+          hours: data.operatingHours || 'Not available',
+          // Store the service prices separately for potential use
+          servicePrices: data.servicePrices || {},
+        };
+      });
       
       setClinics(clinicList); // Update state with fetched clinics
     } catch (error) {
@@ -66,13 +95,31 @@ const FindClinic = () => {
   useEffect(() => {
     fetchClinics(); // Fetch data on component mount
   }, []);
-  //fetchServices function to fetch services from Firestore
+
+  // fetchServices function to fetch services from Firestore
   useEffect(() => {
     const fetchServices = async () => {
       try {
+        // Get services from the services collection
         const querySnapshot = await getDocs(collection(db, "services"));
-        const serviceList = querySnapshot.docs.map(doc => doc.id); // Fetching document IDs as service names
-        setServices(serviceList);
+        const serviceList = querySnapshot.docs.map(doc => doc.id);
+        
+        // Also get unique services from servicePrices in all clinics
+        const clinicsSnapshot = await getDocs(collection(db, "clinics"));
+        const servicePricesList = new Set();
+        
+        clinicsSnapshot.docs.forEach(doc => {
+          const servicePrices = doc.data().servicePrices;
+          if (servicePrices) {
+            Object.keys(servicePrices).forEach(service => {
+              servicePricesList.add(service);
+            });
+          }
+        });
+        
+        // Combine both sets of services, removing duplicates
+        const combinedServices = [...new Set([...serviceList, ...servicePricesList])];
+        setServices(combinedServices);
       } catch (error) {
         console.error("Error fetching services:", error);
       }
@@ -80,6 +127,7 @@ const FindClinic = () => {
 
     fetchServices();
   }, []);
+
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
@@ -125,7 +173,7 @@ const FindClinic = () => {
       clinic.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       clinic.province?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (clinic.services && clinic.services.some(service => 
-        service.toLowerCase().includes(searchQuery.toLowerCase()) // Fix applied here
+        service.toLowerCase().includes(searchQuery.toLowerCase())
       ));
 
     const matchesServices = selectedService.length === 0 || 
@@ -134,7 +182,7 @@ const FindClinic = () => {
     const matchesPrice = !selectedPrice || clinic.priceCategory === selectedPrice;
 
     return matchesSearch && matchesServices && matchesPrice;
-});
+  });
 
   // Sorting the filtered clinics
   const sortedClinics = [...filteredClinics].sort((a, b) => {
@@ -219,7 +267,7 @@ const FindClinic = () => {
               {service}
             </label>
           ))}
-              </div>
+          </div>
 
           {/* Price Filter */}
           <div className="filter">
@@ -326,9 +374,10 @@ const FindClinic = () => {
               <div className="price-services-container">
                 <span className="modal-price">{clinicDetails.priceCategory}</span>
                 <div className="modal-services">
-                  {clinicDetails.services && clinicDetails.services.slice(0, 3).map((service, idx) => (
+                {clinicDetails.services && clinicDetails.services.slice(0, 3).map((service, idx) => (
                     <span key={idx}>{service}</span>
                   ))}
+                   
                 </div>
               </div>
               
