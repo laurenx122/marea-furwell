@@ -1,11 +1,21 @@
-import React, { useState, useEffect } from "react"; 
-import "./PetOwnerHome.css"; 
-import { db, auth } from "../../firebase"; 
-import { collection, query, where, getDocs, doc, addDoc, serverTimestamp, getDoc, updateDoc } from "firebase/firestore";
-import { FaCamera, FaPaw, FaEdit } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import "./PetOwnerHome.css";
+import { db, auth } from "../../firebase";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  addDoc,
+  serverTimestamp,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { FaCamera } from "react-icons/fa";
 
-const PetOwnerHome = () => { 
-  const [activePanel, setActivePanel] = useState("petDetails"); 
+const PetOwnerHome = () => {
+  const [activePanel, setActivePanel] = useState("petDetails");
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState([]);
@@ -19,13 +29,13 @@ const PetOwnerHome = () => {
     Species: "",
     Gender: "",
     Weight: "",
-    dateofBirth: ""
+    dateofBirth: "",
   });
   const [addingPet, setAddingPet] = useState(false);
   const [addPetError, setAddPetError] = useState("");
   const [addPetSuccess, setAddPetSuccess] = useState(false);
-  
-  // Add states for pet image editing
+
+  // Pet image states
   const [petImage, setPetImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [newPetImage, setNewPetImage] = useState(null);
@@ -33,50 +43,94 @@ const PetOwnerHome = () => {
   const [isEditingImage, setIsEditingImage] = useState(false);
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
-  
+
+  // Appointment states
   const [newAppointment, setNewAppointment] = useState({
     petId: "",
-    serviceType: "Vaccination",
+    clinicId: "",
+    veterinarianId: "",
+    serviceType: "",
     dateofAppointment: "",
-    veterinarian: "",
-    clinicId: ""
   });
   const [bookingAppointment, setBookingAppointment] = useState(false);
   const [appointmentError, setAppointmentError] = useState("");
   const [appointmentSuccess, setAppointmentSuccess] = useState(false);
-  const [veterinarians, setVeterinarians] = useState([
-    "Dr. Sarah Johnson",
-    "Dr. Michael Rodriguez",
-    "Dr. Emily Chen",
-    "Dr. James Wilson"
-  ]);
   const [clinics, setClinics] = useState([]);
   const [loadingClinics, setLoadingClinics] = useState(true);
-  
-  // Cloudinary upload preset
+  const [veterinarians, setVeterinarians] = useState([]);
+  const [loadingVeterinarians, setLoadingVeterinarians] = useState(false);
+  const [vetServices, setVetServices] = useState({});
+  const [vetSchedules, setVetSchedules] = useState({});
+  const [availableDates, setAvailableDates] = useState([]);
+  const [allVeterinarians, setAllVeterinarians] = useState([]);
+
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
 
-  // Function to safely format dates
+  // Utility to format dates
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
-    
-    if (dateValue && typeof dateValue.toDate === 'function') {
-      return dateValue.toDate().toLocaleDateString(); // Only date
+    if (dateValue && typeof dateValue.toDate === "function") {
+      return dateValue.toDate().toLocaleString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
     }
-    
-    if (typeof dateValue === 'string') {
+    if (typeof dateValue === "string") {
       try {
-        return new Date(dateValue).toLocaleDateString(); // Only date
+        return new Date(dateValue).toLocaleString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        });
       } catch (e) {
         return dateValue;
       }
     }
-    
     return String(dateValue);
   };
 
-  // Handle pet image change
+  // Convert vet schedule to specific dates
+  const getAvailableDates = (schedules) => {
+    const dates = [];
+    const today = new Date();
+    const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    // Look ahead 30 days
+    for (let i = 0; i < 30; i++) {
+      const currentDate = new Date(today);
+      currentDate.setDate(today.getDate() + i);
+      const dayName = daysOfWeek[currentDate.getDay()];
+
+      schedules.forEach((schedule) => {
+        if (schedule.day === dayName) {
+          const [startHour, startMinute] = schedule.startTime.split(":");
+          const [endHour, endMinute] = schedule.endTime.split(":");
+          const start = new Date(currentDate);
+          start.setHours(parseInt(startHour), parseInt(startMinute), 0);
+          const end = new Date(currentDate);
+          end.setHours(parseInt(endHour), parseInt(endMinute), 0);
+
+          // Only include future times
+          if (start > new Date()) {
+            dates.push({
+              date: start,
+              end,
+              display: `${formatDate(start)} - ${end.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
+            });
+          }
+        }
+      });
+    }
+    return dates;
+  };
+
+  // Image handling
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -85,7 +139,6 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Handle editing pet image in modal
   const handleModalImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -96,15 +149,16 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Save the new pet image
-  const handleSaveImage = async () => {
-    if (!newPetImage || !selectedPet) return;
+  const handleSaveImageAndClose = async () => {
+    if (!newPetImage || !selectedPet) {
+      setShowModal(false);
+      return;
+    }
 
     setIsSavingImage(true);
     setImageUploadError("");
 
     try {
-      // Upload image to Cloudinary
       const image = new FormData();
       image.append("file", newPetImage);
       image.append("cloud_name", "dfgnexrda");
@@ -112,30 +166,24 @@ const PetOwnerHome = () => {
 
       const response = await fetch(
         "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
-        {
-          method: "post",
-          body: image
-        }
+        { method: "post", body: image }
       );
 
-      if (!response.ok) {
-        throw new Error("Image upload failed");
-      }
+      if (!response.ok) throw new Error("Image upload failed");
 
       const imgData = await response.json();
       const newImageURL = imgData.url.toString();
 
-      // Update the pet image URL in Firestore
       const petRef = doc(db, "pets", selectedPet.id);
       await updateDoc(petRef, { petImageURL: newImageURL });
 
-      // Update the state to reflect the new image
       setSelectedPet({ ...selectedPet, petImageURL: newImageURL });
-      
-      // Reset editing state
+      setPets(pets.map((p) => (p.id === selectedPet.id ? { ...p, petImageURL: newImageURL } : p)));
+
       setIsEditingImage(false);
       setNewPetImage(null);
       setNewImagePreview(null);
+      setShowModal(false);
     } catch (error) {
       console.error("Error uploading pet image:", error);
       setImageUploadError("Failed to upload image. Please try again.");
@@ -144,30 +192,74 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Cancel image editing
-  const handleCancelImageEdit = () => {
-    setIsEditingImage(false);
-    setNewPetImage(null);
-    setNewImagePreview(null);
-    setImageUploadError("");
-  };
-
+  // Input handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewPet({
       ...newPet,
-      [name]: name === "Weight" ? (value === "" ? "" : parseFloat(value)) : value
+      [name]: name === "Weight" ? (value === "" ? "" : parseFloat(value)) : value,
     });
   };
 
-  const handleAppointmentChange = (e) => {
+  const handleAppointmentChange = async (e) => {
     const { name, value } = e.target;
-    setNewAppointment({
-      ...newAppointment,
-      [name]: value
-    });
+    setNewAppointment((prev) => ({ ...prev, [name]: value }));
+  
+    if (name === "clinicId" && value) {
+      setLoadingVeterinarians(true);
+      await fetchVeterinarians(value);
+      setLoadingVeterinarians(false);
+      setNewAppointment((prev) => ({
+        ...prev,
+        veterinarianId: "",
+        serviceType: "",
+        dateofAppointment: "",
+      }));
+      setAvailableDates([]);
+    } else if (name === "veterinarianId" && value) {
+      const vet = allVeterinarians.find((v) => v.id === value);
+      const vetServicesList = vet.services || [];
+      setVetServices({ [value]: vetServicesList });
+      setVetSchedules({ [value]: vet.schedule || [] });
+      setAvailableDates(getAvailableDates(vet.schedule || []));
+      setNewAppointment((prev) => ({
+        ...prev,
+        serviceType: vetServicesList.length > 0 ? vetServicesList[0] : "",
+        dateofAppointment: "",
+      }));
+    } else if (name === "serviceType" && value) {
+      const vetId = newAppointment.veterinarianId;
+      if (vetId) {
+        const vet = allVeterinarians.find((v) => v.id === vetId);
+        setVetSchedules({ [vetId]: vet.schedule || [] });
+        setAvailableDates(getAvailableDates(vet.schedule || []));
+      } else {
+        // Filter veterinarians from the full list based on the selected service
+        const filteredVets = allVeterinarians.filter((v) =>
+          (v.services || []).includes(value)
+        );
+        setVeterinarians(filteredVets); // Update the displayed list
+        setVetServices(
+          filteredVets.reduce((acc, v) => ({ ...acc, [v.id]: v.services }), {})
+        );
+        setVetSchedules(
+          filteredVets.reduce((acc, v) => ({ ...acc, [v.id]: v.schedule }), {})
+        );
+        setNewAppointment((prev) => ({
+          ...prev,
+          veterinarianId: filteredVets.length > 0 ? filteredVets[0].id : "",
+          dateofAppointment: "",
+        }));
+        if (filteredVets.length > 0) {
+          setAvailableDates(getAvailableDates(filteredVets[0].schedule || []));
+        } else {
+          setAvailableDates([]);
+        }
+      }
+    }
   };
 
+  // Add pet
   const handleAddPet = async (e) => {
     e.preventDefault();
     setAddingPet(true);
@@ -179,58 +271,36 @@ const PetOwnerHome = () => {
         throw new Error("Pet name, species, and gender are required");
       }
 
-      const currentUser  = auth.currentUser ;
-      if (!currentUser ) {
-        throw new Error("You must be logged in to add a pet");
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("You must be logged in to add a pet");
+
+      let petImageURL = DEFAULT_PET_IMAGE;
+      if (petImage && ["image/jpeg", "image/jpg", "image/png"].includes(petImage.type)) {
+        const image = new FormData();
+        image.append("file", petImage);
+        image.append("cloud_name", "dfgnexrda");
+        image.append("upload_preset", UPLOAD_PRESET);
+
+        const response = await fetch(
+          "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
+          { method: "post", body: image }
+        );
+
+        if (!response.ok) throw new Error("Image upload failed");
+
+        const imgData = await response.json();
+        petImageURL = imgData.url.toString();
       }
 
-      // Upload pet image if one was selected
-      let petImageURL = "";
-      
-      if (petImage && (
-        petImage.type === "image/jpeg" ||
-        petImage.type === "image/jpg" ||
-        petImage.type === "image/png"
-      )) {
-        try {
-          const image = new FormData();
-          image.append("file", petImage);
-          image.append("cloud_name", "dfgnexrda");
-          image.append("upload_preset", UPLOAD_PRESET);
-
-          const response = await fetch(
-            "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
-            {
-              method: "post",
-              body: image
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error("Image upload failed");
-          }
-
-          const imgData = await response.json();
-          petImageURL = imgData.url.toString();
-          console.log("Pet image uploaded successfully:", petImageURL);
-        } catch (uploadError) {
-          console.error("Error uploading pet image:", uploadError);
-          setAddPetError("Failed to upload pet picture. Continuing with pet registration...");
-          // Continue with pet addition even if image upload fails
-        }
-      }
-
-      const ownerRef = doc(db, "users", currentUser .uid);
-
-      await addDoc(collection(db, "pets"), {
+      const ownerRef = doc(db, "users", currentUser.uid);
+      const petDoc = await addDoc(collection(db, "pets"), {
         ...newPet,
-        petImageURL: petImageURL, // Store the image URL
+        petImageURL,
         owner: ownerRef,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
       });
 
       setAddPetSuccess(true);
-      
       setNewPet({
         petName: "",
         Breed: "",
@@ -238,15 +308,11 @@ const PetOwnerHome = () => {
         Species: "",
         Gender: "",
         Weight: "",
-        dateofBirth: ""
+        dateofBirth: "",
       });
-      
-      // Reset image state
       setPetImage(null);
       setImagePreview(null);
-
       fetchPets();
-      
       setTimeout(() => {
         setShowAddPetModal(false);
         setAddPetSuccess(false);
@@ -259,6 +325,7 @@ const PetOwnerHome = () => {
     }
   };
 
+  // Book appointment
   const handleBookAppointment = async (e) => {
     e.preventDefault();
     setBookingAppointment(true);
@@ -266,52 +333,49 @@ const PetOwnerHome = () => {
     setAppointmentSuccess(false);
 
     try {
-      if (!newAppointment.petId || !newAppointment.serviceType || !newAppointment.dateofAppointment || !newAppointment.veterinarian || !newAppointment.clinicId) {
+      const { petId, clinicId, veterinarianId, serviceType, dateofAppointment } = newAppointment;
+      if (!petId || !clinicId || !veterinarianId || !serviceType || !dateofAppointment) {
         throw new Error("All fields are required");
       }
 
-      const currentUser  = auth.currentUser ;
-      if (!currentUser ) {
-        throw new Error("You must be logged in to book an appointment");
-      }
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("You must be logged in to book an appointment");
 
-      const selectedPet = pets.find(pet => pet.id === newAppointment.petId);
-      if (!selectedPet) {
-        throw new Error("Selected pet not found");
-      }
+      const selectedPet = pets.find((pet) => pet.id === petId);
+      if (!selectedPet) throw new Error("Selected pet not found");
 
-      const ownerRef = doc(db, "users", currentUser .uid);
-      const petRef = doc(db, "pets", newAppointment.petId);
-      const clinicRef = doc(db, "clinics", newAppointment.clinicId);
+      const ownerRef = doc(db, "users", currentUser.uid);
+      const petRef = doc(db, "pets", petId);
+      const clinicRef = doc(db, "clinics", clinicId);
+      const vetRef = doc(db, "users", veterinarianId);
 
-      // Add the appointment to Firestore
       await addDoc(collection(db, "appointments"), {
-        petId: newAppointment.petId,
-        petName: selectedPet.petName, 
-        petRef: petRef, 
+        petId,
+        petName: selectedPet.petName,
+        petRef,
         owner: ownerRef,
         clinic: clinicRef,
-        serviceType: newAppointment.serviceType,
-        dateofAppointment: new Date(newAppointment.dateofAppointment),
-        veterinarian: newAppointment.veterinarian,
-        createdAt: serverTimestamp()
+        veterinarianId,
+        veterinarian: veterinarians.find((v) => v.id === veterinarianId).FirstName + " " + veterinarians.find((v) => v.id === veterinarianId).LastName,
+        serviceType,
+        dateofAppointment: new Date(dateofAppointment),
+        createdAt: serverTimestamp(),
       });
 
       setAppointmentSuccess(true);
-      
       setNewAppointment({
-        petId: "",
-        serviceType: "Vaccination",
+        petId,
+        clinicId: "",
+        veterinarianId: "",
+        serviceType: "",
         dateofAppointment: "",
-        veterinarian: "",
-        clinicId: ""
       });
-
+      setVeterinarians([]);
+      setVetServices({});
+      setVetSchedules({});
+      setAvailableDates([]);
       fetchAppointments();
-      
-      setTimeout(() => {
-        setAppointmentSuccess(false);
-      }, 3000);
+      setTimeout(() => setAppointmentSuccess(false), 3000);
     } catch (error) {
       console.error("Error booking appointment:", error);
       setAppointmentError(error.message);
@@ -320,25 +384,18 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Fetch pets from Firestore
+  // Fetch data
   const fetchPets = async () => {
     try {
       setLoading(true);
-      const currentUser  = auth.currentUser ;
-      
-      if (currentUser ) {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
         const petsQuery = query(
           collection(db, "pets"),
-          where("owner", "==", doc(db, "users", currentUser .uid))
+          where("owner", "==", doc(db, "users", currentUser.uid))
         );
-        
         const querySnapshot = await getDocs(petsQuery);
-        const petsList = [];
-        
-        querySnapshot.forEach((doc) => {
-          petsList.push({ id: doc.id, ...doc.data() });
-        });
-        
+        const petsList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setPets(petsList);
       }
     } catch (error) {
@@ -348,24 +405,13 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Fetch clinics from Firestore
   const fetchClinics = async () => {
     try {
       setLoadingClinics(true);
-      const clinicsCollection = collection(db, "clinics");
-      const querySnapshot = await getDocs(clinicsCollection);
-      const clinicsList = [];
-      
-      querySnapshot.forEach((doc) => {
-        const clinicData = doc.data();
-        if (clinicData.clinicName) {
-          clinicsList.push({ 
-            id: doc.id, 
-            name: clinicData.clinicName 
-          });
-        }
-      });
-      
+      const querySnapshot = await getDocs(collection(db, "clinics"));
+      const clinicsList = querySnapshot.docs
+        .map((doc) => ({ id: doc.id, name: doc.data().clinicName }))
+        .filter((c) => c.name);
       setClinics(clinicsList);
     } catch (error) {
       console.error("Error fetching clinics:", error);
@@ -374,84 +420,47 @@ const PetOwnerHome = () => {
     }
   };
 
+const fetchVeterinarians = async (clinicId) => {
+  try {
+    const vetsQuery = query(
+      collection(db, "users"),
+      where("Type", "==", "Veterinarian"),
+      where("clinic", "==", doc(db, "clinics", clinicId))
+    );
+    const querySnapshot = await getDocs(vetsQuery);
+    const vetList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setAllVeterinarians(vetList); // Store the full list
+    setVeterinarians(vetList); // Initially set the filtered list to the full list
+    setVetServices(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.services || [] }), {}));
+    setVetSchedules(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.schedule || [] }), {}));
+  } catch (error) {
+    console.error("Error fetching veterinarians:", error);
+  }
+};
+
   const fetchAppointments = async () => {
     try {
-      const currentUser  = auth.currentUser ;
-      
-      if (currentUser ) {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
         const appointmentsQuery = query(
           collection(db, "appointments"),
-          where("owner", "==", doc(db, "users", currentUser .uid))
+          where("owner", "==", doc(db, "users", currentUser.uid))
         );
-        
         const querySnapshot = await getDocs(appointmentsQuery);
         const appointmentsList = [];
-        
-        for (const appointmentDoc of querySnapshot.docs) {
-          const appointmentData = appointmentDoc.data();
-          let appointmentWithResolvedRefs = { 
-            id: appointmentDoc.id,
-            ...appointmentData
-          };
-          
-          if (typeof appointmentData.petName === 'string') {
-          } 
-          else if (appointmentData.petName && appointmentData.petName.path) {
-            try {
-              const petDocRef = appointmentData.petName;
-              const petDoc = await getDoc(petDocRef);
-              
-              if (petDoc.exists()) {
-                const petData = petDoc.data();
-                appointmentWithResolvedRefs.petName = petData.petName || "Unknown Pet";
-              } else {
-                appointmentWithResolvedRefs.petName = "Pet Not Found";
-              }
-            } catch (error) {
-              console.error("Error fetching pet reference:", error);
-              appointmentWithResolvedRefs.petName = "Error Loading Pet";
-            }
-          } 
-          else if (appointmentData.petId) {
-            try {
-              const petDocRef = doc(db, "pets", appointmentData.petId);
-              const petDoc = await getDoc(petDocRef);
-              
-              if (petDoc.exists()) {
-                const petData = petDoc.data();
-                appointmentWithResolvedRefs.petName = petData.petName || "Unknown Pet";
-              } else {
-                appointmentWithResolvedRefs.petName = "Pet Not Found";
-              }
-            } catch (error) {
-              console.error("Error fetching pet by ID:", error);
-              appointmentWithResolvedRefs.petName = "Error Loading Pet";
-            }
-          } else {
-            appointmentWithResolvedRefs.petName = "Unknown Pet";
-          }
-          
-          // Resolve clinic name
-          if (appointmentData.clinic) {
-            try {
-              const clinicDoc = await getDoc(appointmentData.clinic);
-              if (clinicDoc.exists()) {
-                const clinicData = clinicDoc.data();
-                appointmentWithResolvedRefs.clinicName = clinicData.clinicName || "Unknown Clinic";
-              } else {
-                appointmentWithResolvedRefs.clinicName = "Clinic Not Found";
-              }
-            } catch (error) {
-              console.error("Error fetching clinic:", error);
-              appointmentWithResolvedRefs.clinicName = "Error Loading Clinic";
-            }
-          } else {
-            appointmentWithResolvedRefs.clinicName = "Unknown Clinic";
-          }
-          
-          appointmentsList.push(appointmentWithResolvedRefs);
+
+        for (const doc of querySnapshot.docs) {
+          const data = doc.data();
+          const clinicDoc = await getDoc(data.clinic);
+          appointmentsList.push({
+            id: doc.id,
+            petName: data.petName || "Unknown Pet",
+            clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+            serviceType: data.serviceType || "N/A",
+            veterinarian: data.veterinarian || "N/A",
+            dateofAppointment: data.dateofAppointment,
+          });
         }
-        
         setAppointments(appointmentsList);
       }
     } catch (error) {
@@ -459,7 +468,6 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Fetch data when component mounts
   useEffect(() => {
     fetchPets();
     fetchAppointments();
@@ -484,10 +492,7 @@ const PetOwnerHome = () => {
     setImageUploadError("");
   };
 
-  const openAddPetModal = () => {
-    setShowAddPetModal(true);
-  };
-
+  const openAddPetModal = () => setShowAddPetModal(true);
   const closeAddPetModal = () => {
     setShowAddPetModal(false);
     setNewPet({
@@ -497,7 +502,7 @@ const PetOwnerHome = () => {
       Species: "",
       Gender: "",
       Weight: "",
-      dateofBirth: ""
+      dateofBirth: "",
     });
     setPetImage(null);
     setImagePreview(null);
@@ -505,59 +510,56 @@ const PetOwnerHome = () => {
     setAddPetSuccess(false);
   };
 
-  return ( 
-    <div className="pet-owner-container"> 
-      <div className="sidebar"> 
-        <h2>Pet Owner</h2> 
-        <button 
-          className={activePanel === "petDetails" ? "active" : ""} 
-          onClick={() => setActivePanel("petDetails")} 
-        > 
-          Pet Details 
-        </button> 
-        <button 
-          className={activePanel === "appointments" ? "active" : ""} 
-          onClick={() => setActivePanel("appointments")} 
-        > 
-          Appointments 
-        </button> 
-        <button 
-          className={activePanel === "bookAppointment" ? "active" : ""} 
-          onClick={() => setActivePanel("bookAppointment")} 
-        > 
-          Book Appointment 
-        </button> 
-      </div> 
- 
-      <div className="content"> 
-        <div className="panel-container"> 
-          {activePanel === "petDetails" && ( 
-            <div className="panel pet-details-panel"> 
+  return (
+    <div className="pet-owner-container">
+      <div className="sidebar">
+        <h2>Pet Owner</h2>
+        <button
+          className={activePanel === "petDetails" ? "active" : ""}
+          onClick={() => setActivePanel("petDetails")}
+        >
+          Pet Details
+        </button>
+        <button
+          className={activePanel === "appointments" ? "active" : ""}
+          onClick={() => setActivePanel("appointments")}
+        >
+          Appointments
+        </button>
+        <button
+          className={activePanel === "bookAppointment" ? "active" : ""}
+          onClick={() => setActivePanel("bookAppointment")}
+        >
+          Book Appointment
+        </button>
+      </div>
+
+      <div className="content">
+        <div className="panel-container">
+          {activePanel === "petDetails" && (
+            <div className="panel pet-details-panel">
               <div className="pet-details-header">
                 <h3>Pet Details</h3>
-                <button className="addpetbutt" onClick={openAddPetModal}>Add A Pet</button>
+                <button className="addpetbutt" onClick={openAddPetModal}>
+                  Add A Pet
+                </button>
               </div>
               {loading ? (
                 <p>Loading pet details...</p>
               ) : (
-                <table> 
-                  <thead> 
-                    <tr> 
-                      <th>Pet Name</th> 
-                      <th>Date</th> 
-                      <th>Veterinarian</th> 
-                      <th>Diagnosis</th> 
-                      <th>Medication</th> 
-                      <th>Comments</th> 
-                    </tr> 
-                  </thead> 
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Pet Name</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {pets.length > 0 ? (
                       pets.map((pet) => (
                         <tr key={pet.id}>
                           <td>
-                            <a 
-                              href="#!" 
+                            <a
+                              href="#!"
                               onClick={(e) => {
                                 e.preventDefault();
                                 handlePetClick(pet);
@@ -571,37 +573,37 @@ const PetOwnerHome = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="6">No pets found</td>
+                        <td>No pets found</td>
                       </tr>
                     )}
-                  </tbody> 
+                  </tbody>
                 </table>
               )}
-            </div> 
-          )} 
- 
-          {activePanel === "appointments" && ( 
-            <div className="panel appointments-panel"> 
-              <h3>Appointments</h3> 
-              <table> 
-                <thead> 
-                  <tr> 
-                    <th>Pet Name</th> 
-                    <th>Time & Date of Appointment</th> 
-                    <th>Clinic</th> 
-                    <th>Service</th> 
-                    <th>Veterinarian</th> 
-                  </tr> 
-                </thead> 
+            </div>
+          )}
+
+          {activePanel === "appointments" && (
+            <div className="panel appointments-panel">
+              <h3>Appointments</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pet Name</th>
+                    <th>Date & Time</th>
+                    <th>Clinic</th>
+                    <th>Service</th>
+                    <th>Veterinarian</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {appointments.length > 0 ? (
                     appointments.map((appointment) => (
                       <tr key={appointment.id}>
-                        <td>{typeof appointment.petName === 'string' ? appointment.petName : 'Unknown Pet'}</td>
+                        <td>{appointment.petName}</td>
                         <td>{formatDate(appointment.dateofAppointment)}</td>
-                        <td>{appointment.clinicName || "N/A"}</td>
-                        <td>{appointment.serviceType || "N/A"}</td>
-                        <td>{appointment.veterinarian || "N/A"}</td>
+                        <td>{appointment.clinicName}</td>
+                        <td>{appointment.serviceType}</td>
+                        <td>{appointment.veterinarian}</td>
                       </tr>
                     ))
                   ) : (
@@ -609,30 +611,21 @@ const PetOwnerHome = () => {
                       <td colSpan="5">No appointments found</td>
                     </tr>
                   )}
-                </tbody> 
-              </table> 
-            </div> 
-          )} 
- 
-          {activePanel === "bookAppointment" && ( 
-            <div className="panel book-appointment-panel"> 
-              <h3>Book Appointment</h3> 
-              
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {activePanel === "bookAppointment" && (
+            <div className="panel book-appointment-panel">
+              <h3>Book Appointment</h3>
               {appointmentSuccess && (
-                <div className="success-message">
-                  Appointment booked successfully!
-                </div>
+                <div className="success-message">Appointment booked successfully!</div>
               )}
-              
-              {appointmentError && (
-                <div className="error-message">
-                  {appointmentError}
-                </div>
-              )}
-              
-              <form onSubmit={handleBookAppointment}> 
+              {appointmentError && <div className="error-message">{appointmentError}</div>}
+              <form onSubmit={handleBookAppointment}>
                 <div className="form-group">
-                  <label htmlFor="petId">Choose Pet *</label> 
+                  <label htmlFor="petId">Choose Pet *</label>
                   <select
                     id="petId"
                     name="petId"
@@ -648,54 +641,22 @@ const PetOwnerHome = () => {
                     ))}
                   </select>
                 </div>
-                
+
                 <div className="form-group">
-                  <label htmlFor="serviceType">Service Type *</label> 
-                  <select
-                    id="serviceType"
-                    name="serviceType"
-                    value={newAppointment.serviceType}
-                    onChange={handleAppointmentChange}
-                    required
-                  > 
-                    <option value="Vaccination">Vaccination</option> 
-                    <option value="Pet Surgery">Pet Surgery</option> 
-                    <option value="Regular Checkup">Regular Checkup</option>
-                    <option value="Grooming">Grooming</option>
-                    <option value="Dental Care">Dental Care</option>
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="veterinarian">Veterinarian *</label>
-                  <select
-                    id="veterinarian"
-                    name="veterinarian"
-                    value={newAppointment.veterinarian}
-                    onChange={handleAppointmentChange}
-                    required
-                  >
-                    <option value="">Select a veterinarian</option>
-                    {veterinarians.map((vet, index) => (
-                      <option key={index} value={vet}>
-                        {vet}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="clinicId">Clinic Location *</label> 
+                  <label htmlFor="clinicId">Clinic *</label>
                   <select
                     id="clinicId"
                     name="clinicId"
                     value={newAppointment.clinicId}
                     onChange={handleAppointmentChange}
                     required
+                    disabled={!newAppointment.petId}
                   >
                     <option value="">Select a clinic</option>
                     {loadingClinics ? (
-                      <option value="" disabled>Loading clinics...</option>
+                      <option value="" disabled>
+                        Loading clinics...
+                      </option>
                     ) : (
                       clinics.map((clinic) => (
                         <option key={clinic.id} value={clinic.id}>
@@ -705,22 +666,82 @@ const PetOwnerHome = () => {
                     )}
                   </select>
                 </div>
-                
+
                 <div className="form-group">
-                  <label htmlFor="dateofAppointment">Appointment Date & Time *</label> 
-                  <input
-                    type="datetime-local"
+                  <label htmlFor="veterinarianId">Veterinarian *</label>
+                  <select
+                    id="veterinarianId"
+                    name="veterinarianId"
+                    value={newAppointment.veterinarianId}
+                    onChange={handleAppointmentChange}
+                    required
+                    disabled={!newAppointment.clinicId || loadingVeterinarians}
+                  >
+                    <option value="">Select a veterinarian</option>
+                    {loadingVeterinarians ? (
+                      <option value="" disabled>
+                        Loading veterinarians...
+                      </option>
+                    ) : (
+                      veterinarians.map((vet) => (
+                        <option key={vet.id} value={vet.id}>
+                          {vet.FirstName} {vet.LastName}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="serviceType">Service Type *</label>
+                  <select
+                    id="serviceType"
+                    name="serviceType"
+                    value={newAppointment.serviceType}
+                    onChange={handleAppointmentChange}
+                    required
+                    disabled={!newAppointment.clinicId || loadingVeterinarians}
+                  >
+                    <option value="">Select a service</option>
+                    {newAppointment.veterinarianId &&
+                      vetServices[newAppointment.veterinarianId]?.map((service, index) => (
+                        <option key={index} value={service}>
+                          {service}
+                        </option>
+                      ))}
+                    {!newAppointment.veterinarianId &&
+                      Object.values(vetServices)
+                        .flat()
+                        .filter((v, i, a) => a.indexOf(v) === i)
+                        .map((service, index) => (
+                          <option key={index} value={service}>
+                            {service}
+                          </option>
+                        ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="dateofAppointment">Date & Time *</label>
+                  <select
                     id="dateofAppointment"
                     name="dateofAppointment"
                     value={newAppointment.dateofAppointment}
                     onChange={handleAppointmentChange}
                     required
-                    min={new Date().toISOString().slice(0, 16)}
-                  /> 
+                    disabled={!newAppointment.veterinarianId}
+                  >
+                    <option value="">Select a date and time</option>
+                    {availableDates.map((slot, index) => (
+                      <option key={index} value={slot.date.toISOString()}>
+                        {slot.display}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                
+
                 <div className="form-actions">
-                  <button 
+                  <button
                     type="submit"
                     disabled={bookingAppointment || !newAppointment.petId}
                     className="submit-btn"
@@ -728,60 +749,51 @@ const PetOwnerHome = () => {
                     {bookingAppointment ? "Booking..." : "Book Appointment"}
                   </button>
                 </div>
-              </form> 
-            </div> 
-          )} 
+              </form>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Pet Details Modal with Edit Image Icon */}
       {showModal && selectedPet && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <span className="close-button" onClick={closeModal}>&times;</span>
-            
-            {/* Pet Image in modal with edit icon */}
+            <span className="close-button" onClick={closeModal}>×</span>
             <div className="pet-image-container">
               <div className="pet-image-wrapper">
                 {newImagePreview ? (
-                  <img 
-                    src={newImagePreview} 
-                    alt={`${selectedPet.petName}`} 
+                  <img
+                    src={newImagePreview}
+                    alt={`${selectedPet.petName}`}
                     className="pet-image"
                   />
                 ) : (
-                  <img 
-                    src={selectedPet.petImageURL || DEFAULT_PET_IMAGE} 
-                    alt={`${selectedPet.petName}`} 
+                  <img
+                    src={selectedPet.petImageURL || DEFAULT_PET_IMAGE}
+                    alt={`${selectedPet.petName}`}
                     className="pet-image"
                   />
                 )}
-                <div 
-                  className="edit-image-icon" 
-                  onClick={() => document.getElementById('pet-image-edit').click()}
+                <div
+                  className="edit-image-icon"
+                  onClick={() => document.getElementById("pet-image-edit").click()}
                 >
-                  <img 
-                    src="https://www.freeiconspng.com/thumbs/camera-icon/camera-icon-21.png" 
-                    alt="Edit" 
-                    style={{ width: '18px', height: '18px' }}
+                  <img
+                    src="https://www.freeiconspng.com/thumbs/camera-icon/camera-icon-21.png"
+                    alt="Edit"
+                    style={{ width: "18px", height: "18px" }}
                   />
                 </div>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   id="pet-image-edit"
-                  accept="image/jpeg, image/jpg, image/png" 
+                  accept="image/jpeg, image/jpg, image/png"
                   onChange={handleModalImageChange}
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                 />
               </div>
             </div>
-            
-            {imageUploadError && (
-              <div className="error-message">
-                {imageUploadError}
-              </div>
-            )}
-            
+            {imageUploadError && <div className="error-message">{imageUploadError}</div>}
             <h2>{selectedPet.petName}</h2>
             <div className="pet-info-grid">
               <div className="info-item">
@@ -803,64 +815,48 @@ const PetOwnerHome = () => {
                 <strong>Date of Birth:</strong> {formatDate(selectedPet.dateofBirth)}
               </div>
             </div>
-            
             <div className="modal-actions">
-              {isEditingImage && (
-                <>
-                  <button 
-                    className="save-image-btn" 
-                    onClick={handleSaveImage}
-                    disabled={isSavingImage}
-                  >
-                    {isSavingImage ? "Saving..." : "Save Image"}
-                  </button>
-                </>
-              )}
-              <button className="modal-close-btn" onClick={closeModal}>Close</button>
+              <button
+                className="modal-close-btn"
+                onClick={handleSaveImageAndClose}
+                disabled={isSavingImage}
+              >
+                {isSavingImage ? "Saving..." : isEditingImage ? "Save & Close" : "Close"}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Pet Modal */}
       {showAddPetModal && (
         <div className="modal-overlay">
           <div className="modal-content add-pet-modal">
-            <span className="close-button" onClick={closeAddPetModal}>&times;</span>
+            <span className="close-button" onClick={closeAddPetModal}>×</span>
             <h2>Add New Pet</h2>
-            
-            {addPetSuccess && (
-              <div className="success-message">
-                Pet added successfully!
-              </div>
-            )}
-            
-            {addPetError && (
-              <div className="error-message">
-                {addPetError}
-              </div>
-            )}
-            
+            {addPetSuccess && <div className="success-message">Pet added successfully!</div>}
+            {addPetError && <div className="error-message">{addPetError}</div>}
             <form onSubmit={handleAddPet}>
-              {/* Pet Image Upload */}
               <div className="pet-image-upload-container">
-                <label htmlFor="pet-image-upload" className="pet-image-upload" style={imagePreview ? {backgroundImage: `url(${imagePreview})`} : {}}>
+                <label
+                  htmlFor="pet-image-upload"
+                  className="pet-image-upload"
+                  style={imagePreview ? { backgroundImage: `url(${imagePreview})` } : {}}
+                >
                   {!imagePreview && (
                     <>
                       <FaCamera className="camera-icon" />
                       <p>Upload Pet Photo</p>
                     </>
                   )}
-                  <input 
-                    type="file" 
-                    id="pet-image-upload" 
-                    accept="image/jpeg, image/jpg, image/png" 
-                    onChange={handleImageChange} 
-                    style={{ display: 'none' }} 
+                  <input
+                    type="file"
+                    id="pet-image-upload"
+                    accept="image/jpeg, image/jpg, image/png"
+                    onChange={handleImageChange}
+                    style={{ display: "none" }}
                   />
                 </label>
               </div>
-              
               <div className="form-group">
                 <label htmlFor="petName">Pet Name *</label>
                 <input
@@ -872,7 +868,6 @@ const PetOwnerHome = () => {
                   required
                 />
               </div>
-              
               <div className="form-group">
                 <label htmlFor="Species">Species *</label>
                 <input
@@ -883,7 +878,6 @@ const PetOwnerHome = () => {
                   onChange={handleInputChange}
                 />
               </div>
-              
               <div className="form-group">
                 <label htmlFor="Breed">Breed</label>
                 <input
@@ -894,7 +888,6 @@ const PetOwnerHome = () => {
                   onChange={handleInputChange}
                 />
               </div>
-              
               <div className="form-group">
                 <label htmlFor="Color">Color</label>
                 <input
@@ -905,7 +898,6 @@ const PetOwnerHome = () => {
                   onChange={handleInputChange}
                 />
               </div>
-              
               <div className="form-group">
                 <label htmlFor="Gender">Gender *</label>
                 <select
@@ -920,7 +912,6 @@ const PetOwnerHome = () => {
                   <option value="Female">Female</option>
                 </select>
               </div>
-              
               <div className="form-group">
                 <label htmlFor="Weight">Weight (kg)</label>
                 <input
@@ -933,7 +924,6 @@ const PetOwnerHome = () => {
                   min="0"
                 />
               </div>
-              
               <div className="form-group">
                 <label htmlFor="dateofBirth">Date of Birth</label>
                 <input
@@ -942,23 +932,14 @@ const PetOwnerHome = () => {
                   name="dateofBirth"
                   value={newPet.dateofBirth}
                   onChange={handleInputChange}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={new Date().toISOString().split("T")[0]}
                 />
               </div>
-              
               <div className="form-actions">
-                <button 
-                  type="button" 
-                  className="cancel-btn"
-                  onClick={closeAddPetModal}
-                >
+                <button type="button" className="cancel-btn" onClick={closeAddPetModal}>
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  className="submit-btn"
-                  disabled={addingPet}
-                >
+                <button type="submit" className="submit-btn" disabled={addingPet}>
                   {addingPet ? "Adding..." : "Add Pet"}
                 </button>
               </div>
@@ -966,8 +947,8 @@ const PetOwnerHome = () => {
           </div>
         </div>
       )}
-    </div> 
-  ); 
-}; 
- 
+    </div>
+  );
+};
+
 export default PetOwnerHome;

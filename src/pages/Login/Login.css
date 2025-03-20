@@ -26,7 +26,6 @@
   }
   
   /* Dog Image */
-
 .dog-img {
     width: 150px;
     position: absolute;
@@ -102,6 +101,8 @@
     text-align: center !important;
   }
 
+/* Previous Login.css content remains unchanged up to this point */
+
 .success-modal-overlay {
   position: fixed;
   top: 0;
@@ -112,7 +113,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1005; /* Increased from 1000 to 1005 to appear above Navbar's loginModalOverlay */
 }
 
 .success-modal {
@@ -124,6 +125,8 @@
   max-width: 320px;
   width: 100%;
 }
+
+/* Rest of Login.css remains unchanged */
 
 .success-content {
   display: flex;
