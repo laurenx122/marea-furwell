@@ -50,7 +50,6 @@ const ClinicSubscribe = () => {
   const [verificationDocs, setVerificationDocs] = useState({
     birDoc: null,
     businessPermit: null,
-    otherDocs: null
   });
 
   const handleServiceToggle = (service) => {
@@ -97,7 +96,6 @@ const ClinicSubscribe = () => {
       [name]: type === 'checkbox' ? checked : value
     });
   };
-
   const handleFileChange = async (e) => {
     const { name, files } = e.target;
     const file = files[0];
@@ -119,19 +117,16 @@ const ClinicSubscribe = () => {
       if (data.secure_url) {
         console.log("File uploaded to Cloudinary:", data.secure_url);
   
-        // Update local state
+        // Store document URL locally, but DO NOT update Firestore yet
         setVerificationDocs((prevDocs) => {
           const updatedDocs = {
             ...prevDocs,
             [name]: data.secure_url,
           };
-  
-          // Store in Firestore after state is updated
-          updateFirestoreVerificationDocs(updatedDocs);
+          console.log("Document uploaded successfully.");
+        updateFirestoreVerificationDocs(updatedDocs);
           return updatedDocs;
         });
-  
-        alert("Document uploaded successfully!");
       } else {
         throw new Error("No secure URL received from Cloudinary.");
       }
@@ -141,7 +136,6 @@ const ClinicSubscribe = () => {
     }
   };
   
-  // Helper function to update Firestore
   const updateFirestoreVerificationDocs = async (updatedDocs) => {
     try {
       const clinicRef = doc(db, "registersClinics", auth.currentUser?.uid);
@@ -151,11 +145,12 @@ const ClinicSubscribe = () => {
       console.error("Error updating Firestore:", error);
     }
   };
+  
   const isValidPhilippinesNumber = (number) => {
     const phRegex = /^(\+63|0)9\d{9}$/;
     return phRegex.test(number);
   };
-  // Handle form submission
+  
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!isValidPhilippinesNumber(clinicInfo.phone)) {
@@ -164,77 +159,99 @@ const ClinicSubscribe = () => {
     }
     if (clinicInfo.password !== clinicInfo.confirmPassword) {
       setError('Passwords do not match');
-        return;
-    } 
+      return;
+    }
     setError('');
     setShowModal(true);
   };
-
-  // Replace your existing nextStep function with this:
-const nextStep = async () => {
-  if (currentStep < 4) {
-    // Validate that prices are set before moving to address step
-    if (currentStep === 2) {
-      const hasAllPrices = selectedServices
-        .filter(service => service !== "Others")
-        .every(service => servicePrices[service]);
-      
-      if (!hasAllPrices) {
-        alert("Please set prices for all selected services.");
-        return;
+  
+  const retryOperation = (operation, delay, retries) => new Promise((resolve, reject) => {
+    return operation()
+      .then(resolve)
+      .catch((reason) => {
+        if (retries > 0) {
+          return setTimeout(() => {
+            retryOperation(operation, delay, retries - 1).then(resolve).catch(reject);
+          }, delay);
+        }
+        return reject(reason);
+      });
+  });
+  
+  const nextStep = async () => {
+    if (currentStep < 4) {
+      if (currentStep === 2) {
+        const hasAllPrices = selectedServices
+          .filter(service => service !== "Others")
+          .every(service => servicePrices[service]);
+  
+        if (!hasAllPrices) {
+          alert("Please set prices for all selected services.");
+          return;
+        }
       }
-    }
+      setCurrentStep(currentStep + 1);
+    } else {
+      try {
+        if (!verificationDocs.birDoc || !verificationDocs.businessPermit) {
+          alert("Please upload the required documents.");
+          return;
+        }
+  
+        // Step 1: Create user in Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          clinicInfo.email,
+          clinicInfo.password
+        );
+  
+        const user = userCredential.user;
+        console.log("✅ Firebase Auth User Created:", user.uid);
+        
+        const userData = {
+          clinicName: clinicInfo.clinicName,
+          FirstName: clinicInfo.ownerFirstName,
+          LastName: clinicInfo.ownerLastName,
+          email: clinicInfo.email,
+          contactNumber: clinicInfo.phone,
+          streetAddress: clinicInfo.streetAddress,
+          city: clinicInfo.city,
+          province: clinicInfo.province,
+          postalCode: clinicInfo.postalCode,
+          lat: clinicInfo.lat,
+          lng: clinicInfo.lng,
+          servicePrices: servicePrices,
+          status: "pending",
+          verificationDocs,
+          createdAt: new Date(),
+        };
     
-    setCurrentStep(currentStep + 1);
-  } else {
-    // Handle final submission
-    try {
-      // Step 1: Create user in Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(
-        auth, 
-        clinicInfo.email, 
-        clinicInfo.password
-      );
-      
-      // Step 2: Only proceed to database operation if authentication succeeds
-      const user = userCredential.user;
-      
-      const userData = {
-        clinicName: clinicInfo.clinicName,
-        ownerFirstName: clinicInfo.ownerFirstName,
-        ownerLastName: clinicInfo.ownerLastName,
-        email: clinicInfo.email,
-        phone: clinicInfo.phone,
-        streetAddress: clinicInfo.streetAddress,
-        city: clinicInfo.city,
-        province: clinicInfo.province,
-        postalCode: clinicInfo.postalCode,
-        lat: clinicInfo.lat,
-        lng: clinicInfo.lng,
-        //services: selectedServices,
-        servicePrices: servicePrices, // Make sure to include the prices
-        status: "pending",
-        verificationDocs,
-        createdAt: new Date()
-      };
-      
-      // Store user data in Firestore
-      await setDoc(doc(db, "registersClinics", user.uid), userData);   
-      alert('Pending Account: Please wait for the admin to confirm the clinic information');
-      setShowModal(false);
-      navigate('/Home');     
-      
-    } catch (error) {
-      // Check for specific authentication errors
-      if (error.code === 'auth/email-already-in-use') {
-        alert('This email is already registered. Please use a different email.');
-      } else {
-        alert(`Error creating user: ${error.message}`);
+        console.log("🔥 Storing user data in Firestore:", userData);
+        
+        // Ensure Firestore is initialized
+        if (!db) {
+          console.error("Firestore is not initialized.");
+          return;
+        }
+  
+        // Retry operation to set document in Firestore
+        await retryOperation(() => setDoc(doc(db, "registersClinics", user.uid), userData), 1000, 3);
+        
+        console.log("✅ Firestore Document Created for:", user.uid);
+  
+        alert("Pending Account: Please wait for the admin to confirm the clinic information.");
+        setShowModal(false);
+        navigate("/Home");
+      } catch (error) {
+        console.error("❌ Error creating user or storing data:", error);
+        if (error.code === "auth/email-already-in-use") {
+          alert("This email is already registered. Please use a different email.");
+        } else {
+          alert(`Error creating user: ${error.message}`);
+        }
       }
     }
-  }
-};
-
+  };
   // Get progress bar width based on current step
   const getProgressWidth = () => {
     if (currentStep === 1) return '0%';
@@ -744,6 +761,7 @@ const nextStep = async () => {
                     <input
                       type="file"
                       name="birDoc"
+                      accept="image/*" 
                       onChange={handleFileChange}
                       required
                     />
@@ -757,13 +775,14 @@ const nextStep = async () => {
                     <input
                       type="file"
                       name="businessPermit"
+                      accept="image/*" 
                       onChange={handleFileChange}
                       required
                     />
                   </div>
                 </div>
 
-                <div className="form-group">
+                {/* <div className="form-group">
                   <label>Other Supporting Documents (optional)</label>
                   <div className="file-upload-container">
                     <FiUpload className="upload-icon" />
@@ -773,7 +792,7 @@ const nextStep = async () => {
                       onChange={handleFileChange}
                     />
                   </div>
-                </div>
+                </div> */}
               </div>
             )}
             
