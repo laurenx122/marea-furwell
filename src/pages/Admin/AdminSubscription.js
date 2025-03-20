@@ -18,12 +18,24 @@ const ClinicDashboard = () => {
   // Fetch clinic data
   const fetchClinics = async (collectionName) => {
     try {
-      const querySnapshot = await getDocs(collection(db, collectionName));
-      const clinicsData = querySnapshot.docs.map((doc) => ({
+      const clinicsSnapshot = await getDocs(collection(db, collectionName));
+      const clinicsData = clinicsSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setClinics(clinicsData);
+  
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const usersData = usersSnapshot.docs.reduce((acc, doc) => {
+        acc[doc.id] = doc.data();
+        return acc;
+      }, {});
+  
+      const mergedData = clinicsData.map((clinic) => ({
+        ...clinic,
+        ...usersData[clinic.id],
+      }));
+  
+      setClinics(mergedData);
     } catch (error) {
       console.error(`Error fetching clinics from ${collectionName}:`, error);
     }
@@ -79,7 +91,7 @@ const ClinicDashboard = () => {
           postalCode: clinicToApprove.postalCode,
           lat: clinicToApprove.lat,
           lng: clinicToApprove.lng,
-          services: clinicToApprove.services,
+          servicePrices: clinicToApprove.servicePrices,
           verificationDocs: clinicToApprove.verificationDocs,
           createdAt: clinicToApprove.createdAt,
         };
@@ -87,10 +99,10 @@ const ClinicDashboard = () => {
         const userData = {
           uid: clinicToApprove.id, // Store the uid
           clinicName: clinicToApprove.clinicName,
-          FirstName: clinicToApprove.ownerFirstName,
-          LastName: clinicToApprove.ownerLastName,
+          FirstName: clinicToApprove.FirstName,
+          LastName: clinicToApprove.LastName,
           email: clinicToApprove.email,
-          contactNumber: clinicToApprove.phone,
+          contactNumber: clinicToApprove.contactNumber,
           Type: "Clinic", // Set type explicitly
           clinicRegistered: doc(db,`clinics/${clinicToApprove.id}`),
         };
@@ -209,38 +221,43 @@ return (
           </tr>
         </thead>
         <tbody>
-          {filteredClinics.length > 0 ? (
-            filteredClinics.map((clinic, index) => (
-              <tr key={clinic.id}>
-                <td>{index + 1}</td>
-                <td>{clinic.clinicName}</td>
-                <td>{clinic.services}</td>
-                <td>
-                  {clinic.streetAddress}, {clinic.city}, {clinic.province},{" "}
-                  {clinic.postalCode}
-                </td>
-                <td>{clinic.phone}</td>
-                <td>{clinic.email}</td>
-                <td>
-                  {clinic.ownerFirstName} {clinic.ownerLastName}
-                </td>
-                <td>
-                  {clinic.verificationDocs && Object.keys(clinic.verificationDocs).length > 0 ? (
-                    <>
-                      {Object.values(clinic.verificationDocs).map((docUrl, index) => (
-                        <div key={index}>
-                          {docUrl ? (
-                            <a href={docUrl} target="_blank" rel="noopener noreferrer">
-                              {docUrl.length > 30 ? `${docUrl.substring(0, 30)}...` : docUrl}
-                            </a>
-                          ) : (
-                            <span>No document available</span>
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <span>No documents uploaded</span>
+        {filteredClinics.length > 0 ? (
+          filteredClinics.map((clinic, index) => (
+            <tr key={clinic.id}>
+              <td>{index + 1}</td>
+              <td>{clinic.clinicName}</td>
+              <td>{clinic.servicePrices
+                      ? Object.entries(clinic.servicePrices)
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(", ")
+                      : "No services available"}
+                  </td>
+              <td>
+                {clinic.streetAddress}, {clinic.city}, {clinic.province},{" "}
+                {clinic.postalCode}
+              </td>
+              <td>{clinic.contactNumber}</td>
+              <td>{clinic.email}</td>
+              <td>
+                {clinic.FirstName} {clinic.LastName}
+              </td>
+              <td>
+                {clinic.verificationDocs && Object.keys(clinic.verificationDocs).length > 0 ? (
+                  <>
+                    {Object.values(clinic.verificationDocs).map((docUrl, index) => (
+                      <div key={index}>
+                        {docUrl ? (
+                          <a href={docUrl} target="_blank" rel="noopener noreferrer">
+                            {docUrl.length > 30 ? `${docUrl.substring(0, 30)}...` : docUrl}
+                          </a>
+                        ) : (
+                          <span>No document available</span>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <span>No documents uploaded</span>
                   )}
 
                   </td>
