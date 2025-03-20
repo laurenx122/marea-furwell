@@ -195,9 +195,14 @@ const ClinicLocator = () => {
                 marker.on('popupopen', () => {
                     const button = document.querySelector(`.see-details-button[data-clinic-id="${clinic.id}"]`);
                     if (button) {
-                        button.addEventListener('click', () => {
-                            navigate('/FindClinic', { state: { selectedClinicId: clinic.id } });
+                        button.addEventListener('click', (e) => {
+                            const clinicId = e.target.getAttribute('data-clinic-id');
+                            console.log("Clinic ID clicked:", clinicId);
+                            navigate('/FindClinic', { state: { selectedClinicId: clinicId } });
                         });
+                        // button.addEventListener('click', () => {
+                        //     navigate('/FindClinic', { state: { selectedClinicId: clinic.id } });
+                        // });
                     }
                 });
 
