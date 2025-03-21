@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '../../firebase';
 import Footer from '../../components/Footer/Footer';
@@ -14,11 +14,10 @@ const ClinicDetails = () => {
   const [user, setUser] = useState(null);
   const [userPets, setUserPets] = useState([]);
   const [appointmentData, setAppointmentData] = useState({
-    date: '',
-    time: '',
-    service: '',
-    petId: '',
-    notes: '',
+    petId: "",
+    veterinarianId: "",
+    serviceType: "",
+    dateofAppointment: "",
   });
   const [bookingStatus, setBookingStatus] = useState({ loading: false, success: false, error: null });
   
@@ -30,6 +29,13 @@ const ClinicDetails = () => {
   // Try to get clinic from location state first
   const clinicData = location.state?.clinicData;
 
+  // Additional states from PetOwnerHome for appointment booking
+  const [veterinarians, setVeterinarians] = useState([]);
+  const [loadingVeterinarians, setLoadingVeterinarians] = useState(false);
+  const [vetServices, setVetServices] = useState({});
+  const [vetSchedules, setVetSchedules] = useState({});
+  const [availableDates, setAvailableDates] = useState([]);
+
   // Function to categorize the price
   const categorizePrice = (price) => {
     if (price < 800) return '₱';
@@ -37,16 +43,80 @@ const ClinicDetails = () => {
     return '₱₱₱';
   };
 
+  // Utility to format dates
+  const formatDate = (dateValue) => {
+    if (!dateValue) return "N/A";
+    if (dateValue && typeof dateValue.toDate === "function") {
+      return dateValue.toDate().toLocaleString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    }
+    if (typeof dateValue === "string") {
+      try {
+        return new Date(dateValue).toLocaleString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        });
+      } catch (e) {
+        return dateValue;
+      }
+    }
+    return String(dateValue);
+  };
+
+  // Convert vet schedule to specific dates
+  const getAvailableDates = (schedules) => {
+    const dates = [];
+    const today = new Date();
+    const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    // Look ahead 30 days
+    for (let i = 0; i < 30; i++) {
+      const currentDate = new Date(today);
+      currentDate.setDate(today.getDate() + i);
+      const dayName = daysOfWeek[currentDate.getDay()];
+
+      schedules.forEach((schedule) => {
+        if (schedule.day === dayName) {
+          const [startHour, startMinute] = schedule.startTime.split(":");
+          const [endHour, endMinute] = schedule.endTime.split(":");
+          const start = new Date(currentDate);
+          start.setHours(parseInt(startHour), parseInt(startMinute), 0);
+          const end = new Date(currentDate);
+          end.setHours(parseInt(endHour), parseInt(endMinute), 0);
+
+          // Only include future times
+          if (start > new Date()) {
+            dates.push({
+              date: start,
+              end,
+              display: `${formatDate(start)} - ${end.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
+            });
+          }
+        }
+      });
+    }
+    return dates;
+  };
+
   useEffect(() => {
     // Check authentication status
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        fetchUserPets(currentUser.uid);
+      }
     });
 
     return () => unsubscribe();
   }, [auth]);
-
-  
 
   useEffect(() => {
     async function fetchClinicData() {
@@ -122,6 +192,42 @@ const ClinicDetails = () => {
     fetchClinicData();
   }, [clinicId, clinicData, navigate]);
 
+  // Fetch user's pets
+  const fetchUserPets = async (userId) => {
+    try {
+      const petsQuery = query(
+        collection(db, "pets"),
+        where("owner", "==", doc(db, "users", userId))
+      );
+      const querySnapshot = await getDocs(petsQuery);
+      const petsList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setUserPets(petsList);
+    } catch (error) {
+      console.error("Error fetching pets:", error);
+    }
+  };
+
+  // Fetch veterinarians for this clinic
+  const fetchVeterinarians = async () => {
+    try {
+      setLoadingVeterinarians(true);
+      const vetsQuery = query(
+        collection(db, "users"),
+        where("Type", "==", "Veterinarian"),
+        where("clinic", "==", doc(db, "clinics", clinicId))
+      );
+      const querySnapshot = await getDocs(vetsQuery);
+      const vetList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setVeterinarians(vetList);
+      setVetServices(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.services || [] }), {}));
+      setVetSchedules(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.schedule || [] }), {}));
+    } catch (error) {
+      console.error("Error fetching veterinarians:", error);
+    } finally {
+      setLoadingVeterinarians(false);
+    }
+  };
+
   const handleBookAppointment = () => {
     if (!user) {
       // Show login modal instead of direct redirect
@@ -129,31 +235,51 @@ const ClinicDetails = () => {
       return;
     }
     
+    fetchVeterinarians();
+    
     // Reset appointment data and initialize with default values if available
     setAppointmentData({
-      date: '',
-      time: '',
-      service: clinic.services.length > 0 ? clinic.services[0].name : '',
-      petId: userPets.length > 0 ? userPets[0].id : '',
-      notes: '',
+      petId: userPets.length > 0 ? userPets[0].id : "",
+      veterinarianId: "",
+      serviceType: "",
+      dateofAppointment: "",
     });
     
     // Show booking modal
     setShowModal(true);
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value } = e.target;
-    setAppointmentData({
-      ...appointmentData,
-      [name]: value
-    });
+    setAppointmentData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "veterinarianId" && value) {
+      const vet = veterinarians.find((v) => v.id === value);
+      const vetServicesList = vet.services || [];
+      setVetServices({ [value]: vetServicesList });
+      setVetSchedules({ [value]: vet.schedule || [] });
+      setAvailableDates(getAvailableDates(vet.schedule || []));
+      setAppointmentData((prev) => ({
+        ...prev,
+        serviceType: vetServicesList.length > 0 ? vetServicesList[0] : "",
+        dateofAppointment: "",
+      }));
+    } else if (name === "serviceType" && value) {
+      const vetId = appointmentData.veterinarianId;
+      if (vetId) {
+        const vet = veterinarians.find((v) => v.id === vetId);
+        setVetSchedules({ [vetId]: vet.schedule || [] });
+        setAvailableDates(getAvailableDates(vet.schedule || []));
+      }
+    }
   };
 
   const handleSubmitAppointment = async (e) => {
     e.preventDefault();
     
-    if (!appointmentData.date || !appointmentData.time || !appointmentData.service || !appointmentData.petId) {
+    // Validate required fields
+    const { petId, veterinarianId, serviceType, dateofAppointment } = appointmentData;
+    if (!petId || !veterinarianId || !serviceType || !dateofAppointment) {
       setBookingStatus({ 
         loading: false, 
         success: false, 
@@ -165,17 +291,32 @@ const ClinicDetails = () => {
     setBookingStatus({ loading: true, success: false, error: null });
     
     try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("You must be logged in to book an appointment");
+
+      const selectedPet = userPets.find((pet) => pet.id === petId);
+      if (!selectedPet) throw new Error("Selected pet not found");
+
+      const ownerRef = doc(db, "users", currentUser.uid);
+      const petRef = doc(db, "pets", petId);
+      const clinicRef = doc(db, "clinics", clinicId);
+      const vetRef = doc(db, "users", veterinarianId);
+
       // Create a new appointment document
       const appointmentRef = await addDoc(collection(db, "appointments"), {
-        clinicId: clinic.id,
+        petId,
+        petName: selectedPet.petName,
+        petRef,
+        owner: ownerRef,
+        clinic: clinicRef,
+        clinicId: clinicId,
         clinicName: clinic.clinicName,
-        userId: user.uid,
-        petId: appointmentData.petId,
-        service: appointmentData.service,
-        date: appointmentData.date,
-        time: appointmentData.time,
-        notes: appointmentData.notes,
-        status: "pending", // pending, confirmed, completed, cancelled
+        veterinarianId,
+        veterinarian: veterinarians.find((v) => v.id === veterinarianId).FirstName + " " + 
+                     veterinarians.find((v) => v.id === veterinarianId).LastName,
+        serviceType,
+        dateofAppointment: new Date(dateofAppointment),
+        status: "pending",
         createdAt: serverTimestamp()
       });
       
@@ -186,16 +327,13 @@ const ClinicDetails = () => {
       setTimeout(() => {
         setShowModal(false);
         setBookingStatus({ loading: false, success: false, error: null });
-        
-        // Optional: Navigate to appointments page or show a toast notification
-        // navigate('/appointments');
       }, 3000);
     } catch (error) {
       console.error("Error creating appointment:", error);
       setBookingStatus({ 
         loading: false, 
         success: false, 
-        error: "Failed to book appointment. Please try again." 
+        error: error.message || "Failed to book appointment. Please try again." 
       });
     }
   };
@@ -286,7 +424,6 @@ const ClinicDetails = () => {
               <h2>Location</h2>
               <div className="clinic-map">
                 {clinic.lat && clinic.lng ? (
-                  // Replace with actual map implementation
                   <p className="map-placeholder">
                     Map location: {clinic.lat}, {clinic.lng}
                   </p>
@@ -313,10 +450,8 @@ const ClinicDetails = () => {
               <h2>Login Required</h2>
               <button className="close-button" onClick={() => setShowLoginModal(false)}>×</button>
             </div>
-            
             <div className="modal-body login-modal-body">
               <p>You need to be logged in to book an appointment.</p>
-             
             </div>
           </div>
         </div>
@@ -342,58 +477,94 @@ const ClinicDetails = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmitAppointment}>
-                  
-                  
                   <div className="form-group">
-                    <label htmlFor="service">Select Service</label>
+                    <label htmlFor="petId">Choose Pet *</label>
                     <select
-                      id="service"
-                      name="service"
-                      value={appointmentData.service}
+                      id="petId"
+                      name="petId"
+                      value={appointmentData.petId}
                       onChange={handleInputChange}
                       required
                     >
-                      {clinic.services.map((service, index) => (
-                        <option key={index} value={service.name}>
-                          {service.name} {service.price ? `- ₱${service.price}` : ''}
+                      <option value="">Select a pet</option>
+                      {userPets.map((pet) => (
+                        <option key={pet.id} value={pet.id}>
+                          {pet.petName}
                         </option>
                       ))}
                     </select>
                   </div>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="date">Date</label>
-                      <input
-                        type="date"
-                        id="date"
-                        name="date"
-                        value={appointmentData.date}
-                        onChange={handleInputChange}
-                        min={new Date().toISOString().split('T')[0]}
-                        required
-                      />
-                    </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor="time">Time</label>
-                      <input
-                        type="time"
-                        id="time"
-                        name="time"
-                        value={appointmentData.time}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
+
+                  <div className="form-group">
+                    <label htmlFor="veterinarianId">Veterinarian *</label>
+                    <select
+                      id="veterinarianId"
+                      name="veterinarianId"
+                      value={appointmentData.veterinarianId}
+                      onChange={handleInputChange}
+                      required
+                      disabled={loadingVeterinarians || !appointmentData.petId}
+                    >
+                      <option value="">Select a veterinarian</option>
+                      {loadingVeterinarians ? (
+                        <option value="" disabled>
+                          Loading veterinarians...
+                        </option>
+                      ) : (
+                        veterinarians.map((vet) => (
+                          <option key={vet.id} value={vet.id}>
+                            {vet.FirstName} {vet.LastName}
+                          </option>
+                        ))
+                      )}
+                    </select>
                   </div>
-                  
+
+                  <div className="form-group">
+                    <label htmlFor="serviceType">Service Type *</label>
+                    <select
+                      id="serviceType"
+                      name="serviceType"
+                      value={appointmentData.serviceType}
+                      onChange={handleInputChange}
+                      required
+                      disabled={!appointmentData.veterinarianId}
+                    >
+                      <option value="">Select a service</option>
+                      {appointmentData.veterinarianId &&
+                        vetServices[appointmentData.veterinarianId]?.map((service, index) => (
+                          <option key={index} value={service}>
+                            {service}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="dateofAppointment">Date & Time *</label>
+                    <select
+                      id="dateofAppointment"
+                      name="dateofAppointment"
+                      value={appointmentData.dateofAppointment}
+                      onChange={handleInputChange}
+                      required
+                      disabled={!appointmentData.serviceType}
+                    >
+                      <option value="">Select a date and time</option>
+                      {availableDates.map((slot, index) => (
+                        <option key={index} value={slot.date.toISOString()}>
+                          {slot.display}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="form-group">
                     <label htmlFor="notes">Additional Notes (Optional)</label>
                     <textarea
                       id="notes"
                       name="notes"
-                      value={appointmentData.notes}
+                      value={appointmentData.notes || ""}
                       onChange={handleInputChange}
                       rows="3"
                       placeholder="Any specific concerns or requests?"

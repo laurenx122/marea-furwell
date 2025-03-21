@@ -303,21 +303,23 @@ const Navbar = () => {
                         {isLoggedIn ? (
                             <div className={styles.userMenu}>
                                 {userDetails.profileImageURL && (
-                                    <img
-                                        src={userDetails.profileImageURL}
-                                        alt="Profile"
-                                        className={styles.profileImage}
-                                        onClick={() => setIsModalOpen(true)}
-                                        style={{ cursor: 'pointer', width: '30px', height: '30px', borderRadius: '50%', marginRight: '10px' }}
-                                    />
+                                    <Link to="/PetOwnerHome">
+                                        <img
+                                            src={userDetails.profileImageURL}
+                                            alt="Profile"
+                                            className={styles.profileImage}
+                                            style={{ cursor: 'pointer', width: '30px', height: '30px', borderRadius: '50%', marginRight: '10px' }}
+                                        />
+                                    </Link>
                                 )}
-                                <span
-                                    className={styles.username}
-                                    onClick={() => setIsModalOpen(true)}
-                                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                >
-                                    {userDetails.firstName}
-                                </span>
+                                <Link to="/PetOwnerHome">
+                                    <span
+                                        className={styles.username}
+                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                    >
+                                        {userDetails.firstName}
+                                    </span>
+                                </Link>
                                 <button onClick={handleSignOut} className={styles.logoutButton}>Sign Out</button>
                             </div>
                         ) : (
