@@ -11,6 +11,8 @@ const ClinicDetails = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showVetModal, setShowVetModal] = useState(false); // State for veterinarian modal
+  const [selectedVet, setSelectedVet] = useState(null); // State for selected veterinarian
   const [user, setUser] = useState(null);
   const [userPets, setUserPets] = useState([]);
   const [appointmentData, setAppointmentData] = useState({
@@ -26,24 +28,20 @@ const ClinicDetails = () => {
   const location = useLocation();
   const auth = getAuth();
   
-  // Try to get clinic from location state first
   const clinicData = location.state?.clinicData;
 
-  // Additional states from PetOwnerHome for appointment booking
   const [veterinarians, setVeterinarians] = useState([]);
   const [loadingVeterinarians, setLoadingVeterinarians] = useState(false);
   const [vetServices, setVetServices] = useState({});
   const [vetSchedules, setVetSchedules] = useState({});
   const [availableDates, setAvailableDates] = useState([]);
 
-  // Function to categorize the price
   const categorizePrice = (price) => {
     if (price < 800) return '₱';
     if (price >= 800 && price <= 1400) return '₱₱';
     return '₱₱₱';
   };
 
-  // Utility to format dates
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     if (dateValue && typeof dateValue.toDate === "function") {
@@ -71,13 +69,11 @@ const ClinicDetails = () => {
     return String(dateValue);
   };
 
-  // Convert vet schedule to specific dates
   const getAvailableDates = (schedules) => {
     const dates = [];
     const today = new Date();
     const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    // Look ahead 30 days
     for (let i = 0; i < 30; i++) {
       const currentDate = new Date(today);
       currentDate.setDate(today.getDate() + i);
@@ -92,7 +88,6 @@ const ClinicDetails = () => {
           const end = new Date(currentDate);
           end.setHours(parseInt(endHour), parseInt(endMinute), 0);
 
-          // Only include future times
           if (start > new Date()) {
             dates.push({
               date: start,
@@ -107,7 +102,6 @@ const ClinicDetails = () => {
   };
 
   useEffect(() => {
-    // Check authentication status
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       if (currentUser) {
@@ -120,9 +114,7 @@ const ClinicDetails = () => {
 
   useEffect(() => {
     async function fetchClinicData() {
-      // If we have clinic data from state, use it
       if (clinicData) {
-        // Process service prices if available in state data
         const formattedServices = [];
         if (clinicData.servicePrices) {
           Object.entries(clinicData.servicePrices).forEach(([serviceName, price]) => {
@@ -146,7 +138,6 @@ const ClinicDetails = () => {
         if (clinicDoc.exists()) {
           const data = clinicDoc.data();
           
-          // Process service prices from Firestore
           const formattedServices = [];
           if (data.servicePrices) {
             Object.entries(data.servicePrices).forEach(([serviceName, price]) => {
@@ -179,7 +170,6 @@ const ClinicDetails = () => {
           });
         } else {
           console.error("No clinic found with ID:", clinicId);
-          // Redirect back to clinic list if clinic not found
           navigate('/FindClinic');
         }
       } catch (error) {
@@ -190,9 +180,9 @@ const ClinicDetails = () => {
     }
     
     fetchClinicData();
+    fetchVeterinarians();
   }, [clinicId, clinicData, navigate]);
 
-  // Fetch user's pets
   const fetchUserPets = async (userId) => {
     try {
       const petsQuery = query(
@@ -207,7 +197,6 @@ const ClinicDetails = () => {
     }
   };
 
-  // Fetch veterinarians for this clinic
   const fetchVeterinarians = async () => {
     try {
       setLoadingVeterinarians(true);
@@ -230,14 +219,12 @@ const ClinicDetails = () => {
 
   const handleBookAppointment = () => {
     if (!user) {
-      // Show login modal instead of direct redirect
       setShowLoginModal(true);
       return;
     }
     
     fetchVeterinarians();
     
-    // Reset appointment data and initialize with default values if available
     setAppointmentData({
       petId: userPets.length > 0 ? userPets[0].id : "",
       veterinarianId: "",
@@ -245,7 +232,6 @@ const ClinicDetails = () => {
       dateofAppointment: "",
     });
     
-    // Show booking modal
     setShowModal(true);
   };
 
@@ -277,7 +263,6 @@ const ClinicDetails = () => {
   const handleSubmitAppointment = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
     const { petId, veterinarianId, serviceType, dateofAppointment } = appointmentData;
     if (!petId || !veterinarianId || !serviceType || !dateofAppointment) {
       setBookingStatus({ 
@@ -302,7 +287,6 @@ const ClinicDetails = () => {
       const clinicRef = doc(db, "clinics", clinicId);
       const vetRef = doc(db, "users", veterinarianId);
 
-      // Create a new appointment document
       const appointmentRef = await addDoc(collection(db, "appointments"), {
         petId,
         petName: selectedPet.petName,
@@ -320,10 +304,8 @@ const ClinicDetails = () => {
         createdAt: serverTimestamp()
       });
       
-      // Show success message
       setBookingStatus({ loading: false, success: true, error: null });
       
-      // Close modal after 3 seconds
       setTimeout(() => {
         setShowModal(false);
         setBookingStatus({ loading: false, success: false, error: null });
@@ -339,9 +321,14 @@ const ClinicDetails = () => {
   };
 
   const handleLoginRedirect = () => {
-    // Close the login modal and redirect to login page
     setShowLoginModal(false);
     navigate('/login', { state: { from: `/clinic/${clinicId}` } });
+  };
+
+  // Function to handle opening the veterinarian modal
+  const handleVetClick = (vet) => {
+    setSelectedVet(vet);
+    setShowVetModal(true);
   };
 
   if (loading) {
@@ -352,7 +339,6 @@ const ClinicDetails = () => {
     return <div className="loading">Clinic not found</div>;
   }
 
-  // Format the full address
   const fullAddress = [
     clinic.streetAddress,
     clinic.city,
@@ -380,6 +366,11 @@ const ClinicDetails = () => {
               alt={clinic.clinicName} 
               className="clinic-detail-image"
             />
+            <div className="cta-section">
+              <button className="book-appointment-btn" onClick={handleBookAppointment}>
+                Book an Appointment
+              </button>
+            </div>
           </div>
           
           <div className="clinic-info-section">
@@ -432,11 +423,40 @@ const ClinicDetails = () => {
                 )}
               </div>
             </div>
-            
-            <div className="cta-section">
-              <button className="book-appointment-btn" onClick={handleBookAppointment}>
-                Book an Appointment
-              </button>
+
+            <div className="veterinarians-section">
+              <h2>Our Veterinarians</h2>
+              {loadingVeterinarians ? (
+                <p>Loading veterinarians...</p>
+              ) : veterinarians.length > 0 ? (
+                <ul className="veterinarians-list">
+                  {veterinarians.map((vet) => (
+                    <li
+                      key={vet.id}
+                      className="veterinarian-item"
+                      onClick={() => handleVetClick(vet)}
+                    >
+                      <img
+                        src={vet.profileImageURL || 'https://via.placeholder.com/50'} // Fallback image if profileImage is not available
+                        alt={`${vet.FirstName} ${vet.LastName}`}
+                        className="vet-profile-image"
+                      />
+                      <div className="vet-info">
+                        <span className="vet-name">
+                          Dr. {vet.FirstName} {vet.LastName}
+                        </span>
+                        {vet.services && vet.services.length > 0 && (
+                          <span className="vet-services">
+                            Specialties: {vet.services.join(', ')}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No veterinarians found for this clinic.</p>
+              )}
             </div>
           </div>
         </div>
@@ -593,6 +613,42 @@ const ClinicDetails = () => {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Veterinarian Details Modal */}
+      {showVetModal && selectedVet && (
+        <div className="modal-overlay">
+          <div className="vet-modal">
+            <div className="modal-header">
+              <h2>Veterinarian Details</h2>
+              <button className="close-button" onClick={() => setShowVetModal(false)}>×</button>
+            </div>
+            <div className="modal-body vet-modal-body">
+              <img
+                src={selectedVet.profileImageURL || 'https://via.placeholder.com/100'}
+                alt={`${selectedVet.FirstName} ${selectedVet.LastName}`}
+                className="vet-modal-image"
+              />
+              <h3>{`Dr. ${selectedVet.FirstName} ${selectedVet.LastName}`}</h3>
+              <p><strong>Contact Number:</strong> {selectedVet.contactNumber || 'Not available'}</p>
+              <p><strong>Email:</strong> {selectedVet.Gmail || 'Not available'}</p>
+              <div className="vet-schedule">
+                <strong>Schedule:</strong>
+                {selectedVet.schedule && selectedVet.schedule.length > 0 ? (
+                  <ul>
+                    {selectedVet.schedule.map((slot, index) => (
+                      <li key={index}>
+                        {slot.day}: {slot.startTime} - {slot.endTime}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Not available</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
