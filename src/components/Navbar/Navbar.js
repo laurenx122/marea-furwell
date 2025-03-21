@@ -292,9 +292,9 @@ const Navbar = () => {
                                         Contact Us
                                     </Link>
                                 </li>
-                                <li className={styles.navbarItem}>
+                                {/* <li className={styles.navbarItem}>
                                     <Link to="/maps" className={styles.navbarLink}>Maps</Link>
-                                </li>
+                                </li> */}
                             </>
                         )}
                     </ul>
