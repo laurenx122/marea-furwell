@@ -34,8 +34,6 @@ const PetOwnerHome = () => {
   const [addingPet, setAddingPet] = useState(false);
   const [addPetError, setAddPetError] = useState("");
   const [addPetSuccess, setAddPetSuccess] = useState(false);
-
-  // Pet image states
   const [petImage, setPetImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [newPetImage, setNewPetImage] = useState(null);
@@ -43,8 +41,6 @@ const PetOwnerHome = () => {
   const [isEditingImage, setIsEditingImage] = useState(false);
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
-
-  // Appointment states
   const [newAppointment, setNewAppointment] = useState({
     petId: "",
     clinicId: "",
@@ -63,11 +59,16 @@ const PetOwnerHome = () => {
   const [vetSchedules, setVetSchedules] = useState({});
   const [availableDates, setAvailableDates] = useState([]);
   const [allVeterinarians, setAllVeterinarians] = useState([]);
+  const [ownerInfo, setOwnerInfo] = useState(null);
+  const [newOwnerImage, setNewOwnerImage] = useState(null);
+  const [ownerImagePreview, setOwnerImagePreview] = useState(null);
+  const [isEditingOwnerImage, setIsEditingOwnerImage] = useState(false);
+  const [showOwnerModal, setShowOwnerModal] = useState(false);
 
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
+  const DEFAULT_OWNER_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
 
-  // Utility to format dates
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     if (dateValue && typeof dateValue.toDate === "function") {
@@ -95,13 +96,11 @@ const PetOwnerHome = () => {
     return String(dateValue);
   };
 
-  // Convert vet schedule to specific dates
   const getAvailableDates = (schedules) => {
     const dates = [];
     const today = new Date();
     const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    // Look ahead 30 days
     for (let i = 0; i < 30; i++) {
       const currentDate = new Date(today);
       currentDate.setDate(today.getDate() + i);
@@ -116,7 +115,6 @@ const PetOwnerHome = () => {
           const end = new Date(currentDate);
           end.setHours(parseInt(endHour), parseInt(endMinute), 0);
 
-          // Only include future times
           if (start > new Date()) {
             dates.push({
               date: start,
@@ -130,7 +128,6 @@ const PetOwnerHome = () => {
     return dates;
   };
 
-  // Image handling
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -146,6 +143,15 @@ const PetOwnerHome = () => {
       setNewImagePreview(URL.createObjectURL(file));
       setIsEditingImage(true);
       setImageUploadError("");
+    }
+  };
+
+  const handleOwnerImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewOwnerImage(file);
+      setOwnerImagePreview(URL.createObjectURL(file));
+      setIsEditingOwnerImage(true);
     }
   };
 
@@ -192,7 +198,45 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Input handlers
+  const handleSaveOwnerImage = async () => {
+    if (!newOwnerImage) {
+      setShowOwnerModal(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const image = new FormData();
+      image.append("file", newOwnerImage);
+      image.append("cloud_name", "dfgnexrda");
+      image.append("upload_preset", UPLOAD_PRESET);
+
+      const response = await fetch(
+        "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
+        { method: "post", body: image }
+      );
+
+      if (!response.ok) throw new Error("Image upload failed");
+
+      const imgData = await response.json();
+      const newImageURL = imgData.url.toString();
+
+      const ownerRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(ownerRef, { profileImageURL: newImageURL });
+
+      setOwnerInfo({ ...ownerInfo, profileImageURL: newImageURL });
+      setNewOwnerImage(null);
+      setOwnerImagePreview(null);
+      setIsEditingOwnerImage(false);
+      setShowOwnerModal(false);
+    } catch (error) {
+      console.error("Error uploading owner image:", error);
+      setImageUploadError("Failed to upload image. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewPet({
@@ -204,7 +248,7 @@ const PetOwnerHome = () => {
   const handleAppointmentChange = async (e) => {
     const { name, value } = e.target;
     setNewAppointment((prev) => ({ ...prev, [name]: value }));
-  
+
     if (name === "clinicId" && value) {
       setLoadingVeterinarians(true);
       await fetchVeterinarians(value);
@@ -234,11 +278,10 @@ const PetOwnerHome = () => {
         setVetSchedules({ [vetId]: vet.schedule || [] });
         setAvailableDates(getAvailableDates(vet.schedule || []));
       } else {
-        // Filter veterinarians from the full list based on the selected service
         const filteredVets = allVeterinarians.filter((v) =>
           (v.services || []).includes(value)
         );
-        setVeterinarians(filteredVets); // Update the displayed list
+        setVeterinarians(filteredVets);
         setVetServices(
           filteredVets.reduce((acc, v) => ({ ...acc, [v.id]: v.services }), {})
         );
@@ -259,7 +302,6 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Add pet
   const handleAddPet = async (e) => {
     e.preventDefault();
     setAddingPet(true);
@@ -325,7 +367,6 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Book appointment
   const handleBookAppointment = async (e) => {
     e.preventDefault();
     setBookingAppointment(true);
@@ -384,7 +425,6 @@ const PetOwnerHome = () => {
     }
   };
 
-  // Fetch data
   const fetchPets = async () => {
     try {
       setLoading(true);
@@ -420,23 +460,23 @@ const PetOwnerHome = () => {
     }
   };
 
-const fetchVeterinarians = async (clinicId) => {
-  try {
-    const vetsQuery = query(
-      collection(db, "users"),
-      where("Type", "==", "Veterinarian"),
-      where("clinic", "==", doc(db, "clinics", clinicId))
-    );
-    const querySnapshot = await getDocs(vetsQuery);
-    const vetList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setAllVeterinarians(vetList); // Store the full list
-    setVeterinarians(vetList); // Initially set the filtered list to the full list
-    setVetServices(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.services || [] }), {}));
-    setVetSchedules(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.schedule || [] }), {}));
-  } catch (error) {
-    console.error("Error fetching veterinarians:", error);
-  }
-};
+  const fetchVeterinarians = async (clinicId) => {
+    try {
+      const vetsQuery = query(
+        collection(db, "users"),
+        where("Type", "==", "Veterinarian"),
+        where("clinic", "==", doc(db, "clinics", clinicId))
+      );
+      const querySnapshot = await getDocs(vetsQuery);
+      const vetList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setAllVeterinarians(vetList);
+      setVeterinarians(vetList);
+      setVetServices(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.services || [] }), {}));
+      setVetSchedules(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.schedule || [] }), {}));
+    } catch (error) {
+      console.error("Error fetching veterinarians:", error);
+    }
+  };
 
   const fetchAppointments = async () => {
     try {
@@ -468,7 +508,29 @@ const fetchVeterinarians = async (clinicId) => {
     }
   };
 
+  const fetchOwnerInfo = async () => {
+    try {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const ownerRef = doc(db, "users", currentUser.uid);
+        const ownerDoc = await getDoc(ownerRef);
+        if (ownerDoc.exists()) {
+          const ownerData = ownerDoc.data();
+          setOwnerInfo({
+            FirstName: ownerData.FirstName || "Unknown",
+            LastName: ownerData.LastName || "",
+            email: currentUser.email,
+            profileImageURL: ownerData.profileImageURL || DEFAULT_OWNER_IMAGE,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching owner info:", error);
+    }
+  };
+
   useEffect(() => {
+    fetchOwnerInfo();
     fetchPets();
     fetchAppointments();
     fetchClinics();
@@ -510,32 +572,82 @@ const fetchVeterinarians = async (clinicId) => {
     setAddPetSuccess(false);
   };
 
+  const handleOwnerClick = () => {
+    setShowOwnerModal(true);
+  };
+
   return (
     <div className="pet-owner-container">
       <div className="sidebar">
-        <h2>Pet Owner</h2>
-        <button
-          className={activePanel === "petDetails" ? "active" : ""}
-          onClick={() => setActivePanel("petDetails")}
-        >
-          Pet Details
-        </button>
-        <button
-          className={activePanel === "appointments" ? "active" : ""}
-          onClick={() => setActivePanel("appointments")}
-        >
-          Appointments
-        </button>
-        <button
-          className={activePanel === "bookAppointment" ? "active" : ""}
-          onClick={() => setActivePanel("bookAppointment")}
-        >
-          Book Appointment
-        </button>
+        {ownerInfo && (
+          <div className="owner-sidebar-panel">
+            <div className="owner-img-container">
+              <img
+                src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
+                alt="Owner Profile"
+                className="owner-profile-image"
+              />
+              <label htmlFor="owner-image-upload" className="edit-icon">
+                <FaCamera />
+              </label>
+              <input
+                type="file"
+                id="owner-image-upload"
+                accept="image/jpeg, image/jpg, image/png"
+                onChange={handleOwnerImageChange}
+                style={{ display: "none" }}
+              />
+            </div>
+            <button
+              className={activePanel === "profile" ? "active" : ""}
+              onClick={() => setActivePanel("profile")}
+            >
+              {ownerInfo.FirstName} {ownerInfo.LastName}
+            </button>
+          </div>
+        )}
+        <div className="sidebar-buttons">
+          <button
+            className={activePanel === "petDetails" ? "active" : ""}
+            onClick={() => setActivePanel("petDetails")}
+          >
+            Pet Details
+          </button>
+          <button
+            className={activePanel === "appointments" ? "active" : ""}
+            onClick={() => setActivePanel("appointments")}
+          >
+            Appointments
+          </button>
+          <button
+            className={activePanel === "bookAppointment" ? "active" : ""}
+            onClick={() => setActivePanel("bookAppointment")}
+          >
+            Book Appointment
+          </button>
+        </div>
       </div>
 
       <div className="content">
         <div className="panel-container">
+          {activePanel === "profile" && ownerInfo && (
+            <div className="panel profile-panel">
+              <h3>Profile</h3>
+              <div className="owner-details">
+                <img
+                  src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
+                  alt="Owner"
+                  className="owner-info-img"
+                />
+                <p><strong>First Name:</strong> {ownerInfo.FirstName}</p>
+                <p><strong>Last Name:</strong> {ownerInfo.LastName}</p>
+                <p><strong>Email:</strong> {ownerInfo.email}</p>
+                <button className="edit-owner-btn" onClick={handleOwnerClick}>
+                  Edit Profile Picture
+                </button>
+              </div>
+            </div>
+          )}
           {activePanel === "petDetails" && (
             <div className="panel pet-details-panel">
               <div className="pet-details-header">
@@ -581,7 +693,6 @@ const fetchVeterinarians = async (clinicId) => {
               )}
             </div>
           )}
-
           {activePanel === "appointments" && (
             <div className="panel appointments-panel">
               <h3>Appointments</h3>
@@ -615,7 +726,6 @@ const fetchVeterinarians = async (clinicId) => {
               </table>
             </div>
           )}
-
           {activePanel === "bookAppointment" && (
             <div className="panel book-appointment-panel">
               <h3>Book Appointment</h3>
@@ -641,7 +751,6 @@ const fetchVeterinarians = async (clinicId) => {
                     ))}
                   </select>
                 </div>
-
                 <div className="form-group">
                   <label htmlFor="clinicId">Clinic *</label>
                   <select
@@ -666,7 +775,6 @@ const fetchVeterinarians = async (clinicId) => {
                     )}
                   </select>
                 </div>
-
                 <div className="form-group">
                   <label htmlFor="veterinarianId">Veterinarian *</label>
                   <select
@@ -691,7 +799,6 @@ const fetchVeterinarians = async (clinicId) => {
                     )}
                   </select>
                 </div>
-
                 <div className="form-group">
                   <label htmlFor="serviceType">Service Type *</label>
                   <select
@@ -720,7 +827,6 @@ const fetchVeterinarians = async (clinicId) => {
                         ))}
                   </select>
                 </div>
-
                 <div className="form-group">
                   <label htmlFor="dateofAppointment">Date & Time *</label>
                   <select
@@ -739,7 +845,6 @@ const fetchVeterinarians = async (clinicId) => {
                     ))}
                   </select>
                 </div>
-
                 <div className="form-actions">
                   <button
                     type="submit"
@@ -822,6 +927,35 @@ const fetchVeterinarians = async (clinicId) => {
                 disabled={isSavingImage}
               >
                 {isSavingImage ? "Saving..." : isEditingImage ? "Save & Close" : "Close"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showOwnerModal && ownerInfo && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <span className="close-button" onClick={() => setShowOwnerModal(false)}>×</span>
+            <h2>{ownerInfo.FirstName} {ownerInfo.LastName}</h2>
+            <div className="owner-image-container">
+              <img
+                src={ownerImagePreview || ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
+                alt="Owner"
+                className="owner-info-img"
+              />
+            </div>
+            {imageUploadError && <div className="error-message">{imageUploadError}</div>}
+            <p><strong>First Name:</strong> {ownerInfo.FirstName}</p>
+            <p><strong>Last Name:</strong> {ownerInfo.LastName}</p>
+            <p><strong>Email:</strong> {ownerInfo.email}</p>
+            <div className="modal-actions">
+              <button
+                className="modal-close-btn"
+                onClick={handleSaveOwnerImage}
+                disabled={loading}
+              >
+                {loading ? "Saving..." : isEditingOwnerImage ? "Save & Close" : "Close"}
               </button>
             </div>
           </div>

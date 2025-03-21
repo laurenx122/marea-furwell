@@ -15,7 +15,7 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 2px;
   align-items: flex-start;
   justify-content: flex-start;
   min-height: 100vh;
@@ -55,12 +55,61 @@
   font-weight: bold;
 }
 
+/* Owner Sidebar Panel */
+.owner-sidebar-panel {
+  width: 100%;
+  margin-top: 90px;
+}
+
+.owner-img-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 150px;
+  height: 150px;
+  margin: 0 auto 20px;
+}
+
+.owner-profile-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffb6c1;
+}
+
+/* Edit Icon */
+.edit-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  padding: 5px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sidebar Buttons Container */
+.sidebar-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  margin-top: 5px;
+}
+
 /* Content Area */
 .content {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  margin-top: 0; /* Removed margin-top to align with ClinicHome */
+  margin-top: 0;
 }
 
 /* Panel Container */
@@ -103,6 +152,7 @@ tr:hover {
 }
 
 /* Panel Colors */
+.profile-panel { background-color: #e4e8ff; }
 .pet-details-panel { background-color: #ffe4e6; }
 .appointments-panel { background-color: #fdf6c2; }
 .book-appointment-panel { background-color: #c2f0d1; }
@@ -131,7 +181,6 @@ tr:hover {
 .pet-details-header {
   display: flex;
   justify-content: space-between;
-
   align-items: center;
   margin-bottom: 20px;
 }
@@ -407,26 +456,6 @@ form {
   background-color: #ffebee;
 }
 
-/* Image Edit Buttons */
-.save-image-btn {
-  background-color: #ff4081;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.save-image-btn:hover {
-  background-color: #f50057;
-}
-
-.save-image-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
 /* Add Pet Modal */
 .add-pet-modal {
   padding: 0;
@@ -434,4 +463,44 @@ form {
 
 .add-pet-modal form {
   padding: 20px;
+}
+
+/* Profile Panel */
+.profile-panel {
+  background-color: #e4e8ff;
+}
+
+.owner-details {
+  text-align: center;
+}
+
+.owner-info-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 15px;
+  border: 3px solid #ffb6c1;
+}
+
+.edit-owner-btn {
+  background-color: #ff4081;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 15px;
+}
+
+.edit-owner-btn:hover {
+  background-color: #f50057;
+}
+
+/* Owner Image Container in Modal */
+.owner-image-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
 }
