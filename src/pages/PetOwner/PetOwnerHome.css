@@ -78,23 +78,6 @@
   border: 3px solid #ffb6c1;
 }
 
-/* Edit Icon */
-.edit-icon {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background-color: rgba(255, 255, 255, 0.7);
-  border-radius: 50%;
-  padding: 5px;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* Sidebar Buttons Container */
 .sidebar-buttons {
   display: flex;
@@ -106,7 +89,7 @@
 
 /* Content Area */
 .content {
-  flex: 1;
+  flexed: 1;
   padding: 20px;
   overflow-y: auto;
   margin-top: 0;
@@ -155,7 +138,6 @@ tr:hover {
 .profile-panel { background-color: #e4e8ff; }
 .pet-details-panel { background-color: #ffe4e6; }
 .appointments-panel { background-color: #fdf6c2; }
-.book-appointment-panel { background-color: #c2f0d1; }
 
 /* Panel Headers */
 .panel h3 {
@@ -496,11 +478,4 @@ form {
 
 .edit-owner-btn:hover {
   background-color: #f50057;
-}
-
-/* Owner Image Container in Modal */
-.owner-image-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
 }
