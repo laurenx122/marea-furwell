@@ -86,9 +86,7 @@ const ClinicSubscribe = () => {
     delete updatedPrices[serviceToRemove];
     setServicePrices(updatedPrices);
   };
-  
-  
-  // Handle input changes for the initial form
+   // Handle input changes for the initial form
   const handleInitialFormChange = (e) => {
     const { name, value, type, checked } = e.target;
     setClinicInfo({
@@ -96,6 +94,7 @@ const ClinicSubscribe = () => {
       [name]: type === 'checkbox' ? checked : value
     });
   };
+  
   const handleFileChange = async (e) => {
     const { name, files } = e.target;
     const file = files[0];
@@ -117,14 +116,18 @@ const ClinicSubscribe = () => {
       if (data.secure_url) {
         console.log("File uploaded to Cloudinary:", data.secure_url);
   
-        // Store document URL locally, but DO NOT update Firestore yet
+        // Update verificationDocs state with the new URL
         setVerificationDocs((prevDocs) => {
           const updatedDocs = {
             ...prevDocs,
-            [name]: data.secure_url,
+            [name]: data.secure_url, // Use the input name (e.g., "birDoc" or "businessPermit") as the key
           };
-          console.log("Document uploaded successfully.");
-        updateFirestoreVerificationDocs(updatedDocs);
+  
+          // Call updateFirestoreVerificationDocs to save the updated docs to Firestore
+          updateFirestoreVerificationDocs(updatedDocs).catch((error) => {
+            console.error("Error updating Firestore:", error);
+          });
+  
           return updatedDocs;
         });
       } else {
@@ -135,17 +138,30 @@ const ClinicSubscribe = () => {
       alert("Failed to upload document. Please try again.");
     }
   };
-  
+ 
   const updateFirestoreVerificationDocs = async (updatedDocs) => {
     try {
+      // Validate updatedDocs
+      if (!updatedDocs || typeof updatedDocs !== "object") {
+        throw new Error("Invalid updatedDocs object");
+      }
+  
+      // Log for debugging
+      console.log("Updating Firestore with:", updatedDocs);
+  
+      // Reference to the Firestore document
       const clinicRef = doc(db, "registersClinics", auth.currentUser?.uid);
+  
+      // Update Firestore with the new verificationDocs
       await setDoc(clinicRef, { verificationDocs: updatedDocs }, { merge: true });
+  
+      // Log success
       console.log("Verification docs updated in Firestore:", updatedDocs);
     } catch (error) {
       console.error("Error updating Firestore:", error);
+      throw error; // Re-throw the error to handle it in the calling function
     }
   };
-  
   const isValidPhilippinesNumber = (number) => {
     const phRegex = /^(\+63|0)9\d{9}$/;
     return phRegex.test(number);
@@ -177,7 +193,6 @@ const ClinicSubscribe = () => {
         return reject(reason);
       });
   });
-  
   const nextStep = async () => {
     if (currentStep < 4) {
       if (currentStep === 2) {
@@ -193,6 +208,7 @@ const ClinicSubscribe = () => {
       setCurrentStep(currentStep + 1);
     } else {
       try {
+        // Check if all required documents are uploaded
         if (!verificationDocs.birDoc || !verificationDocs.businessPermit) {
           alert("Please upload the required documents.");
           return;
@@ -207,7 +223,8 @@ const ClinicSubscribe = () => {
   
         const user = userCredential.user;
         console.log("✅ Firebase Auth User Created:", user.uid);
-        
+  
+        // Prepare user data for Firestore
         const userData = {
           clinicName: clinicInfo.clinicName,
           FirstName: clinicInfo.ownerFirstName,
@@ -222,25 +239,26 @@ const ClinicSubscribe = () => {
           lng: clinicInfo.lng,
           servicePrices: servicePrices,
           status: "pending",
-          verificationDocs,
+          verificationDocs, // Include the verificationDocs object
           createdAt: new Date(),
         };
-    
+  
         console.log("🔥 Storing user data in Firestore:", userData);
-        
+  
         // Ensure Firestore is initialized
         if (!db) {
           console.error("Firestore is not initialized.");
           return;
         }
   
-        // Retry operation to set document in Firestore
+        // Retry Firestore update
         await retryOperation(() => setDoc(doc(db, "registersClinics", user.uid), userData), 1000, 3);
-        
+  
         console.log("✅ Firestore Document Created for:", user.uid);
   
+        // Show success alert
         alert("Pending Account: Please wait for the admin to confirm the clinic information.");
-        setShowModal(false);
+     
         navigate("/Home");
       } catch (error) {
         console.error("❌ Error creating user or storing data:", error);
