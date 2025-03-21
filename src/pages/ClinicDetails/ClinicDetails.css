@@ -98,6 +98,38 @@
   transform: scale(1.03);
 }
 
+.cta-section {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  margin: 0;
+  padding: 0;
+  text-align: right;
+}
+
+.book-appointment-btn {
+  background: linear-gradient(135deg, #3E6680 0%, #113B57 100%);
+  color: white;
+  border: none;
+  padding: 14px 40px;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(17, 59, 87, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.book-appointment-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 7px 25px rgba(17, 59, 87, 0.4);
+}
+
+.book-appointment-btn:active {
+  transform: translateY(-1px);
+}
+
 .clinic-info-section {
   padding: 40px;
 }
@@ -294,34 +326,126 @@
   font-style: italic;
 }
 
-.cta-section {
-  text-align: center;
-  margin-top: 40px;
-  padding-top: 30px;
-  border-top: 1px solid #eef5f9;
+/* Veterinarians Section Styles */
+.veterinarians-section {
+  margin-bottom: 35px;
 }
 
-.book-appointment-btn {
-  background: linear-gradient(135deg, #3E6680 0%, #113B57 100%);
-  color: white;
-  border: none;
-  padding: 14px 40px;
-  border-radius: 30px;
-  font-size: 1.1rem;
-  font-weight: 600;
+.veterinarians-list {
+  list-style-type: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 35px;
+}
+
+.veterinarian-item {
+  background-color: #f0f8ff;
+  padding: 16px 20px;
+  border-radius: 12px;
+  color: #113B57;
+  display: flex;
+  align-items: center;
+  position: relative;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(17, 59, 87, 0.3);
-  letter-spacing: 0.5px;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #4D9DE0;
 }
 
-.book-appointment-btn:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 7px 25px rgba(17, 59, 87, 0.4);
+.veterinarian-item:hover {
+  background-color: #d0edff;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(77, 157, 224, 0.2);
 }
 
-.book-appointment-btn:active {
-  transform: translateY(-1px);
+.vet-profile-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 15px;
+}
+
+.vet-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.vet-name {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.vet-services {
+  font-size: 0.9rem;
+  color: #444;
+}
+
+/* Veterinarian Modal Styles */
+.vet-modal {
+  background-color: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: modalFadeIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.vet-modal-body {
+  text-align: center;
+  padding: 40px 30px;
+}
+
+.vet-modal-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 15px;
+}
+
+.vet-modal-body h3 {
+  color: #113B57;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.vet-modal-body p {
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.vet-schedule {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.vet-schedule strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #113B57;
+  font-size: 1.1rem;
+}
+
+.vet-schedule ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.vet-schedule li {
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #444;
 }
 
 /* Modal styles */
@@ -506,8 +630,6 @@
   box-shadow: 0 3px 10px rgba(17, 59, 87, 0.2);
 }
 
-
-
 .error-message {
   color: #d32f2f;
   background-color: #ffebee;
@@ -631,7 +753,7 @@
     padding: 25px;
   }
   
-  .services-list {
+  .services-list, .veterinarians-list {
     grid-template-columns: 1fr 1fr;
   }
   
@@ -649,7 +771,7 @@
     font-size: 1.7rem;
   }
   
-  .services-list {
+  .services-list, .veterinarians-list {
     grid-template-columns: 1fr;
   }
   
