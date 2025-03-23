@@ -67,11 +67,14 @@ const ClinicHome = () => {
   });
   const [clinicEmail, setClinicEmail] = useState("");
   const [clinicPasswordInput, setClinicPasswordInput] = useState("");
+  const [showPatientModal, setShowPatientModal] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   const navigate = useNavigate();
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_VET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const DEFAULT_CLINIC_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
+  const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
 
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
@@ -98,6 +101,33 @@ const ClinicHome = () => {
       }
     }
     return String(dateValue);
+  };
+
+  const formatDOB = (dateValue) => {
+    if (!dateValue) return "N/A";
+    let dob;
+    if (dateValue && typeof dateValue.toDate === "function") {
+      dob = dateValue.toDate();
+    } else if (typeof dateValue === "string") {
+      dob = new Date(dateValue);
+    } else {
+      return "N/A";
+    }
+
+    const formattedDate = dob.toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    const today = new Date("2025-03-23"); // Current date as per context
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+
+    return `${formattedDate} (${age})`;
   };
 
   const handleImageChange = (e) => {
@@ -394,24 +424,57 @@ const ClinicHome = () => {
   const handleSignOut = () => {
     setIsSignOutConfirmOpen(true);
   };
-  
+
   const confirmSignOut = async () => {
     try {
       await signOut(getAuth());
-      setIsSignOutConfirmOpen(false); 
-      setIsSignOutSuccessOpen(true); 
+      setIsSignOutConfirmOpen(false);
+      setIsSignOutSuccessOpen(true);
       setTimeout(() => {
-        setIsSignOutSuccessOpen(false); 
-        navigate("/Home"); 
-      }, 2000); 
+        setIsSignOutSuccessOpen(false);
+        navigate("/Home");
+      }, 2000);
     } catch (error) {
       console.error("Error signing out:", error);
-      setIsSignOutConfirmOpen(false); 
+      setIsSignOutConfirmOpen(false);
     }
   };
 
   const fetchPatients = async () => {
-    setLoading(false);
+    try {
+      setLoading(true);
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const clinicRef = doc(db, "clinics", currentUser.uid);
+        const appointmentsQuery = query(
+          collection(db, "appointments"),
+          where("clinic", "==", clinicRef)
+        );
+        const querySnapshot = await getDocs(appointmentsQuery);
+        const patientIds = new Set();
+        const patientsList = [];
+
+        for (const appointmentDoc of querySnapshot.docs) {
+          const appointmentData = appointmentDoc.data();
+          const petRef = appointmentData.petRef;
+
+          if (petRef && !patientIds.has(petRef.id)) {
+            const petDoc = await getDoc(petRef);
+            if (petDoc.exists()) {
+              patientsList.push({ id: petDoc.id, ...petDoc.data() });
+              patientIds.add(petRef.id);
+            }
+          }
+        }
+
+        setPatients(patientsList);
+      }
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+      setPatients([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchAppointments = async () => {
@@ -467,7 +530,6 @@ const ClinicHome = () => {
           });
         }
 
-        // Sort appointments by dateofAppointment in ascending order
         appointmentsList.sort((a, b) => {
           const dateA = a.dateofAppointment && typeof a.dateofAppointment.toDate === "function"
             ? a.dateofAppointment.toDate()
@@ -517,6 +579,16 @@ const ClinicHome = () => {
   const handleVetNameClick = (vet) => {
     setSelectedVet(vet);
     setShowVetInfoModal(true);
+  };
+
+  const handlePatientClick = (patient) => {
+    setSelectedPatient(patient);
+    setShowPatientModal(true);
+  };
+
+  const closePatientModal = () => {
+    setShowPatientModal(false);
+    setSelectedPatient(null);
   };
 
   useEffect(() => {
@@ -630,6 +702,41 @@ const ClinicHome = () => {
           {activePanel === "patients" && (
             <div className="panel patients-panel">
               <h3>Patients</h3>
+              {loading ? (
+                <p>Loading patients...</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Pet Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patients.length > 0 ? (
+                      patients.map((patient) => (
+                        <tr key={patient.id}>
+                          <td>
+                            <a
+                              href="#!"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handlePatientClick(patient);
+                              }}
+                              className="pet-name-link"
+                            >
+                              {patient.petName}
+                            </a>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td>No patients found</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
           {activePanel === "appointments" && (
@@ -1139,6 +1246,49 @@ const ClinicHome = () => {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {showPatientModal && selectedPatient && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <span className="close-button" onClick={closePatientModal}>×</span>
+            <div className="pet-image-container">
+              <div className="pet-image-wrapper">
+                <img
+                  src={selectedPatient.petImageURL || DEFAULT_PET_IMAGE}
+                  alt={`${selectedPatient.petName}`}
+                  className="pet-image"
+                />
+              </div>
+            </div>
+            <h2>{selectedPatient.petName}</h2>
+            <div className="pet-info-grid">
+              <div className="info-item">
+                <strong>Species:</strong> {selectedPatient.Species || "N/A"}
+              </div>
+              <div className="info-item">
+                <strong>Breed:</strong> {selectedPatient.Breed || "N/A"}
+              </div>
+              <div className="info-item">
+                <strong>Color:</strong> {selectedPatient.Color || "N/A"}
+              </div>
+              <div className="info-item">
+                <strong>Gender:</strong> {selectedPatient.Gender || "N/A"}
+              </div>
+              <div className="info-item">
+                <strong>Weight:</strong> {selectedPatient.Weight ? `${selectedPatient.Weight} kg` : "N/A"}
+              </div>
+              <div className="info-item">
+                <strong>Date of Birth:</strong> {formatDOB(selectedPatient.dateofBirth)}
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="modal-close-btn" onClick={closePatientModal}>
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
