@@ -1,765 +1,627 @@
-import React, { useState, useEffect } from "react"; 
-import "./VeterinaryHome.css"; 
-import { db, auth } from "../../firebase"; 
-import { collection, query, where, getDocs, doc, addDoc, serverTimestamp, getDoc } from "firebase/firestore";
- 
-const VeterinaryHome = () => { 
-  const [activePanel, setActivePanel] = useState("petDetails"); 
-  const [pets, setPets] = useState([]);
-  const [loading, setLoading] = useState(true);
+// VeterinaryHome.jsx
+import React, { useState, useEffect } from "react";
+import "./VeterinaryHome.css";
+import { db, auth } from "../../firebase";
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
+import { getAuth, signOut } from "firebase/auth";
+import { FaCamera, FaEdit } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+
+const VeterinaryHome = () => {
+  const [activePanel, setActivePanel] = useState("appointments");
+  const [vetInfo, setVetInfo] = useState(null);
+  const [editedVetInfo, setEditedVetInfo] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [showAddPetModal, setShowAddPetModal] = useState(false);
-  const [selectedPet, setSelectedPet] = useState(null);
-  const [newPet, setNewPet] = useState({
-    petName: "",
-    Breed: "",
-    Color: "",
-    Species: "",
-    Gender: "",
-    Weight: "",
-    dateofBirth: ""
-  });
-  const [addingPet, setAddingPet] = useState(false);
-  const [addPetError, setAddPetError] = useState("");
-  const [addPetSuccess, setAddPetSuccess] = useState(false);
-  
-  const [newAppointment, setNewAppointment] = useState({
-    petId: "",
-    serviceType: "Vaccination",
-    dateofAppointment: "",
-    veterinarian: "",
-    clinicId: ""
-  });
-  const [bookingAppointment, setBookingAppointment] = useState(false);
-  const [appointmentError, setAppointmentError] = useState("");
-  const [appointmentSuccess, setAppointmentSuccess] = useState(false);
-  const [veterinarians, setVeterinarians] = useState([
-    "Dr. Sarah Johnson",
-    "Dr. Michael Rodriguez",
-    "Dr. Emily Chen",
-    "Dr. James Wilson"
-  ]);
-  const [clinics, setClinics] = useState([]);
-  const [loadingClinics, setLoadingClinics] = useState(true);
- 
-  // Function to safely format dates
+  const [schedule, setSchedule] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showVetModal, setShowVetModal] = useState(false);
+  const [isEditingVet, setIsEditingVet] = useState(false);
+  const [newVetImage, setNewVetImage] = useState(null);
+  const [vetImagePreview, setVetImagePreview] = useState(null);
+  const [isUpdatingVet, setIsUpdatingVet] = useState(false);
+  const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
+  const [isSignOutSuccessOpen, setIsSignOutSuccessOpen] = useState(false);
+  const [showRemarksModal, setShowRemarksModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [newRemark, setNewRemark] = useState("");
+
+  const navigate = useNavigate();
+  const UPLOAD_PRESET = "furwell";
+  const DEFAULT_VET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
+
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
-    
-    if (dateValue && typeof dateValue.toDate === 'function') {
-      return dateValue.toDate().toLocaleString(); 
+    if (typeof dateValue.toDate === "function") {
+      return dateValue.toDate().toLocaleString();
     }
-    
-    if (typeof dateValue === 'string') {
+    if (typeof dateValue === "string") {
       try {
-        return new Date(dateValue).toLocaleString(); 
+        return new Date(dateValue).toLocaleString();
       } catch (e) {
         return dateValue;
       }
     }
-    
-
     return String(dateValue);
   };
 
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewPet({
-      ...newPet,
-      [name]: name === "Weight" ? (value === "" ? "" : parseFloat(value)) : value
-    });
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return "N/A";
+    const dob = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return `${age} years`;
   };
 
-
-  const handleAppointmentChange = (e) => {
-    const { name, value } = e.target;
-    setNewAppointment({
-      ...newAppointment,
-      [name]: value
-    });
-  };
-
-  const handleAddPet = async (e) => {
-    e.preventDefault();
-    setAddingPet(true);
-    setAddPetError("");
-    setAddPetSuccess(false);
-
-    try {
-      if (!newPet.petName || !newPet.Species || !newPet.Gender) {
-        throw new Error("Pet name, species, and gender are required");
-      }
-
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error("You must be logged in to add a pet");
-      }
-
-      const ownerRef = doc(db, "users", currentUser.uid);
-
-      await addDoc(collection(db, "pets"), {
-        ...newPet,
-        owner: ownerRef,
-        createdAt: serverTimestamp()
-      });
-
-
-      setAddPetSuccess(true);
-      
-      setNewPet({
-        petName: "",
-        Breed: "",
-        Color: "",
-        Species: "",
-        Gender: "",
-        Weight: "",
-        dateofBirth: ""
-      });
-
-      fetchPets();
-      
-      setTimeout(() => {
-        setShowAddPetModal(false);
-        setAddPetSuccess(false);
-      }, 2000);
-    } catch (error) {
-      console.error("Error adding pet:", error);
-      setAddPetError(error.message);
-    } finally {
-      setAddingPet(false);
+  const handleVetImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewVetImage(file);
+      setVetImagePreview(URL.createObjectURL(file));
+      setShowVetModal(true);
+      setIsEditingVet(true);
     }
   };
 
-  const handleBookAppointment = async (e) => {
-    e.preventDefault();
-    setBookingAppointment(true);
-    setAppointmentError("");
-    setAppointmentSuccess(false);
-
-    try {
-      if (!newAppointment.petId || !newAppointment.serviceType || !newAppointment.dateofAppointment || !newAppointment.veterinarian || !newAppointment.clinicId) {
-        throw new Error("All fields are required");
-      }
-
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error("You must be logged in to book an appointment");
-      }
-
-      const selectedPet = pets.find(pet => pet.id === newAppointment.petId);
-      if (!selectedPet) {
-        throw new Error("Selected pet not found");
-      }
-
-      const ownerRef = doc(db, "users", currentUser.uid);
-      const petRef = doc(db, "pets", newAppointment.petId);
-      const clinicRef = doc(db, "clinics", newAppointment.clinicId);
-
-      // Add the appointment to Firestore
-      await addDoc(collection(db, "appointments"), {
-        petId: newAppointment.petId,
-        petName: selectedPet.petName, 
-        petRef: petRef, 
-        owner: ownerRef,
-        clinic: clinicRef,
-        serviceType: newAppointment.serviceType,
-        dateofAppointment: new Date(newAppointment.dateofAppointment),
-        veterinarian: newAppointment.veterinarian,
-        createdAt: serverTimestamp()
-      });
-
-      setAppointmentSuccess(true);
-      
-      setNewAppointment({
-        petId: "",
-        serviceType: "Vaccination",
-        dateofAppointment: "",
-        veterinarian: "",
-        clinicId: ""
-      });
-
-      fetchAppointments();
-      
-      setTimeout(() => {
-        setAppointmentSuccess(false);
-      }, 3000);
-    } catch (error) {
-      console.error("Error booking appointment:", error);
-      setAppointmentError(error.message);
-    } finally {
-      setBookingAppointment(false);
-    }
+  const handleVetInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditedVetInfo({ ...editedVetInfo, [name]: value });
   };
 
-  // Fetch pets from Firestore
-  const fetchPets = async () => {
+  const fetchVetInfo = async () => {
     try {
-      setLoading(true);
       const currentUser = auth.currentUser;
-      
       if (currentUser) {
-        const petsQuery = query(
-          collection(db, "pets"),
-          where("owner", "==", doc(db, "users", currentUser.uid))
-        );
-        
-        const querySnapshot = await getDocs(petsQuery);
-        const petsList = [];
-        
-        querySnapshot.forEach((doc) => {
-          petsList.push({ id: doc.id, ...doc.data() });
-        });
-        
-        setPets(petsList);
+        const vetRef = doc(db, "users", currentUser.uid);
+        const vetDoc = await getDoc(vetRef);
+        if (vetDoc.exists()) {
+          const vetData = vetDoc.data();
+          let clinicName = "N/A";
+          if (vetData.clinic) {
+            const clinicDoc = await getDoc(vetData.clinic);
+            if (clinicDoc.exists()) {
+              clinicName = clinicDoc.data().clinicName || "N/A";
+            }
+          }
+          const vetInfoData = {
+            id: vetDoc.id,
+            FirstName: vetData.FirstName || "",
+            LastName: vetData.LastName || "",
+            clinicName,
+            contactNumber: vetData.contactNumber || "",
+            email: vetData.email || "",
+            profileImageURL: vetData.profileImageURL || DEFAULT_VET_IMAGE,
+            schedule: vetData.schedule || [],
+          };
+          setVetInfo(vetInfoData);
+          setEditedVetInfo(vetInfoData);
+          setSchedule(vetData.schedule || []);
+        }
       }
     } catch (error) {
-      console.error("Error fetching pets:", error);
+      console.error("Error fetching vet info:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch clinics from Firestore
-  const fetchClinics = async () => {
+  const handleSaveVetInfo = async () => {
     try {
-      setLoadingClinics(true);
-      const clinicsCollection = collection(db, "clinics");
-      const querySnapshot = await getDocs(clinicsCollection);
-      const clinicsList = [];
-      
-      querySnapshot.forEach((doc) => {
-        const clinicData = doc.data();
-        if (clinicData.clinicName) {
-          clinicsList.push({ 
-            id: doc.id, 
-            name: clinicData.clinicName 
+      setIsUpdatingVet(true);
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const vetRef = doc(db, "users", currentUser.uid);
+        let profileImageURL = editedVetInfo.profileImageURL;
+
+        if (newVetImage && ["image/jpeg", "image/jpg", "image/png"].includes(newVetImage.type)) {
+          const image = new FormData();
+          image.append("file", newVetImage);
+          image.append("cloud_name", "dfgnexrda");
+          image.append("upload_preset", UPLOAD_PRESET);
+
+          const response = await fetch(
+            "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
+            { method: "post", body: image }
+          );
+
+          if (!response.ok) throw new Error("Image upload failed");
+
+          const imgData = await response.json();
+          profileImageURL = imgData.url.toString();
+        }
+
+        await updateDoc(vetRef, {
+          FirstName: editedVetInfo.FirstName,
+          LastName: editedVetInfo.LastName,
+          contactNumber: editedVetInfo.contactNumber,
+          profileImageURL,
+        });
+
+        setVetInfo({ ...editedVetInfo, profileImageURL });
+        setNewVetImage(null);
+        setVetImagePreview(null);
+        setIsEditingVet(false);
+        setShowVetModal(false);
+      }
+    } catch (error) {
+      console.error("Error updating vet info:", error);
+    } finally {
+      setIsUpdatingVet(false);
+    }
+  };
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        // Step 1: Verify the UID from users/uid (optional, since auth.currentUser.uid should suffice)
+        const vetRef = doc(db, "users", currentUser.uid);
+        const vetDoc = await getDoc(vetRef);
+        if (!vetDoc.exists()) {
+          console.error("Veterinarian document does not exist for UID:", currentUser.uid);
+          return;
+        }
+
+        // Step 2: Query appointments where veterinarianId matches the current user's UID
+        const appointmentsQuery = query(
+          collection(db, "appointments"),
+          where("veterinarianId", "==", currentUser.uid)
+        );
+        const querySnapshot = await getDocs(appointmentsQuery);
+        const appointmentsList = [];
+
+        for (const doc of querySnapshot.docs) {
+          const data = doc.data();
+          let petData = {};
+          let ownerName = "N/A";
+
+          if (data.petRef) {
+            const petDoc = await getDoc(data.petRef);
+            if (petDoc.exists()) {
+              petData = petDoc.data();
+            }
+          }
+
+          if (data.owner) {
+            const ownerDoc = await getDoc(data.owner);
+            if (ownerDoc.exists()) {
+              const ownerData = ownerDoc.data();
+              ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "N/A";
+            }
+          }
+
+          appointmentsList.push({
+            id: doc.id,
+            dateofAppointment: data.dateofAppointment,
+            petName: data.petName || petData.petName || "N/A",
+            species: petData.Species || "N/A",
+            breed: petData.Breed || "N/A",
+            age: calculateAge(petData.dateofBirth),
+            owner: ownerName,
+            service: data.serviceType || "N/A",
+            remarks: data.remarks || "",
           });
         }
-      });
-      
-      setClinics(clinicsList);
+
+        setAppointments(appointmentsList);
+      }
     } catch (error) {
-      console.error("Error fetching clinics:", error);
+      console.error("Error fetching appointments:", error);
     } finally {
-      setLoadingClinics(false);
+      setLoading(false);
     }
   };
 
-const fetchAppointments = async () => {
-  try {
-    const currentUser = auth.currentUser;
-    
-    if (currentUser) {
-      const appointmentsQuery = query(
-        collection(db, "appointments"),
-        where("owner", "==", doc(db, "users", currentUser.uid))
-      );
-      
-      const querySnapshot = await getDocs(appointmentsQuery);
-      const appointmentsList = [];
-      
-      for (const appointmentDoc of querySnapshot.docs) {
-        const appointmentData = appointmentDoc.data();
-        let appointmentWithResolvedRefs = { 
-          id: appointmentDoc.id,
-          ...appointmentData
-        };
-        
-        if (typeof appointmentData.petName === 'string') {
-        } 
-        else if (appointmentData.petName && appointmentData.petName.path) {
-          try {
-            const petDocRef = appointmentData.petName;
-            const petDoc = await getDoc(petDocRef);
-            
-            if (petDoc.exists()) {
-              const petData = petDoc.data();
-              appointmentWithResolvedRefs.petName = petData.petName || "Unknown Pet";
-            } else {
-              appointmentWithResolvedRefs.petName = "Pet Not Found";
-            }
-          } catch (error) {
-            console.error("Error fetching pet reference:", error);
-            appointmentWithResolvedRefs.petName = "Error Loading Pet";
-          }
-        } 
-        else if (appointmentData.petId) {
-          try {
-            const petDocRef = doc(db, "pets", appointmentData.petId);
-            const petDoc = await getDoc(petDocRef);
-            
-            if (petDoc.exists()) {
-              const petData = petDoc.data();
-              appointmentWithResolvedRefs.petName = petData.petName || "Unknown Pet";
-            } else {
-              appointmentWithResolvedRefs.petName = "Pet Not Found";
-            }
-          } catch (error) {
-            console.error("Error fetching pet by ID:", error);
-            appointmentWithResolvedRefs.petName = "Error Loading Pet";
-          }
-        } else {
-          appointmentWithResolvedRefs.petName = "Unknown Pet";
-        }
-        
-        // Resolve clinic name
-        if (appointmentData.clinic) {
-          try {
-            const clinicDoc = await getDoc(appointmentData.clinic);
-            if (clinicDoc.exists()) {
-              const clinicData = clinicDoc.data();
-              appointmentWithResolvedRefs.clinicName = clinicData.clinicName || "Unknown Clinic";
-            } else {
-              appointmentWithResolvedRefs.clinicName = "Clinic Not Found";
-            }
-          } catch (error) {
-            console.error("Error fetching clinic:", error);
-            appointmentWithResolvedRefs.clinicName = "Error Loading Clinic";
-          }
-        } else {
-          appointmentWithResolvedRefs.clinicName = "Unknown Clinic";
-        }
-        
-        appointmentsList.push(appointmentWithResolvedRefs);
-      }
-      
-      setAppointments(appointmentsList);
-    }
-  } catch (error) {
-    console.error("Error fetching appointments:", error);
-  }
-};
+  const handleSignOut = () => {
+    setIsSignOutConfirmOpen(true);
+  };
 
-  // Fetch data when component mounts
+  const confirmSignOut = async () => {
+    try {
+      await signOut(getAuth());
+      setIsSignOutConfirmOpen(false);
+      setIsSignOutSuccessOpen(true);
+      setTimeout(() => {
+        setIsSignOutSuccessOpen(false);
+        navigate("/Home");
+      }, 2000);
+    } catch (error) {
+      console.error("Error signing out:", error);
+      setIsSignOutConfirmOpen(false);
+    }
+  };
+
+  const openRemarksModal = (appointment) => {
+    setSelectedAppointment(appointment);
+    setNewRemark(appointment.remarks || "");
+    setShowRemarksModal(true);
+  };
+
+  const handleRemarkChange = (e) => {
+    setNewRemark(e.target.value);
+  };
+
+  const saveRemark = async () => {
+    if (selectedAppointment) {
+      try {
+        const appointmentRef = doc(db, "appointments", selectedAppointment.id);
+        await updateDoc(appointmentRef, { remarks: newRemark });
+        setAppointments((prev) =>
+          prev.map((appt) =>
+            appt.id === selectedAppointment.id ? { ...appt, remarks: newRemark } : appt
+          )
+        );
+        setShowRemarksModal(false);
+        setSelectedAppointment(null);
+        setNewRemark("");
+      } catch (error) {
+        console.error("Error updating remark:", error);
+      }
+    }
+  };
+
   useEffect(() => {
-    fetchPets();
+    fetchVetInfo();
     fetchAppointments();
-    fetchClinics();
   }, []);
 
-  const handlePetClick = (pet) => {
-    setSelectedPet(pet);
-    setShowModal(true);
-  };
+  return (
+    <div className="vet-container">
+      <div className="sidebar">
+        {vetInfo && (
+          <div className="vet-sidebar-panel">
+            <div className="vet-img-container">
+              <img
+                src={vetInfo.profileImageURL}
+                alt="Vet Profile"
+                className="veterinarian-profile-image"
+              />
+              <label htmlFor="vet-image-upload" className="edit-icon">
+                <FaCamera />
+              </label>
+              <input
+                type="file"
+                id="vet-image-upload"
+                accept="image/jpeg, image/jpg, image/png"
+                onChange={handleVetImageChange}
+                style={{ display: "none" }}
+              />
+            </div>
+            <button
+              className={activePanel === "vetInfo" ? "active" : ""}
+              onClick={() => setActivePanel("vetInfo")}
+            >
+              {vetInfo.FirstName} {vetInfo.LastName}
+            </button>
+          </div>
+        )}
+        <div className="sidebar-buttons">
+          <button
+            className={activePanel === "appointments" ? "active" : ""}
+            onClick={() => setActivePanel("appointments")}
+          >
+            Upcoming Appointments
+          </button>
+          <button
+            className={activePanel === "schedule" ? "active" : ""}
+            onClick={() => setActivePanel("schedule")}
+          >
+            Schedule
+          </button>
+        </div>
+        <button className="signout-btn" onClick={handleSignOut}>
+          Sign Out
+        </button>
+      </div>
 
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedPet(null);
-  };
-
-  const openAddPetModal = () => {
-    setShowAddPetModal(true);
-  };
-
-  const closeAddPetModal = () => {
-    setShowAddPetModal(false);
-    setNewPet({
-      petName: "",
-      Breed: "",
-      Color: "",
-      Species: "",
-      Gender: "",
-      Weight: "",
-      dateofBirth: ""
-    });
-    setAddPetError("");
-    setAddPetSuccess(false);
-  };
-
-  return ( 
-    <div className="pet-owner-container"> 
-      <div className="sidebar"> 
-        <h2>Pet Owner</h2> 
-        <button 
-          className={activePanel === "petDetails" ? "active" : ""} 
-          onClick={() => setActivePanel("petDetails")} 
-        > 
-          Upcoming Appointments
-        </button> 
-        <button 
-          className={activePanel === "appointments" ? "active" : ""} 
-          onClick={() => setActivePanel("appointments")} 
-        > 
-          Schedule
-        </button> 
-        <button 
-          className={activePanel === "bookAppointment" ? "active" : ""} 
-          onClick={() => setActivePanel("bookAppointment")} 
-        > 
-          Insert Req'd info
-        </button> 
-      </div> 
- 
-      <div className="content"> 
-        <div className="panel-container"> 
-          {activePanel === "petDetails" && ( 
-            <div className="panel pet-details-panel"> 
-              <div className="pet-details-header">
-                <h3>Upcoming Appointments</h3>
-                <button className="addpetbutt" onClick={openAddPetModal}>Add A Pet</button>
+      <div className="content">
+        <div className="panel-container">
+          {activePanel === "vetInfo" && vetInfo && (
+            <div className="panel vet-info-panel">
+              <h3>Veterinarian Information</h3>
+              <div className="vet-details">
+                <img
+                  src={vetInfo.profileImageURL}
+                  alt="Veterinarian"
+                  className="vet-info-img"
+                />
+                <p><strong>First Name:</strong> {vetInfo.FirstName}</p>
+                <p><strong>Last Name:</strong> {vetInfo.LastName}</p>
+                <p><strong>Clinic:</strong> {vetInfo.clinicName}</p>
+                <p><strong>Contact:</strong> {vetInfo.contactNumber || "N/A"}</p>
+                <p><strong>Email:</strong> {vetInfo.email}</p>
+                <button
+                  className="edit-vet-btn"
+                  onClick={() => {
+                    setShowVetModal(true);
+                    setIsEditingVet(true);
+                  }}
+                >
+                  Edit Profile
+                </button>
               </div>
+            </div>
+          )}
+
+          {activePanel === "appointments" && (
+            <div className="panel appointments-panel">
+              <h3>Upcoming Appointments</h3>
               {loading ? (
-                <p>Loading pet details...</p>
+                <p>Loading appointments...</p>
               ) : (
-                <table> 
-                  <thead> 
-                    <tr> 
-                      <th>Pet ID</th>
-                      <th>Date</th>
-                      <th>Time</th> 
-                      <th>Pet Name</th> 
-                      <th>Owner</th> 
-                      <th>Species</th> 
-                      <th>Service</th> 
-                      <th>Comments</th> 
-                    </tr> 
-                  </thead> 
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date of Appointment</th>
+                      <th>Pet Name</th>
+                      <th>Species</th>
+                      <th>Breed</th>
+                      <th>Age</th>
+                      <th>Owner</th>
+                      <th>Service</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {pets.length > 0 ? (
-                      pets.map((pet) => (
-                        <tr key={pet.id}>
+                    {appointments.length > 0 ? (
+                      appointments.map((appt) => (
+                        <tr key={appt.id}>
+                          <td>{formatDate(appt.dateofAppointment)}</td>
+                          <td>{appt.petName}</td>
+                          <td>{appt.species}</td>
+                          <td>{appt.breed}</td>
+                          <td>{appt.age}</td>
+                          <td>{appt.owner}</td>
+                          <td>{appt.service}</td>
                           <td>
-                            <a 
-                              href="#!" 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handlePetClick(pet);
-                              }}
-                              className="pet-name-link"
-                            >
-                              {pet.petName}
-                            </a>
+                            {appt.remarks || "N/A"}
+                            <FaEdit
+                              className="edit-remark-icon"
+                              onClick={() => openRemarksModal(appt)}
+                            />
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="6">No pets found</td>
+                        <td colSpan="8">No upcoming appointments</td>
                       </tr>
                     )}
-                  </tbody> 
+                  </tbody>
                 </table>
               )}
-            </div> 
-          )} 
- 
-          {activePanel === "appointments" && ( 
-            <div className="panel appointments-panel"> 
-              <h3>Schedule</h3> 
-              <table> 
-                <thead> 
-                  <tr> 
-                    <th>Monday</th> 
-                    <th>Tuesday</th> 
-                    <th>Wednesday</th> 
-                    <th>Thursday</th> 
-                    <th>Friday</th> 
-                    <th>Saturday</th> 
-                    <th>Sunday</th> 
-                  </tr> 
-                </thead> 
+            </div>
+          )}
+
+          {activePanel === "schedule" && (
+            <div className="panel schedule-panel">
+              <h3>Schedule</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Monday</th>
+                    <th>Tuesday</th>
+                    <th>Wednesday</th>
+                    <th>Thursday</th>
+                    <th>Friday</th>
+                    <th>Saturday</th>
+                    <th>Sunday</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {appointments.length > 0 ? (
-                    appointments.map((appointment) => (
-                      <tr key={appointment.id}>
-                        <td>{typeof appointment.petName === 'string' ? appointment.petName : 'Unknown Pet'}</td>
-                        <td>{formatDate(appointment.dateofAppointment)}</td>
-                        <td>{appointment.clinicName || "N/A"}</td>
-                        <td>{appointment.serviceType || "N/A"}</td>
-                        <td>{appointment.veterinarian || "N/A"}</td>
-                        
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="7">No appointments found</td>
-                    </tr>
-                  )}
-                </tbody> 
-              </table> 
-            </div> 
-          )} 
- 
-          {activePanel === "bookAppointment" && ( 
-            <div className="panel book-appointment-panel"> 
-              <h3>Book Appointment</h3> 
-              
-              {appointmentSuccess && (
-                <div className="success-message">
-                  Appointment booked successfully!
-                </div>
-              )}
-              
-              {appointmentError && (
-                <div className="error-message">
-                  {appointmentError}
-                </div>
-              )}
-              
-              <form onSubmit={handleBookAppointment}> 
-                <div className="form-group">
-                  <label htmlFor="petId">Choose Pet *</label> 
-                  <select
-                    id="petId"
-                    name="petId"
-                    value={newAppointment.petId}
-                    onChange={handleAppointmentChange}
-                    required
-                  >
-                    <option value="">Select a pet</option>
-                    {pets.map((pet) => (
-                      <option key={pet.id} value={pet.id}>
-                        {pet.petName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="serviceType">Service Type *</label> 
-                  <select
-                    id="serviceType"
-                    name="serviceType"
-                    value={newAppointment.serviceType}
-                    onChange={handleAppointmentChange}
-                    required
-                  > 
-                    <option value="Vaccination">Vaccination</option> 
-                    <option value="Pet Surgery">Pet Surgery</option> 
-                    <option value="Regular Checkup">Regular Checkup</option>
-                    <option value="Grooming">Grooming</option>
-                    <option value="Dental Care">Dental Care</option>
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="veterinarian">Veterinarian *</label>
-                  <select
-                    id="veterinarian"
-                    name="veterinarian"
-                    value={newAppointment.veterinarian}
-                    onChange={handleAppointmentChange}
-                    required
-                  >
-                    <option value="">Select a veterinarian</option>
-                    {veterinarians.map((vet, index) => (
-                      <option key={index} value={vet}>
-                        {vet}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="clinicId">Clinic Location *</label> 
-                  <select
-                    id="clinicId"
-                    name="clinicId"
-                    value={newAppointment.clinicId}
-                    onChange={handleAppointmentChange}
-                    required
-                  >
-                    <option value="">Select a clinic</option>
-                    {loadingClinics ? (
-                      <option value="" disabled>Loading clinics...</option>
-                    ) : (
-                      clinics.map((clinic) => (
-                        <option key={clinic.id} value={clinic.id}>
-                          {clinic.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="dateofAppointment">Appointment Date & Time *</label> 
-                  <input
-                    type="datetime-local"
-                    id="dateofAppointment"
-                    name="dateofAppointment"
-                    value={newAppointment.dateofAppointment}
-                    onChange={handleAppointmentChange}
-                    required
-                    min={new Date().toISOString().slice(0, 16)}
-                  /> 
-                </div>
-                
-                <div className="form-actions">
-                  <button 
-                    type="submit"
-                    disabled={bookingAppointment || !newAppointment.petId}
-                    className="submit-btn"
-                  >
-                    {bookingAppointment ? "Booking..." : "Book Appointment"}
-                  </button>
-                </div>
-              </form> 
-            </div> 
-          )} 
+                  <tr>
+                    {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => {
+                      const sched = schedule.find((s) => s.day === day);
+                      return (
+                        <td key={day}>
+                          {sched ? `${sched.startTime} - ${sched.endTime}` : "N/A"}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Pet Details Modal */}
-      {showModal && selectedPet && (
+      {showVetModal && vetInfo && (
         <div className="modal-overlay">
-          <div className="modal-content">
-            <span className="close-button" onClick={closeModal}>&times;</span>
-            <h2>{selectedPet.petName}</h2>
-            <div className="pet-info-grid">
-              <div className="info-item">
-                <strong>Species:</strong> {selectedPet.Species || "N/A"}
-              </div>
-              <div className="info-item">
-                <strong>Breed:</strong> {selectedPet.Breed || "N/A"}
-              </div>
-              <div className="info-item">
-                <strong>Color:</strong> {selectedPet.Color || "N/A"}
-              </div>
-              <div className="info-item">
-                <strong>Gender:</strong> {selectedPet.Gender || "N/A"}
-              </div>
-              <div className="info-item">
-                <strong>Weight:</strong> {selectedPet.Weight ? `${selectedPet.Weight} kg` : "N/A"}
-              </div>
-              <div className="info-item">
-                <strong>Date of Birth:</strong> {formatDate(selectedPet.dateofBirth)}
-              </div>
-            </div>
-            <button className="modal-close-btn" onClick={closeModal}>Close</button>
+          <div className="modal-content-v">
+            <span
+              className="close-button"
+              onClick={() => {
+                setShowVetModal(false);
+                setIsEditingVet(false);
+              }}
+            >
+              ×
+            </span>
+            {isEditingVet ? (
+              <>
+                <h2>Edit Veterinarian Information</h2>
+                <div className="vet-image-upload-container">
+                  <label
+                    htmlFor="vet-image-upload-modal"
+                    className="vet-image-upload"
+                    style={
+                      vetImagePreview
+                        ? { backgroundImage: `url(${vetImagePreview})` }
+                        : { backgroundImage: `url(${editedVetInfo.profileImageURL})` }
+                    }
+                  >
+                    {!vetImagePreview && !editedVetInfo.profileImageURL && (
+                      <>
+                        <FaCamera className="camera-icon" />
+                        <p>Upload Photo</p>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      id="vet-image-upload-modal"
+                      accept="image/jpeg, image/jpg, image/png"
+                      onChange={handleVetImageChange}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="FirstName">First Name</label>
+                  <input
+                    type="text"
+                    id="FirstName"
+                    name="FirstName"
+                    value={editedVetInfo.FirstName}
+                    onChange={handleVetInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="LastName">Last Name</label>
+                  <input
+                    type="text"
+                    id="LastName"
+                    name="LastName"
+                    value={editedVetInfo.LastName}
+                    onChange={handleVetInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="contactNumber">Contact Number</label>
+                  <input
+                    type="text"
+                    id="contactNumber"
+                    name="contactNumber"
+                    value={editedVetInfo.contactNumber}
+                    onChange={handleVetInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={editedVetInfo.email}
+                    readOnly
+                  />
+                </div>
+                <div className="form-actions">
+                  <button
+                    className="submit-btn"
+                    onClick={handleSaveVetInfo}
+                    disabled={isUpdatingVet}
+                  >
+                    {isUpdatingVet ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    className="cancel-btn"
+                    onClick={() => {
+                      setShowVetModal(false);
+                      setIsEditingVet(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <img
+                  src={vetInfo.profileImageURL}
+                  alt="Veterinarian"
+                  className="vet-info-img"
+                />
+                <h2>{vetInfo.FirstName} {vetInfo.LastName}</h2>
+                <p><strong>Clinic:</strong> {vetInfo.clinicName}</p>
+                <p><strong>Contact:</strong> {vetInfo.contactNumber || "N/A"}</p>
+                <p><strong>Email:</strong> {vetInfo.email}</p>
+                <button
+                  className="modal-close-btn"
+                  onClick={() => setShowVetModal(false)}
+                >
+                  Close
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
 
-      {/* Add Pet Modal */}
-      {showAddPetModal && (
+      {isSignOutConfirmOpen && (
         <div className="modal-overlay">
-          <div className="modal-content add-pet-modal">
-            <span className="close-button" onClick={closeAddPetModal}>&times;</span>
-            <h2>Add New Pet</h2>
-            
-            {addPetSuccess && (
-              <div className="success-message">
-                Pet added successfully!
-              </div>
-            )}
-            
-            {addPetError && (
-              <div className="error-message">
-                {addPetError}
-              </div>
-            )}
-            
-            <form onSubmit={handleAddPet}>
-              <div className="form-group">
-                <label htmlFor="petName">Pet Name *</label>
-                <input
-                  type="text"
-                  id="petName"
-                  name="petName"
-                  value={newPet.petName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="Species">Species *</label>
-                <input
-                  type="text"
-                  id="Species"
-                  name="Species"
-                  value={newPet.Species}
-                  onChange={handleInputChange}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="Breed">Breed</label>
-                <input
-                  type="text"
-                  id="Breed"
-                  name="Breed"
-                  value={newPet.Breed}
-                  onChange={handleInputChange}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="Color">Color</label>
-                <input
-                  type="text"
-                  id="Color"
-                  name="Color"
-                  value={newPet.Color}
-                  onChange={handleInputChange}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="Gender">Gender *</label>
-                <select
-                  id="Gender"
-                  name="Gender"
-                  value={newPet.Gender}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="Weight">Weight (kg)</label>
-                <input
-                  type="number"
-                  id="Weight"
-                  name="Weight"
-                  value={newPet.Weight}
-                  onChange={handleInputChange}
-                  step="0.1"
-                  min="0"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="dateofBirth">Date of Birth</label>
-                <input
-                  type="date"
-                  id="dateofBirth"
-                  name="dateofBirth"
-                  value={newPet.dateofBirth}
-                  onChange={handleInputChange}
-                  max={new Date().toISOString().split('T')[0]}
-                />
-              </div>
-              
-              <div className="form-actions">
-                <button 
-                  type="button" 
-                  className="cancel-btn"
-                  onClick={closeAddPetModal}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="submit-btn"
-                  disabled={addingPet}
-                >
-                  {addingPet ? "Adding..." : "Add Pet"}
-                </button>
-              </div>
-            </form>
+          <div className="modal-content signout-confirm-modal">
+            <p>Are you sure you want to sign out?</p>
+            <div className="form-actions">
+              <button className="submit-btn" onClick={confirmSignOut}>
+                Yes
+              </button>
+              <button
+                className="cancel-btn"
+                onClick={() => setIsSignOutConfirmOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
-    </div> 
-  ); 
-}; 
- 
+
+      {isSignOutSuccessOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content signout-success-modal">
+            <div className="success-content">
+              <img
+                src="/images/check.gif"
+                alt="Success Checkmark"
+                className="success-image"
+              />
+              <p>Signed Out Successfully</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRemarksModal && selectedAppointment && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <span
+              className="close-button"
+              onClick={() => setShowRemarksModal(false)}
+            >
+              ×
+            </span>
+            <h2>Add/Edit Remark for {selectedAppointment.petName}</h2>
+            <div className="form-group">
+              <label htmlFor="remark">Remark</label>
+              <textarea
+                id="remark"
+                value={newRemark}
+                onChange={handleRemarkChange}
+                rows="4"
+                style={{ width: "100%", padding: "10px", borderRadius: "5px" }}
+              />
+            </div>
+            <div className="form-actions">
+              <button className="submit-btn" onClick={saveRemark}>
+                Save
+              </button>
+              <button
+                className="cancel-btn"
+                onClick={() => setShowRemarksModal(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default VeterinaryHome;

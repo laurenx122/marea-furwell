@@ -1,33 +1,65 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
 
-/* General Layout */
-.pet-owner-container {
+.vet-container {
   display: flex;
   height: 100vh;
   background-color: #d3f0f7;
-  font-family: 'Albert Sans';
+  font-family: 'Albert Sans', sans-serif;
 }
 
-/* Sidebar Styling */
 .sidebar {
   width: 250px;
   background-color: #EDBFC6;
-  padding: 15x;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 15px;
   align-items: flex-start;
-  font-family: 'Albert Sans';
+  justify-content: space-between; /* Adjusted to space between for sign-out button */
+  height: auto;
+  max-height: 100vh;
 }
 
-.sidebar h2 {
-  font-size: 24px;
-  margin-bottom: 15px;
+.vet-sidebar-panel {
+  width: 100%;
+}
+
+.vet-img-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 150px;
+  height: 150px;
+  margin: 0 auto 20px;
+}
+
+.veterinarian-profile-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffb6c1;
+}
+
+.edit-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  padding: 5px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar button {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   font-size: 16px;
   border: none;
   cursor: pointer;
@@ -35,7 +67,11 @@
   border-radius: 5px;
   text-align: left;
   transition: 0.3s;
-  font-family: 'Albert Sans';
+  font-family: 'Albert Sans', sans-serif;
+}
+
+.sidebar button:hover {
+  background-color: #ffcdd2;
 }
 
 .sidebar button.active {
@@ -44,15 +80,36 @@
   font-weight: bold;
 }
 
-/* Content Area */
+.sidebar-buttons {
+  margin-top: 20px;
+  flex-grow: 1; /* Ensures buttons take up available space */
+}
+
+.signout-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  background-color: #ff8c94;
+  color: black;
+  border-radius: 5px;
+  text-align: left;
+  transition: background-color 0.3s, transform 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.signout-btn:hover {
+  background-color: #ff5555;
+  transform: translateY(-2px);
+}
+
 .content {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  margin-top: 60px;
 }
 
-/* Panel Container */
 .panel-container {
   background: white;
   padding: 20px;
@@ -60,7 +117,6 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Table Styling */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -68,7 +124,7 @@ table {
 }
 
 th, td {
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #FF7B7B;
   text-align: left;
 }
@@ -77,267 +133,205 @@ th {
   background-color: #ffb6c1;
 }
 
-td button {
-  background-color: #ff69b4;
+.appointments-panel { background-color: #fdf6c2; }
+.schedule-panel { background-color: #c2f0d1; }
+.vet-info-panel { background-color: #ffe4e6; }
+
+.panel h3 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #ff4081;
+}
+
+.vet-info-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 15px;
+  border: 3px solid #ffb6c1;
+}
+
+.edit-vet-btn {
+  margin-top: 15px;
+  background-color: #ff4081;
   color: white;
-  padding: 5px 10px;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-td button:hover {
-  background-color: #ff1493;
-}
-
-/* Panel Colors */
-.pet-details-panel {
-  background-color: #ffe4e6;
-}
-
-.appointments-panel {
-  background-color: #fdf6c2;
-}
-
-.book-appointment-panel {
-  background-color: #c2f0d1;
-}
-
-/* Form Styling */
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-form input,
-form select {
-  padding: 8px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-form button {
-  padding: 10px;
-  background-color: #ff8c94;
-  color: white;
+  padding: 8px 16px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
 }
 
-form button:hover {
-  background-color: #ff1493;
+.edit-vet-btn:hover {
+  background-color: #f50057;
 }
 
-/* Pet name link styling */
-.pet-name-link {
-  color: #000;
-  text-decoration: none;
-  font-weight: bold;
+.edit-remark-icon {
+  margin-left: 10px;
   cursor: pointer;
+  color: #ff4081;
 }
 
-.pet-name-link:hover {
-  color: #555;
+.edit-remark-icon:hover {
+  color: #f50057;
 }
 
-/* Updated Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
 }
 
-.modal-content {
-  background-color: #E3F2FD;
-  border-radius: 8px;
+.modal-content-v {
+  background-color: #d3f0f7;
+  border-radius: 10px;
   padding: 20px;
-  width: 350px;
+  width: 500px;
   max-width: 90%;
+  text-align: center;
   position: relative;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .close-button {
   position: absolute;
   top: 10px;
-  right: 15px;
+  right: 10px;
   font-size: 24px;
   cursor: pointer;
-  color: #5C9EBC;
-}
-
-.close-button:hover {
-  color: #2F7A99;
-}
-
-h2 {
-  margin-top: 0;
   color: #333;
-  padding-bottom: 10px;
+}
+
+.modal-content h2 {
+  font-size: 24px;
+  color: #ff4081;
   margin-bottom: 20px;
 }
 
-.pet-info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.info-item {
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-radius: 4px;
-}
-
-.info-item strong {
-  color: #555;
-}
-
-.modal-close-btn {
-  background-color: #5DB5A4;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: block;
-  margin: 0 auto;
-  font-weight: bold;
-}
-
-.modal-close-btn:hover {
-  background-color: #4A9B8B;
-}
-
-/* Pet details header */
-.pet-details-header {
+.vet-image-upload-container {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  padding: 20px;
+  background-color: #ffb6c1;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.vet-image-upload {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  margin-bottom: 15px;
-}
-
-.pet-details-header h3 {
-  margin: 0;
-}
-
-.addpetbutt {
-  background-color: #ff8c94;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 15px;
+  justify-content: center;
   cursor: pointer;
-  font-family: 'Albert Sans';
+  background-size: cover;
+  background-position: center;
+  border: 3px solid #fff;
 }
 
-.addpetbutt:hover {
-  background-color: #ff1493;
+.vet-image-upload .camera-icon {
+  font-size: 24px;
+  color: #ff4081;
 }
 
-/* Add Pet Modal - SMALLER FORM */
-.add-pet-modal {
-  width: 400px;
-  max-width: 85%;
-  margin-top: 60px;
+.vet-image-upload p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  color: #333;
 }
 
 .form-group {
-  margin-bottom: 5px;
+  margin-bottom: 15px;
+  text-align: left;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 4px;
-  font-weight: 500;
-  color: #555;
-  font-size: 13px;
+  margin-bottom: 5px;
+  color: #333;
+  font-weight: bold;
 }
 
 .form-group input,
-.form-group select {
+.form-group textarea {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #4A9B8B;
-  border-radius: 4px;
-  font-size: 13px;
-  box-sizing: border-box;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
 }
 
 .form-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.cancel-btn {
-  background-color: #FFCDD2;
-  color: #333;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.cancel-btn:hover {
-  background-color: #F8BBD0;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
 }
 
 .submit-btn {
-  background-color: #5DB5A4;
+  background-color: #ff4081;
   color: white;
+  padding: 10px 20px;
   border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
-  font-weight: 500;
 }
 
 .submit-btn:hover {
-  background-color: #4A9B8B;
+  background-color: #f50057;
 }
 
 .submit-btn:disabled {
-  background-color: #95a5a6;
+  background-color: #ccc;
   cursor: not-allowed;
 }
 
-.success-message {
-  background-color: #C8E6C9;
-  color: #155724;
-  padding: 8px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-  text-align: center;
-  font-size: 13px;
+.cancel-btn {
+  background-color: #999;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-.error-message {
-  background-color: #FFEBEE;
-  color: #721c24;
-  padding: 8px;
-  border-radius: 4px;
-  margin-bottom: 12px;
+.cancel-btn:hover {
+  background-color: #666;
+}
+
+.signout-confirm-modal {
+  padding: 20px;
   text-align: center;
-  font-size: 13px;
+}
+
+.signout-success-modal {
+  padding: 10px;
+  text-align: center;
+}
+
+.success-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.success-image {
+  width: 40px;
+  height: 40px;
+  margin-right: 15px;
+}
+
+.signout-success-modal p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
 }

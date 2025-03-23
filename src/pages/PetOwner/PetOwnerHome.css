@@ -89,7 +89,7 @@
 
 /* Content Area */
 .content {
-  flexed: 1;
+  flex: 1;
   padding: 20px;
   overflow-y: auto;
   margin-top: 0;
@@ -104,6 +104,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  margin-top: 50px;
 }
 
 /* Table Styling */
@@ -209,7 +210,7 @@ form {
 
 .form-group input,
 .form-group select {
-  width: 100%;
+  width: 95%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
