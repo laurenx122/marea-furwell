@@ -299,9 +299,7 @@ const ClinicDetails = () => {
         veterinarian: veterinarians.find((v) => v.id === veterinarianId).FirstName + " " + 
                      veterinarians.find((v) => v.id === veterinarianId).LastName,
         serviceType,
-        dateofAppointment: new Date(dateofAppointment),
-        status: "pending",
-        createdAt: serverTimestamp()
+        dateofAppointment: new Date(dateofAppointment),        createdAt: serverTimestamp()
       });
       
       setBookingStatus({ loading: false, success: true, error: null });

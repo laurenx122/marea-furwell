@@ -25,8 +25,7 @@ import ClinicDetails from './pages/ClinicDetails/ClinicDetails';
 
 const Layout = ({ children }) => {
   const location = useLocation();
-  const noNavbarRoutes = ['/ClinicHome']; // Add routes where Navbar should not appear
-  //Adding '/PetOwnerHome' soon
+  const noNavbarRoutes = ['/ClinicHome', '/VeterinaryHome']; // Add routes where Navbar should not appear
   return (
     <>
       {!noNavbarRoutes.includes(location.pathname) && <Navbar />}
