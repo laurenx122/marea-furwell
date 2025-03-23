@@ -31,17 +31,24 @@ const VeterinaryHome = () => {
 
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
+    let date;
     if (typeof dateValue.toDate === "function") {
-      return dateValue.toDate().toLocaleString();
+      date = dateValue.toDate();
+    } else if (typeof dateValue === "string" || dateValue instanceof Date) {
+      date = new Date(dateValue);
+    } else {
+      return "N/A";
     }
-    if (typeof dateValue === "string") {
-      try {
-        return new Date(dateValue).toLocaleString();
-      } catch (e) {
-        return dateValue;
-      }
-    }
-    return String(dateValue);
+  
+    const month = date.toLocaleString("en-US", { month: "long" });
+    const day = date.getDate();
+    const year = date.getFullYear();
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const period = hours >= 12 ? "PM" : "AM";
+    const hour12 = hours % 12 || 12;
+  
+    return `${month} ${day}, ${year} at ${hour12}:${minutes} ${period}`;
   };
 
   const calculateAge = (dateOfBirth) => {
@@ -158,34 +165,32 @@ const VeterinaryHome = () => {
       setLoading(true);
       const currentUser = auth.currentUser;
       if (currentUser) {
-        // Step 1: Verify the UID from users/uid (optional, since auth.currentUser.uid should suffice)
         const vetRef = doc(db, "users", currentUser.uid);
         const vetDoc = await getDoc(vetRef);
         if (!vetDoc.exists()) {
           console.error("Veterinarian document does not exist for UID:", currentUser.uid);
           return;
         }
-
-        // Step 2: Query appointments where veterinarianId matches the current user's UID
+  
         const appointmentsQuery = query(
           collection(db, "appointments"),
           where("veterinarianId", "==", currentUser.uid)
         );
         const querySnapshot = await getDocs(appointmentsQuery);
         const appointmentsList = [];
-
+  
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
           let petData = {};
           let ownerName = "N/A";
-
+  
           if (data.petRef) {
             const petDoc = await getDoc(data.petRef);
             if (petDoc.exists()) {
               petData = petDoc.data();
             }
           }
-
+  
           if (data.owner) {
             const ownerDoc = await getDoc(data.owner);
             if (ownerDoc.exists()) {
@@ -193,10 +198,10 @@ const VeterinaryHome = () => {
               ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "N/A";
             }
           }
-
+  
           appointmentsList.push({
             id: doc.id,
-            dateofAppointment: data.dateofAppointment,
+            dateofAppointment: data.dateofAppointment, // Use the actual Firestore data
             petName: data.petName || petData.petName || "N/A",
             species: petData.Species || "N/A",
             breed: petData.Breed || "N/A",
@@ -206,7 +211,7 @@ const VeterinaryHome = () => {
             remarks: data.remarks || "",
           });
         }
-
+  
         setAppointments(appointmentsList);
       }
     } catch (error) {
@@ -271,7 +276,7 @@ const VeterinaryHome = () => {
 
   return (
     <div className="vet-container">
-      <div className="sidebar">
+      <div className="sidebar-v">
         {vetInfo && (
           <div className="vet-sidebar-panel">
             <div className="vet-img-container">
@@ -299,7 +304,7 @@ const VeterinaryHome = () => {
             </button>
           </div>
         )}
-        <div className="sidebar-buttons">
+        <div className="sidebar-buttons-v">
           <button
             className={activePanel === "appointments" ? "active" : ""}
             onClick={() => setActivePanel("appointments")}
@@ -313,7 +318,7 @@ const VeterinaryHome = () => {
             Schedule
           </button>
         </div>
-        <button className="signout-btn" onClick={handleSignOut}>
+        <button className="signout-btn-v" onClick={handleSignOut}>
           Sign Out
         </button>
       </div>

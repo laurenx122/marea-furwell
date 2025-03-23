@@ -78,6 +78,33 @@ const PetOwnerHome = () => {
     return String(dateValue);
   };
 
+  const formatDOB = (dateValue) => {
+    if (!dateValue) return "N/A";
+    let dob;
+    if (dateValue && typeof dateValue.toDate === "function") {
+      dob = dateValue.toDate();
+    } else if (typeof dateValue === "string") {
+      dob = new Date(dateValue);
+    } else {
+      return "N/A";
+    }
+
+    const formattedDate = dob.toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    const today = new Date("2025-03-23"); // Current date as per context
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+
+    return `${formattedDate} (${age})`;
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -314,7 +341,6 @@ const PetOwnerHome = () => {
           });
         }
   
-        // Sort appointments by dateofAppointment in ascending order
         appointmentsList.sort((a, b) => {
           const dateA = a.dateofAppointment && typeof a.dateofAppointment.toDate === "function"
             ? a.dateofAppointment.toDate()
@@ -607,7 +633,7 @@ const PetOwnerHome = () => {
                 <strong>Weight:</strong> {selectedPet.Weight ? `${selectedPet.Weight} kg` : "N/A"}
               </div>
               <div className="info-item">
-                <strong>Date of Birth:</strong> {formatDate(selectedPet.dateofBirth)}
+                <strong>Date of Birth:</strong> {formatDOB(selectedPet.dateofBirth)}
               </div>
             </div>
             <div className="modal-actions">
