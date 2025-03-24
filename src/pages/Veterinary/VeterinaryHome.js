@@ -15,9 +15,7 @@ import {
   Month,
   Agenda,
   Inject,
-  RecurrenceEditor,
 } from "@syncfusion/ej2-react-schedule";
-//npm install @syncfusion/ej2-grids --save
 import { registerLicense } from "@syncfusion/ej2-base";
 
 // Import Syncfusion CSS for proper styling
@@ -31,7 +29,6 @@ import "@syncfusion/ej2-popups/styles/material.css";
 import "@syncfusion/ej2-react-schedule/styles/material.css";
 
 const VeterinaryHome = () => {
-  // Register Syncfusion license (ensure this is your valid key)
   registerLicense(
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
   );
@@ -40,6 +37,7 @@ const VeterinaryHome = () => {
   const [vetInfo, setVetInfo] = useState(null);
   const [editedVetInfo, setEditedVetInfo] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [pastAppointments, setPastAppointments] = useState([]); // New state for past appointments
   const [schedule, setSchedule] = useState([]);
   const [scheduleEvents, setScheduleEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +60,6 @@ const VeterinaryHome = () => {
     "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const scheduleObj = useRef(null);
 
-  // Utility functions
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     let date;
@@ -73,37 +70,36 @@ const VeterinaryHome = () => {
     } else {
       return "N/A";
     }
-    const month = date.toLocaleString("en-US", { month: "long" });
-    const day = date.getDate();
-    const year = date.getFullYear();
-    const hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    const period = hours >= 12 ? "PM" : "AM";
-    const hour12 = hours % 12 || 12;
-    return `${month} ${day}, ${year} at ${hour12}:${minutes} ${period}`;
+    return date.toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).replace(",", " at");
   };
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return "N/A";
     let dob;
-    // Handle Firestore Timestamp
     if (typeof dateOfBirth.toDate === "function") {
       dob = dateOfBirth.toDate();
-    } else if (typeof dateOfBirth === "string" || dateOfBirth instanceof Date) {
+    } else if (typeof dateOfBirth === "string") {
       dob = new Date(dateOfBirth);
     } else {
       return "N/A";
     }
 
-    if (isNaN(dob.getTime())) return "N/A"; // Check if the date is invalid
+    if (isNaN(dob.getTime())) return "N/A";
 
-    const today = new Date();
+    const today = new Date("2025-03-24"); // Current date as per context
     let age = today.getFullYear() - dob.getFullYear();
     const monthDiff = today.getMonth() - dob.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
       age--;
     }
-    return age >= 0 ? `${age}` : "N/A"; // Return only the numeric age
+    return age >= 0 ? `${age}` : "N/A";
   };
 
   const parseTime = (timeStr) => {
@@ -279,27 +275,24 @@ const VeterinaryHome = () => {
           where("veterinarianId", "==", currentUser.uid)
         );
         const querySnapshot = await getDocs(appointmentsQuery);
-        const appointmentsList = [];
+        const currentAppointmentsList = [];
+        const pastAppointmentsList = [];
+        const today = new Date("2025-03-24"); // Current date as per context
 
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
           let petData = {};
           let ownerName = "N/A";
 
-          // Fetch pet data from petRef
           if (data.petRef) {
             const petDoc = await getDoc(data.petRef);
             if (petDoc.exists()) {
               petData = petDoc.data();
-              console.log("Pet Data:", petData); // Debug log to inspect pet data
             } else {
               console.warn("Pet document does not exist for petRef:", data.petRef);
             }
-          } else {
-            console.warn("No petRef found for appointment:", doc.id);
           }
 
-          // Fetch owner data
           if (data.owner) {
             const ownerDoc = await getDoc(data.owner);
             if (ownerDoc.exists()) {
@@ -310,11 +303,9 @@ const VeterinaryHome = () => {
 
           const startTime = data.dateofAppointment.toDate();
           const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+          const petAge = calculateAge(petData.dateofBirth);
 
-          // Calculate age using the dateOfBirth from petData
-          const petAge = calculateAge(petData.dateOfBirth);
-
-          appointmentsList.push({
+          const appointmentDetails = {
             Id: doc.id,
             Subject: `${data.petName || petData.petName || "N/A"} - ${data.serviceType || "N/A"}`,
             StartTime: startTime,
@@ -322,19 +313,27 @@ const VeterinaryHome = () => {
             petName: data.petName || petData.petName || "N/A",
             species: petData.Species || "N/A",
             breed: petData.Breed || "N/A",
-            age: petAge, // Use the calculated age
+            age: petAge,
             owner: ownerName,
             service: data.serviceType || "N/A",
             remarks: data.remarks || "",
-            dateofAppointment: data.dateofAppointment,
-          });
+            dateofAppointment: startTime,
+          };
+
+          if (startTime < today) {
+            pastAppointmentsList.push(appointmentDetails);
+          } else {
+            currentAppointmentsList.push(appointmentDetails);
+          }
         }
 
-        console.log("Fetched Appointments:", appointmentsList); // Debug log
-        setAppointments(appointmentsList);
+        setAppointments(currentAppointmentsList);
+        setPastAppointments(pastAppointmentsList);
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
+      setAppointments([]);
+      setPastAppointments([]);
     } finally {
       setLoading(false);
     }
@@ -380,9 +379,14 @@ const VeterinaryHome = () => {
             appt.Id === selectedAppointment.Id ? { ...appt, remarks: newRemark } : appt
           )
         );
+        setPastAppointments((prev) =>
+          prev.map((appt) =>
+            appt.Id === selectedAppointment.Id ? { ...appt, remarks: newRemark } : appt
+          )
+        );
 
         setAppointmentDetails((prev) =>
-          prev.Id === selectedAppointment.Id ? { ...prev, remarks: newRemark } : prev
+          prev && prev.Id === selectedAppointment.Id ? { ...prev, remarks: newRemark } : prev
         );
 
         setShowRemarksModal(false);
@@ -395,7 +399,6 @@ const VeterinaryHome = () => {
   };
 
   const onEventClick = (args) => {
-    console.log("Event clicked:", args.event);
     const appointment = appointments.find((appt) => appt.Id === args.event.Id);
     setAppointmentDetails(appointment);
     setShowDetailsModal(true);
@@ -411,22 +414,22 @@ const VeterinaryHome = () => {
   }, []);
 
   return (
-    <div className="vet-container">
+    <div className="vet-container-v">
       <div className="sidebar-v">
         {vetInfo && (
-          <div className="vet-sidebar-panel">
-            <div className="vet-img-container">
+          <div className="vet-sidebar-panel-v">
+            <div className="vet-img-container-v">
               <img
                 src={vetInfo.profileImageURL}
                 alt="Vet Profile"
-                className="veterinarian-profile-image"
+                className="veterinarian-profile-image-v"
               />
-              <label htmlFor="vet-image-upload" className="edit-icon">
+              <label htmlFor="vet-image-upload-v" className="edit-icon-v">
                 <FaCamera />
               </label>
               <input
                 type="file"
-                id="vet-image-upload"
+                id="vet-image-upload-v"
                 accept="image/jpeg, image/jpg, image/png"
                 onChange={handleVetImageChange}
                 style={{ display: "none" }}
@@ -453,40 +456,36 @@ const VeterinaryHome = () => {
           >
             Schedule
           </button>
+          <button
+            className={activePanel === "healthRecords" ? "active" : ""}
+            onClick={() => setActivePanel("healthRecords")}
+          >
+            Health Records
+          </button>
         </div>
         <button className="signout-btn-v" onClick={handleSignOut}>
           Sign Out
         </button>
       </div>
 
-      <div className="content">
-        <div className="panel-container">
+      <div className="content-v">
+        <div className="panel-container-v">
           {activePanel === "vetInfo" && vetInfo && (
-            <div className="panel vet-info-panel">
+            <div className="panel-v vet-info-panel-v">
               <h3>Veterinarian Information</h3>
-              <div className="vet-details">
+              <div className="vet-details-v">
                 <img
                   src={vetInfo.profileImageURL}
                   alt="Veterinarian"
-                  className="vet-info-img"
+                  className="vet-info-img-v"
                 />
-                <p>
-                  <strong>First Name:</strong> {vetInfo.FirstName}
-                </p>
-                <p>
-                  <strong>Last Name:</strong> {vetInfo.LastName}
-                </p>
-                <p>
-                  <strong>Clinic:</strong> {vetInfo.clinicName}
-                </p>
-                <p>
-                  <strong>Contact:</strong> {vetInfo.contactNumber || "N/A"}
-                </p>
-                <p>
-                  <strong>Email:</strong> {vetInfo.email}
-                </p>
+                <p><strong>First Name:</strong> {vetInfo.FirstName}</p>
+                <p><strong>Last Name:</strong> {vetInfo.LastName}</p>
+                <p><strong>Clinic:</strong> {vetInfo.clinicName}</p>
+                <p><strong>Contact:</strong> {vetInfo.contactNumber || "N/A"}</p>
+                <p><strong>Email:</strong> {vetInfo.email}</p>
                 <button
-                  className="edit-vet-btn"
+                  className="edit-vet-btn-v"
                   onClick={() => {
                     setShowVetModal(true);
                     setIsEditingVet(true);
@@ -499,7 +498,7 @@ const VeterinaryHome = () => {
           )}
 
           {activePanel === "appointments" && (
-            <div className="panel appointments-panel">
+            <div className="panel-v appointments-panel-v">
               <h3>Upcoming Appointments</h3>
               {loading ? (
                 <p>Loading appointments...</p>
@@ -508,7 +507,7 @@ const VeterinaryHome = () => {
                   ref={scheduleObj}
                   width="100%"
                   height="650px"
-                  currentDate={new Date(2025, 2, 23)}
+                  currentDate={new Date(2025, 2, 24)}
                   eventSettings={{
                     dataSource: appointments,
                     fields: {
@@ -536,7 +535,7 @@ const VeterinaryHome = () => {
           )}
 
           {activePanel === "schedule" && (
-            <div className="panel schedule-panel">
+            <div className="panel-v schedule-panel-v">
               <h3>Schedule</h3>
               {loading ? (
                 <p>Loading schedule...</p>
@@ -544,7 +543,7 @@ const VeterinaryHome = () => {
                 <ScheduleComponent
                   width="100%"
                   height="650px"
-                  currentDate={new Date(2025, 2, 23)}
+                  currentDate={new Date(2025, 2, 24)}
                   eventSettings={{
                     dataSource: scheduleEvents,
                     fields: {
@@ -570,15 +569,52 @@ const VeterinaryHome = () => {
               )}
             </div>
           )}
+
+          {activePanel === "healthRecords" && (
+            <div className="panel-v health-records-panel-v">
+              <h3>Health Records</h3>
+              {loading ? (
+                <p>Loading health records...</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date of Appointment</th>
+                      <th>Patient Name</th>
+                      <th>Owner</th>
+                      <th>Service</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pastAppointments.length > 0 ? (
+                      pastAppointments.map((record) => (
+                        <tr key={record.Id}>
+                          <td>{formatDate(record.dateofAppointment)}</td>
+                          <td>{record.petName}</td>
+                          <td>{record.owner}</td>
+                          <td>{record.service}</td>
+                          <td>{record.remarks || "N/A"}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5">No past appointments found</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Modals */}
       {showVetModal && vetInfo && (
-        <div className="modal-overlay">
+        <div className="modal-overlay-v">
           <div className="modal-content-v">
             <span
-              className="close-button"
+              className="close-button-v"
               onClick={() => {
                 setShowVetModal(false);
                 setIsEditingVet(false);
@@ -589,10 +625,10 @@ const VeterinaryHome = () => {
             {isEditingVet ? (
               <>
                 <h2>Edit Veterinarian Information</h2>
-                <div className="vet-image-upload-container">
+                <div className="vet-image-upload-container-v">
                   <label
-                    htmlFor="vet-image-upload-modal"
-                    className="vet-image-upload"
+                    htmlFor="vet-image-upload-modal-v"
+                    className="vet-image-upload-v"
                     style={
                       vetImagePreview
                         ? { backgroundImage: `url(${vetImagePreview})` }
@@ -601,13 +637,13 @@ const VeterinaryHome = () => {
                   >
                     {!vetImagePreview && !editedVetInfo.profileImageURL && (
                       <>
-                        <FaCamera className="camera-icon" />
+                        <FaCamera className="camera-icon-v" />
                         <p>Upload Photo</p>
                       </>
                     )}
                     <input
                       type="file"
-                      id="vet-image-upload-modal"
+                      id="vet-image-upload-modal-v"
                       accept="image/jpeg, image/jpg, image/png"
                       onChange={handleVetImageChange}
                       style={{ display: "none" }}
@@ -654,7 +690,7 @@ const VeterinaryHome = () => {
                     readOnly
                   />
                 </div>
-                <div className="form-actions">
+                <div className="form-actions-v">
                   <button
                     className="submit-btn-v"
                     onClick={handleSaveVetInfo}
@@ -678,21 +714,16 @@ const VeterinaryHome = () => {
                 <img
                   src={vetInfo.profileImageURL}
                   alt="Veterinarian"
-                  className="vet-info-img"
+                  className="vet-info-img-v"
                 />
-                <h2>
-                  {vetInfo.FirstName} {vetInfo.LastName}
-                </h2>
-                <p>
-                  <strong>Clinic:</strong> {vetInfo.clinicName}
-                </p>
-                <p>
-                  <strong>Contact:</strong> {vetInfo.contactNumber || "N/A"}
-                </p>
-                <p>
-                  <strong>Email:</strong> {vetInfo.email}
-                </p>
-                <button className="modal-close-btn" onClick={() => setShowVetModal(false)}>
+                <h2>{vetInfo.FirstName} {vetInfo.LastName}</h2>
+                <p><strong>Clinic:</strong> {vetInfo.clinicName}</p>
+                <p><strong>Contact:</strong> {vetInfo.contactNumber || "N/A"}</p>
+                <p><strong>Email:</strong> {vetInfo.email}</p>
+                <button
+                  className="modal-close-btn-v"
+                  onClick={() => setShowVetModal(false)}
+                >
                   Close
                 </button>
               </>
@@ -702,10 +733,10 @@ const VeterinaryHome = () => {
       )}
 
       {isSignOutConfirmOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content signout-confirm-modal">
+        <div className="modal-overlay-v">
+          <div className="modal-content-v signout-confirm-modal-v">
             <p>Are you sure you want to sign out?</p>
-            <div className="form-actions">
+            <div className="form-actions-v">
               <button className="submit-btn-v" onClick={confirmSignOut}>
                 Yes
               </button>
@@ -721,13 +752,13 @@ const VeterinaryHome = () => {
       )}
 
       {isSignOutSuccessOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content signout-success-modal">
-            <div className="success-content">
+        <div className="modal-overlay-v">
+          <div className="modal-content-v signout-success-modal-v">
+            <div className="success-content-v">
               <img
                 src="/images/check.gif"
                 alt="Success Checkmark"
-                className="success-image"
+                className="success-image-v"
               />
               <p>Signed Out Successfully</p>
             </div>
@@ -736,10 +767,10 @@ const VeterinaryHome = () => {
       )}
 
       {showDetailsModal && appointmentDetails && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay-v">
+          <div className="modal-content-v">
             <span
-              className="close-button"
+              className="close-button-v"
               onClick={() => {
                 setShowDetailsModal(false);
                 setShowRemarksModal(false);
@@ -749,37 +780,19 @@ const VeterinaryHome = () => {
             </span>
             <h2>Appointment Details</h2>
             <div className="form-group-v">
-              <p>
-                <strong>Date:</strong> {formatDate(appointmentDetails.dateofAppointment)}
-              </p>
-              <p>
-                <strong>Pet Name:</strong> {appointmentDetails.petName}
-              </p>
-              <p>
-                <strong>Species:</strong> {appointmentDetails.species}
-              </p>
-              <p>
-                <strong>Breed:</strong> {appointmentDetails.breed}
-              </p>
-              <p>
-                <strong>Age:</strong> {appointmentDetails.age || "N/A"}
-              </p>
-              <p>
-                <strong>Owner:</strong> {appointmentDetails.owner}
-              </p>
-              <p>
-                <strong>Service:</strong> {appointmentDetails.service}
-              </p>
-              <p>
-                <strong>Remarks:</strong> {appointmentDetails.remarks || "N/A"}
-              </p>
+              <p><strong>Date:</strong> {formatDate(appointmentDetails.dateofAppointment)}</p>
+              <p><strong>Pet Name:</strong> {appointmentDetails.petName}</p>
+              <p><strong>Species:</strong> {appointmentDetails.species}</p>
+              <p><strong>Breed:</strong> {appointmentDetails.breed}</p>
+              <p><strong>Age:</strong> {appointmentDetails.age}</p>
+              <p><strong>Owner:</strong> {appointmentDetails.owner}</p>
+              <p><strong>Service:</strong> {appointmentDetails.service}</p>
+              <p><strong>Remarks:</strong> {appointmentDetails.remarks || "N/A"}</p>
             </div>
-            <div className="form-actions">
+            <div className="form-actions-v">
               <button
                 className="submit-btn-v"
-                onClick={() => {
-                  openRemarksModal(appointmentDetails);
-                }}
+                onClick={() => openRemarksModal(appointmentDetails)}
               >
                 Edit Remark
               </button>
@@ -795,10 +808,10 @@ const VeterinaryHome = () => {
             </div>
 
             {showRemarksModal && selectedAppointment && (
-              <div className="remarks-overlay">
-                <div className="remarks-content">
+              <div className="remarks-overlay-v">
+                <div className="remarks-content-v">
                   <span
-                    className="remarks-close-button"
+                    className="remarks-close-button-v"
                     onClick={() => setShowRemarksModal(false)}
                   >
                     ×
@@ -811,10 +824,10 @@ const VeterinaryHome = () => {
                       value={newRemark}
                       onChange={handleRemarkChange}
                       rows="4"
-                      className="remarks-textarea"
+                      className="remarks-textarea-v"
                     />
                   </div>
-                  <div className="form-actions">
+                  <div className="form-actions-v">
                     <button className="submit-btn-v" onClick={saveRemark}>
                       Save
                     </button>
