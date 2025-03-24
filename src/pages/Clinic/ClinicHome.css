@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
 
 /* General Layout */
-.clinic-container {
+.clinic-container-c {
   display: flex;
   height: 100vh;
   background-color: #d3f0f7;
@@ -9,7 +9,7 @@
 }
 
 /* Sidebar Styling */
-.sidebar_clinicHome {
+.sidebar-c {
   width: 250px;
   background-color: #EDBFC6;
   padding: 20px;
@@ -22,7 +22,7 @@
   max-height: 100vh;
 }
 
-.sidebar_clinicHome button {
+.sidebar-c button {
   width: 100%;
   padding: 12px;
   font-size: 16px;
@@ -37,23 +37,23 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.sidebar_clinicHome button:hover {
+.sidebar-c button:hover {
   background-color: #ffcdd2;
   transform: translateY(-2px);
 }
 
-.sidebar_clinicHome button.active {
+.sidebar-c button.active {
   background-color: #ff8c94;
   color: #fff;
   font-weight: bold;
 }
 
-.sidebar-buttons {
+.sidebar-buttons-c {
   margin-top: -150px;
 }
 
 /* Content Area */
-.content {
+.content-c {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
@@ -62,7 +62,7 @@
 }
 
 /* Panel Container */
-.panel-container {
+.panel-container-c {
   background: white;
   padding: 20px;
   border-radius: 10px;
@@ -101,15 +101,15 @@ tr:hover {
 }
 
 /* Panel Colors */
-.patients-panel { background-color: #ffe4e6; }
-.appointments-panel { background-color: #fdf6c2; }
-.records-panel { background-color: #c2f0d1; }
-.services-panel { background-color: #e4e8ff; }
-.veterinarians-panel { background-color: #f0e4ff; }
-.clinic-panel { background-color: #e4e8ff; }
+.patients-panel-c { padding: 10px; background-color: #ffe4e6; }
+.appointments-panel-c {padding: 10px; background-color: #fdf6c2;  }
+.records-panel-c { padding: 10px; background-color: #c2f0d1; }
+.services-panel-c { padding: 10px;background-color: #e4e8ff; }
+.veterinarians-panel-c { padding: 10px;background-color: #f0e4ff; }
+.clinic-panel-c { padding: 10px; background-color: #e4e8ff; }
 
 /* Panel Headers */
-.panel h3 {
+.panel-c h3 {
   font-size: 24px;
   margin-bottom: 20px;
   color: #ff4081;
@@ -118,11 +118,11 @@ tr:hover {
 }
 
 /* Clinic Sidebar Panel */
-.clinic-sidebar-panel {
+.clinic-sidebar-panel-c {
   width: 100%;
 }
 
-.clinic-img-container {
+.clinic-img-container-c {
   position: relative;
   display: flex;
   justify-content: center;
@@ -131,7 +131,7 @@ tr:hover {
   margin: 0 auto 20px;
 }
 
-.clinic-profile-image {
+.clinic-profile-image-c {
   width: 150px;
   height: 150px;
   border-radius: 50%;
@@ -140,7 +140,7 @@ tr:hover {
 }
 
 /* Edit Icon */
-.edit-icon {
+.edit-icon-c {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -156,7 +156,7 @@ tr:hover {
   justify-content: center;
 }
 
-.edit-clinic-btn {
+.edit-clinic-btn-c {
   margin-top: 15px;
   background-color: #ff4081;
   color: white;
@@ -167,12 +167,12 @@ tr:hover {
   transition: background-color 0.3s;
 }
 
-.edit-clinic-btn:hover {
+.edit-clinic-btn-c:hover {
   background-color: #f50057;
 }
 
 /* Add Veterinarian Button */
-.add-vet-btn {
+.add-vet-btn-c {
   margin-top: 20px;
   background-color: #ff69b4;
   color: white;
@@ -184,12 +184,12 @@ tr:hover {
   transition: background-color 0.3s;
 }
 
-.add-vet-btn:hover {
+.add-vet-btn-c:hover {
   background-color: #ff1493;
 }
 
 /* Signout Button */
-.signout-btn {
+.signout-btn-c {
   width: 100%;
   padding: 12px;
   font-size: 16px;
@@ -203,13 +203,13 @@ tr:hover {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.signout-btn:hover {
+.signout-btn-c:hover {
   background-color: #ff5555;
   transform: translateY(-2px);
 }
 
 /* Modal Styling */
-.modal-overlay {
+.modal-overlay-c {
   position: fixed;
   top: 0;
   left: 0;
@@ -222,7 +222,7 @@ tr:hover {
   z-index: 1000;
 }
 
-.modal-content {
+.modal-content-c {
   background-color: #d3f0f7;
   border-radius: 10px;
   width: 500px;
@@ -235,7 +235,7 @@ tr:hover {
   text-align: center;
 }
 
-.close-button {
+.close-button-c {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -244,13 +244,13 @@ tr:hover {
   color: #333;
 }
 
-.modal-content h2 {
+.modal-content-c h2 {
   font-size: 24px;
   color: #ff4081;
   margin-bottom: 20px;
 }
 
-.clinic-info-img {
+.clinic-info-img-c {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -259,7 +259,7 @@ tr:hover {
   border: 3px solid #ffb6c1;
 }
 
-.vet-info-img {
+.vet-info-img-c {
   width: 100px;
   height: 100px;
   border-radius: 50%;
@@ -270,33 +270,33 @@ tr:hover {
 }
 
 /* Pet Name Link */
-.pet-name-link {
+.pet-name-link-c {
   color: #ff4081;
   text-decoration: underline;
   cursor: pointer;
 }
 
-.pet-name-link:hover {
+.pet-name-link-c:hover {
   color: #f50057;
 }
 
 /* Veterinarian Name Link */
-.vet-name-link {
+.vet-name-link-c {
   color: #ff4081;
   text-decoration: underline;
   cursor: pointer;
 }
 
-.vet-name-link:hover {
+.vet-name-link-c:hover {
   color: #f50057;
 }
 
 /* Add Veterinarian Modal */
-.add-vet-modal {
+.add-vet-modal-c {
   padding: 0;
 }
 
-.vet-image-upload-container {
+.vet-image-upload-container-c {
   display: flex;
   justify-content: center;
   padding: 20px;
@@ -305,7 +305,7 @@ tr:hover {
   border-top-right-radius: 10px;
 }
 
-.vet-image-upload {
+.vet-image-upload-c {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -321,39 +321,39 @@ tr:hover {
   transition: transform 0.3s;
 }
 
-.vet-image-upload:hover {
+.vet-image-upload-c:hover {
   transform: scale(1.05);
 }
 
-.vet-image-upload .camera-icon {
+.vet-image-upload-c .camera-icon-c {
   font-size: 24px;
   color: #ff4081;
 }
 
-.vet-image-upload p {
+.vet-image-upload-c p {
   margin: 5px 0 0;
   font-size: 14px;
   color: #333;
 }
 
-.add-vet-modal form {
+.add-vet-modal-c form {
   padding: 20px;
 }
 
-.form-group {
+.form-group-c {
   margin-bottom: 15px;
   text-align: left;
 }
 
-.form-group label {
+.form-group-c label {
   display: block;
   margin-bottom: 5px;
   color: #333;
   font-weight: bold;
 }
 
-.form-group input {
-  width: 100%;
+.form-group-c input {
+  width: 96%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
@@ -361,28 +361,28 @@ tr:hover {
   transition: border-color 0.3s;
 }
 
-.form-group input:focus {
+.form-group-c input:focus {
   border-color: #ff4081;
   outline: none;
 }
 
-.success-message {
+.success-message-c {
   color: #4caf50;
   margin-bottom: 15px;
 }
 
-.error-message {
+.error-message-c {
   color: #ff1744;
   margin-bottom: 15px;
 }
 
-.form-actions {
+.form-actions-c {
   display: flex;
   justify-content: space-between;
   gap: 10px;
 }
 
-.cancel-btn {
+.cancel-btn-c {
   background-color: #999;
   color: white;
   padding: 10px 20px;
@@ -392,11 +392,11 @@ tr:hover {
   transition: background-color 0.3s;
 }
 
-.cancel-btn:hover {
+.cancel-btn-c:hover {
   background-color: #666;
 }
 
-.submit-btn {
+.submit-btn-c {
   background-color: #ff4081;
   color: white;
   padding: 10px 20px;
@@ -406,59 +406,59 @@ tr:hover {
   transition: background-color 0.3s;
 }
 
-.submit-btn:hover {
+.submit-btn-c:hover {
   background-color: #f50057;
 }
 
-.submit-btn:disabled {
+.submit-btn-c:disabled {
   background-color: #ccc;
   cursor: not-allowed;
 }
 
 /* Veterinarian Services */
-.vet-services-left {
+.vet-services-left-c {
   text-align: left;
   width: 100%;
 }
 
-.services-checkboxes-left {
+.services-checkboxes-left-c {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   width: 100%;
 }
 
-.checkbox-item-left {
+.checkbox-item-left-c {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
 }
 
-.checkbox-item-left input[type="checkbox"] {
+.checkbox-item-left-c input[type="checkbox"] {
   width: 20px;
   height: 20px;
   margin-right: 10px;
 }
 
-.checkbox-item-left label {
+.checkbox-item-left-c label {
   font-size: 16px;
 }
 
 /* Schedule Inputs */
-.schedule-inputs {
+.schedule-inputs-c {
   display: flex;
   gap: 10px;
   margin: 10px 0;
 }
 
-.schedule-inputs select,
-.schedule-inputs input {
+.schedule-inputs-c select,
+.schedule-inputs-c input {
   padding: 5px;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
-.add-schedule-btn {
+.add-schedule-btn-c {
   background-color: #4caf50;
   color: white;
   padding: 5px 10px;
@@ -468,18 +468,18 @@ tr:hover {
   transition: background-color 0.3s;
 }
 
-.add-schedule-btn:hover {
+.add-schedule-btn-c:hover {
   background-color: #45a049;
 }
 
-.schedule-list {
+.schedule-list-c {
   margin-top: 10px;
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
-.schedule-item {
+.schedule-item-c {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -488,7 +488,7 @@ tr:hover {
   border-radius: 4px;
 }
 
-.remove-schedule-btn {
+.remove-schedule-btn-c {
   background-color: #ff4444;
   color: white;
   border: none;
@@ -502,66 +502,66 @@ tr:hover {
   transition: background-color 0.3s;
 }
 
-.remove-schedule-btn:hover {
+.remove-schedule-btn-c:hover {
   background-color: #cc0000;
 }
 
 /* Signout Modals */
-.signout-confirm-modal {
+.signout-confirm-modal-c {
   padding: 20px;
   text-align: center;
 }
 
-.signout-success-modal {
+.signout-success-modal-c {
   padding: 10px;
   text-align: center;
 }
 
-.success-content {
+.success-content-c {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.success-image {
+.success-image-c {
   width: 40px;
   height: 40px;
   margin-right: 15px;
 }
 
-.signout-success-modal p {
+.signout-success-modal-c p {
   margin: 0;
   font-size: 18px;
   font-weight: bold;
 }
 
-/* Patient Modal Styling (Copied from PetOwnerHome) */
-.pet-info-grid {
+/* Patient Modal Styling */
+.pet-info-grid-c {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
   margin-bottom: 20px;
 }
 
-.info-item {
+.info-item-c {
   padding: 10px;
   background-color: #fff5f6;
   border-radius: 4px;
   text-align: left;
 }
 
-.info-item strong {
+.info-item-c strong {
   color: #555;
 }
 
-.modal-actions {
+.modal-actions-c {
   display: flex;
   justify-content: center;
   gap: 10px;
   margin-top: 20px;
 }
 
-.modal-close-btn {
+.modal-close-btn-c {
   background-color: #ff4081;
   color: white;
   padding: 10px 20px;
@@ -571,26 +571,64 @@ tr:hover {
   transition: background-color 0.3s;
 }
 
-.modal-close-btn:hover {
+.modal-close-btn-c:hover {
   background-color: #f50057;
 }
 
-.pet-image-container {
+.appointment-info-grid-c {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.info-item-c {
+  padding: 10px;
+  background-color: #fff5f6;
+  border-radius: 4px;
+  text-align: left;
+}
+
+.info-item-c strong {
+  color: #555;
+}
+
+.pet-image-container-c {
   display: flex;
   justify-content: center;
   background-image: url("https://us.123rf.com/450wm/pliskova/pliskova1706/pliskova170600317/81354009-pet-seamless-pattern-on-a-blue-background-illustration.jpg");
   margin-bottom: 20px;
 }
 
-.pet-image-wrapper {
+.pet-image-wrapper-c {
   position: relative;
   display: inline-block;
 }
 
-.pet-image {
+.pet-image-c {
   width: 120px;
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid #ffb6c1;
+}
+
+/* Syncfusion Schedule Styles */
+.e-schedule {
+  border: 1px solid #ffb6c1;
+  border-radius: 5px;
+}
+
+.e-schedule .e-schedule-toolbar {
+  background-color: #ffb6c1;
+  border-bottom: 1px solid #ff8c94;
+}
+
+.e-schedule .e-appointment {
+  background-color: #ff4081 !important;
+  border: none;
+}
+
+.e-schedule .e-appointment:hover {
+  background-color: #f50057 !important;
 }
