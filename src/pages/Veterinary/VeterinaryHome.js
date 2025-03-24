@@ -1,18 +1,46 @@
-// VeterinaryHome.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./VeterinaryHome.css";
 import { db, auth } from "../../firebase";
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 import { FaCamera, FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import {
+  ScheduleComponent,
+  ViewsDirective,
+  ViewDirective,
+  Day,
+  Week,
+  WorkWeek,
+  Month,
+  Agenda,
+  Inject,
+  RecurrenceEditor,
+} from "@syncfusion/ej2-react-schedule";
+import { registerLicense } from "@syncfusion/ej2-base";
+
+// Import Syncfusion CSS for proper styling
+import "@syncfusion/ej2-base/styles/material.css";
+import "@syncfusion/ej2-buttons/styles/material.css";
+import "@syncfusion/ej2-calendars/styles/material.css";
+import "@syncfusion/ej2-dropdowns/styles/material.css";
+import "@syncfusion/ej2-inputs/styles/material.css";
+import "@syncfusion/ej2-navigations/styles/material.css";
+import "@syncfusion/ej2-popups/styles/material.css";
+import "@syncfusion/ej2-react-schedule/styles/material.css";
 
 const VeterinaryHome = () => {
+  // Register Syncfusion license (ensure this is your valid key)
+  registerLicense(
+    "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
+  );
+
   const [activePanel, setActivePanel] = useState("appointments");
   const [vetInfo, setVetInfo] = useState(null);
   const [editedVetInfo, setEditedVetInfo] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [schedule, setSchedule] = useState([]);
+  const [scheduleEvents, setScheduleEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showVetModal, setShowVetModal] = useState(false);
   const [isEditingVet, setIsEditingVet] = useState(false);
@@ -24,11 +52,16 @@ const VeterinaryHome = () => {
   const [showRemarksModal, setShowRemarksModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [newRemark, setNewRemark] = useState("");
+  const [appointmentDetails, setAppointmentDetails] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const navigate = useNavigate();
   const UPLOAD_PRESET = "furwell";
-  const DEFAULT_VET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
+  const DEFAULT_VET_IMAGE =
+    "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
+  const scheduleObj = useRef(null);
 
+  // Utility functions
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     let date;
@@ -39,7 +72,6 @@ const VeterinaryHome = () => {
     } else {
       return "N/A";
     }
-  
     const month = date.toLocaleString("en-US", { month: "long" });
     const day = date.getDate();
     const year = date.getFullYear();
@@ -47,20 +79,89 @@ const VeterinaryHome = () => {
     const minutes = date.getMinutes().toString().padStart(2, "0");
     const period = hours >= 12 ? "PM" : "AM";
     const hour12 = hours % 12 || 12;
-  
     return `${month} ${day}, ${year} at ${hour12}:${minutes} ${period}`;
   };
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return "N/A";
-    const dob = new Date(dateOfBirth);
+    let dob;
+    // Handle Firestore Timestamp
+    if (typeof dateOfBirth.toDate === "function") {
+      dob = dateOfBirth.toDate();
+    } else if (typeof dateOfBirth === "string" || dateOfBirth instanceof Date) {
+      dob = new Date(dateOfBirth);
+    } else {
+      return "N/A";
+    }
+
+    if (isNaN(dob.getTime())) return "N/A"; // Check if the date is invalid
+
     const today = new Date();
     let age = today.getFullYear() - dob.getFullYear();
     const monthDiff = today.getMonth() - dob.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
       age--;
     }
-    return `${age} years`;
+    return age >= 0 ? `${age}` : "N/A"; // Return only the numeric age
+  };
+
+  const parseTime = (timeStr) => {
+    if (!timeStr) return { hours: 0, minutes: 0 };
+    const [time, period] = timeStr.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+    return { hours, minutes };
+  };
+
+  const generateScheduleEvents = (scheduleData) => {
+    if (!scheduleData || scheduleData.length === 0) return [];
+
+    const events = [];
+    const dayToNumber = {
+      Monday: 1,
+      Tuesday: 2,
+      Wednesday: 3,
+      Thursday: 4,
+      Friday: 5,
+      Saturday: 6,
+      Sunday: 0,
+    };
+
+    const today = new Date();
+    const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+
+    scheduleData.forEach((sched, index) => {
+      if (!sched.day || !sched.startTime || !sched.endTime) return;
+
+      const dayNumber = dayToNumber[sched.day];
+      if (dayNumber === undefined) return;
+
+      const start = parseTime(sched.startTime);
+      const end = parseTime(sched.endTime);
+
+      const startDate = new Date(firstDayOfWeek);
+      startDate.setDate(firstDayOfWeek.getDate() + dayNumber);
+      startDate.setHours(start.hours, start.minutes, 0, 0);
+
+      const endDate = new Date(firstDayOfWeek);
+      endDate.setDate(firstDayOfWeek.getDate() + dayNumber);
+      endDate.setHours(end.hours, end.minutes, 0, 0);
+
+      const recurrenceRule = `FREQ=WEEKLY;BYDAY=${sched.day.slice(0, 2).toUpperCase()};INTERVAL=1`;
+
+      events.push({
+        Id: `schedule-${index}`,
+        Subject: `Available: ${sched.startTime} - ${sched.endTime}`,
+        StartTime: startDate,
+        EndTime: endDate,
+        RecurrenceRule: recurrenceRule,
+        IsAllDay: false,
+        IsReadonly: true,
+      });
+    });
+
+    return events;
   };
 
   const handleVetImageChange = (e) => {
@@ -106,12 +207,12 @@ const VeterinaryHome = () => {
           setVetInfo(vetInfoData);
           setEditedVetInfo(vetInfoData);
           setSchedule(vetData.schedule || []);
+          const events = generateScheduleEvents(vetData.schedule || []);
+          setScheduleEvents(events);
         }
       }
     } catch (error) {
       console.error("Error fetching vet info:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -171,26 +272,33 @@ const VeterinaryHome = () => {
           console.error("Veterinarian document does not exist for UID:", currentUser.uid);
           return;
         }
-  
+
         const appointmentsQuery = query(
           collection(db, "appointments"),
           where("veterinarianId", "==", currentUser.uid)
         );
         const querySnapshot = await getDocs(appointmentsQuery);
         const appointmentsList = [];
-  
+
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
           let petData = {};
           let ownerName = "N/A";
-  
+
+          // Fetch pet data from petRef
           if (data.petRef) {
             const petDoc = await getDoc(data.petRef);
             if (petDoc.exists()) {
               petData = petDoc.data();
+              console.log("Pet Data:", petData); // Debug log to inspect pet data
+            } else {
+              console.warn("Pet document does not exist for petRef:", data.petRef);
             }
+          } else {
+            console.warn("No petRef found for appointment:", doc.id);
           }
-  
+
+          // Fetch owner data
           if (data.owner) {
             const ownerDoc = await getDoc(data.owner);
             if (ownerDoc.exists()) {
@@ -198,20 +306,30 @@ const VeterinaryHome = () => {
               ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "N/A";
             }
           }
-  
+
+          const startTime = data.dateofAppointment.toDate();
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+
+          // Calculate age using the dateOfBirth from petData
+          const petAge = calculateAge(petData.dateOfBirth);
+
           appointmentsList.push({
-            id: doc.id,
-            dateofAppointment: data.dateofAppointment, // Use the actual Firestore data
+            Id: doc.id,
+            Subject: `${data.petName || petData.petName || "N/A"} - ${data.serviceType || "N/A"}`,
+            StartTime: startTime,
+            EndTime: endTime,
             petName: data.petName || petData.petName || "N/A",
             species: petData.Species || "N/A",
             breed: petData.Breed || "N/A",
-            age: calculateAge(petData.dateofBirth),
+            age: petAge, // Use the calculated age
             owner: ownerName,
             service: data.serviceType || "N/A",
             remarks: data.remarks || "",
+            dateofAppointment: data.dateofAppointment,
           });
         }
-  
+
+        console.log("Fetched Appointments:", appointmentsList); // Debug log
         setAppointments(appointmentsList);
       }
     } catch (error) {
@@ -253,13 +371,19 @@ const VeterinaryHome = () => {
   const saveRemark = async () => {
     if (selectedAppointment) {
       try {
-        const appointmentRef = doc(db, "appointments", selectedAppointment.id);
+        const appointmentRef = doc(db, "appointments", selectedAppointment.Id || selectedAppointment.id);
         await updateDoc(appointmentRef, { remarks: newRemark });
+
         setAppointments((prev) =>
           prev.map((appt) =>
-            appt.id === selectedAppointment.id ? { ...appt, remarks: newRemark } : appt
+            appt.Id === selectedAppointment.Id ? { ...appt, remarks: newRemark } : appt
           )
         );
+
+        setAppointmentDetails((prev) =>
+          prev.Id === selectedAppointment.Id ? { ...prev, remarks: newRemark } : prev
+        );
+
         setShowRemarksModal(false);
         setSelectedAppointment(null);
         setNewRemark("");
@@ -267,6 +391,17 @@ const VeterinaryHome = () => {
         console.error("Error updating remark:", error);
       }
     }
+  };
+
+  const onEventClick = (args) => {
+    console.log("Event clicked:", args.event);
+    const appointment = appointments.find((appt) => appt.Id === args.event.Id);
+    setAppointmentDetails(appointment);
+    setShowDetailsModal(true);
+  };
+
+  const onCellClick = (args) => {
+    args.cancel = true;
   };
 
   useEffect(() => {
@@ -334,11 +469,21 @@ const VeterinaryHome = () => {
                   alt="Veterinarian"
                   className="vet-info-img"
                 />
-                <p><strong>First Name:</strong> {vetInfo.FirstName}</p>
-                <p><strong>Last Name:</strong> {vetInfo.LastName}</p>
-                <p><strong>Clinic:</strong> {vetInfo.clinicName}</p>
-                <p><strong>Contact:</strong> {vetInfo.contactNumber || "N/A"}</p>
-                <p><strong>Email:</strong> {vetInfo.email}</p>
+                <p>
+                  <strong>First Name:</strong> {vetInfo.FirstName}
+                </p>
+                <p>
+                  <strong>Last Name:</strong> {vetInfo.LastName}
+                </p>
+                <p>
+                  <strong>Clinic:</strong> {vetInfo.clinicName}
+                </p>
+                <p>
+                  <strong>Contact:</strong> {vetInfo.contactNumber || "N/A"}
+                </p>
+                <p>
+                  <strong>Email:</strong> {vetInfo.email}
+                </p>
                 <button
                   className="edit-vet-btn"
                   onClick={() => {
@@ -358,46 +503,33 @@ const VeterinaryHome = () => {
               {loading ? (
                 <p>Loading appointments...</p>
               ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date of Appointment</th>
-                      <th>Pet Name</th>
-                      <th>Species</th>
-                      <th>Breed</th>
-                      <th>Age</th>
-                      <th>Owner</th>
-                      <th>Service</th>
-                      <th>Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {appointments.length > 0 ? (
-                      appointments.map((appt) => (
-                        <tr key={appt.id}>
-                          <td>{formatDate(appt.dateofAppointment)}</td>
-                          <td>{appt.petName}</td>
-                          <td>{appt.species}</td>
-                          <td>{appt.breed}</td>
-                          <td>{appt.age}</td>
-                          <td>{appt.owner}</td>
-                          <td>{appt.service}</td>
-                          <td>
-                            {appt.remarks || "N/A"}
-                            <FaEdit
-                              className="edit-remark-icon"
-                              onClick={() => openRemarksModal(appt)}
-                            />
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="8">No upcoming appointments</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                <ScheduleComponent
+                  ref={scheduleObj}
+                  width="100%"
+                  height="650px"
+                  currentDate={new Date(2025, 2, 23)}
+                  eventSettings={{
+                    dataSource: appointments,
+                    fields: {
+                      id: "Id",
+                      subject: { name: "Subject" },
+                      startTime: { name: "StartTime" },
+                      endTime: { name: "EndTime" },
+                    },
+                  }}
+                  eventClick={onEventClick}
+                  cellClick={onCellClick}
+                  readOnly={true}
+                >
+                  <ViewsDirective>
+                    <ViewDirective option="Day" />
+                    <ViewDirective option="Week" />
+                    <ViewDirective option="WorkWeek" />
+                    <ViewDirective option="Month" />
+                    <ViewDirective option="Agenda" />
+                  </ViewsDirective>
+                  <Inject services={[Day, Week, WorkWeek, Month, Agenda]} />
+                </ScheduleComponent>
               )}
             </div>
           )}
@@ -405,36 +537,42 @@ const VeterinaryHome = () => {
           {activePanel === "schedule" && (
             <div className="panel schedule-panel">
               <h3>Schedule</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Monday</th>
-                    <th>Tuesday</th>
-                    <th>Wednesday</th>
-                    <th>Thursday</th>
-                    <th>Friday</th>
-                    <th>Saturday</th>
-                    <th>Sunday</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => {
-                      const sched = schedule.find((s) => s.day === day);
-                      return (
-                        <td key={day}>
-                          {sched ? `${sched.startTime} - ${sched.endTime}` : "N/A"}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                </tbody>
-              </table>
+              {loading ? (
+                <p>Loading schedule...</p>
+              ) : (
+                <ScheduleComponent
+                  width="100%"
+                  height="650px"
+                  currentDate={new Date(2025, 2, 23)}
+                  eventSettings={{
+                    dataSource: scheduleEvents,
+                    fields: {
+                      id: "Id",
+                      subject: { name: "Subject" },
+                      startTime: { name: "StartTime" },
+                      endTime: { name: "EndTime" },
+                      recurrenceRule: { name: "RecurrenceRule" },
+                    },
+                  }}
+                  readOnly={true}
+                  cellClick={onCellClick}
+                >
+                  <ViewsDirective>
+                    <ViewDirective option="Day" />
+                    <ViewDirective option="Week" />
+                    <ViewDirective option="WorkWeek" />
+                    <ViewDirective option="Month" />
+                    <ViewDirective option="Agenda" />
+                  </ViewsDirective>
+                  <Inject services={[Day, Week, WorkWeek, Month, Agenda]} />
+                </ScheduleComponent>
+              )}
             </div>
           )}
         </div>
       </div>
 
+      {/* Modals */}
       {showVetModal && vetInfo && (
         <div className="modal-overlay">
           <div className="modal-content-v">
@@ -475,7 +613,7 @@ const VeterinaryHome = () => {
                     />
                   </label>
                 </div>
-                <div className="form-group">
+                <div className="form-group-v">
                   <label htmlFor="FirstName">First Name</label>
                   <input
                     type="text"
@@ -485,7 +623,7 @@ const VeterinaryHome = () => {
                     onChange={handleVetInputChange}
                   />
                 </div>
-                <div className="form-group">
+                <div className="form-group-v">
                   <label htmlFor="LastName">Last Name</label>
                   <input
                     type="text"
@@ -495,7 +633,7 @@ const VeterinaryHome = () => {
                     onChange={handleVetInputChange}
                   />
                 </div>
-                <div className="form-group">
+                <div className="form-group-v">
                   <label htmlFor="contactNumber">Contact Number</label>
                   <input
                     type="text"
@@ -505,7 +643,7 @@ const VeterinaryHome = () => {
                     onChange={handleVetInputChange}
                   />
                 </div>
-                <div className="form-group">
+                <div className="form-group-v">
                   <label htmlFor="email">Email</label>
                   <input
                     type="email"
@@ -517,14 +655,14 @@ const VeterinaryHome = () => {
                 </div>
                 <div className="form-actions">
                   <button
-                    className="submit-btn"
+                    className="submit-btn-v"
                     onClick={handleSaveVetInfo}
                     disabled={isUpdatingVet}
                   >
                     {isUpdatingVet ? "Saving..." : "Save"}
                   </button>
                   <button
-                    className="cancel-btn"
+                    className="cancel-btn-v"
                     onClick={() => {
                       setShowVetModal(false);
                       setIsEditingVet(false);
@@ -541,14 +679,19 @@ const VeterinaryHome = () => {
                   alt="Veterinarian"
                   className="vet-info-img"
                 />
-                <h2>{vetInfo.FirstName} {vetInfo.LastName}</h2>
-                <p><strong>Clinic:</strong> {vetInfo.clinicName}</p>
-                <p><strong>Contact:</strong> {vetInfo.contactNumber || "N/A"}</p>
-                <p><strong>Email:</strong> {vetInfo.email}</p>
-                <button
-                  className="modal-close-btn"
-                  onClick={() => setShowVetModal(false)}
-                >
+                <h2>
+                  {vetInfo.FirstName} {vetInfo.LastName}
+                </h2>
+                <p>
+                  <strong>Clinic:</strong> {vetInfo.clinicName}
+                </p>
+                <p>
+                  <strong>Contact:</strong> {vetInfo.contactNumber || "N/A"}
+                </p>
+                <p>
+                  <strong>Email:</strong> {vetInfo.email}
+                </p>
+                <button className="modal-close-btn" onClick={() => setShowVetModal(false)}>
                   Close
                 </button>
               </>
@@ -562,11 +705,11 @@ const VeterinaryHome = () => {
           <div className="modal-content signout-confirm-modal">
             <p>Are you sure you want to sign out?</p>
             <div className="form-actions">
-              <button className="submit-btn" onClick={confirmSignOut}>
+              <button className="submit-btn-v" onClick={confirmSignOut}>
                 Yes
               </button>
               <button
-                className="cancel-btn"
+                className="cancel-btn-v"
                 onClick={() => setIsSignOutConfirmOpen(false)}
               >
                 Cancel
@@ -591,37 +734,99 @@ const VeterinaryHome = () => {
         </div>
       )}
 
-      {showRemarksModal && selectedAppointment && (
+      {showDetailsModal && appointmentDetails && (
         <div className="modal-overlay">
           <div className="modal-content">
             <span
               className="close-button"
-              onClick={() => setShowRemarksModal(false)}
+              onClick={() => {
+                setShowDetailsModal(false);
+                setShowRemarksModal(false);
+              }}
             >
               ×
             </span>
-            <h2>Add/Edit Remark for {selectedAppointment.petName}</h2>
-            <div className="form-group">
-              <label htmlFor="remark">Remark</label>
-              <textarea
-                id="remark"
-                value={newRemark}
-                onChange={handleRemarkChange}
-                rows="4"
-                style={{ width: "100%", padding: "10px", borderRadius: "5px" }}
-              />
+            <h2>Appointment Details</h2>
+            <div className="form-group-v">
+              <p>
+                <strong>Date:</strong> {formatDate(appointmentDetails.dateofAppointment)}
+              </p>
+              <p>
+                <strong>Pet Name:</strong> {appointmentDetails.petName}
+              </p>
+              <p>
+                <strong>Species:</strong> {appointmentDetails.species}
+              </p>
+              <p>
+                <strong>Breed:</strong> {appointmentDetails.breed}
+              </p>
+              <p>
+                <strong>Age:</strong> {appointmentDetails.age || "N/A"}
+              </p>
+              <p>
+                <strong>Owner:</strong> {appointmentDetails.owner}
+              </p>
+              <p>
+                <strong>Service:</strong> {appointmentDetails.service}
+              </p>
+              <p>
+                <strong>Remarks:</strong> {appointmentDetails.remarks || "N/A"}
+              </p>
             </div>
             <div className="form-actions">
-              <button className="submit-btn" onClick={saveRemark}>
-                Save
+              <button
+                className="submit-btn-v"
+                onClick={() => {
+                  openRemarksModal(appointmentDetails);
+                }}
+              >
+                Edit Remark
               </button>
               <button
-                className="cancel-btn"
-                onClick={() => setShowRemarksModal(false)}
+                className="cancel-btn-v"
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  setShowRemarksModal(false);
+                }}
               >
-                Cancel
+                Close
               </button>
             </div>
+
+            {showRemarksModal && selectedAppointment && (
+              <div className="remarks-overlay">
+                <div className="remarks-content">
+                  <span
+                    className="remarks-close-button"
+                    onClick={() => setShowRemarksModal(false)}
+                  >
+                    ×
+                  </span>
+                  <h3>Add/Edit Remark for {selectedAppointment.petName}</h3>
+                  <div className="form-group-v">
+                    <label htmlFor="remark">Remark</label>
+                    <textarea
+                      id="remark"
+                      value={newRemark}
+                      onChange={handleRemarkChange}
+                      rows="4"
+                      className="remarks-textarea"
+                    />
+                  </div>
+                  <div className="form-actions">
+                    <button className="submit-btn-v" onClick={saveRemark}>
+                      Save
+                    </button>
+                    <button
+                      className="cancel-btn-v"
+                      onClick={() => setShowRemarksModal(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
