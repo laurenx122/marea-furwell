@@ -17,6 +17,7 @@ import {
   Inject,
   RecurrenceEditor,
 } from "@syncfusion/ej2-react-schedule";
+//npm install @syncfusion/ej2-grids --save
 import { registerLicense } from "@syncfusion/ej2-base";
 
 // Import Syncfusion CSS for proper styling
