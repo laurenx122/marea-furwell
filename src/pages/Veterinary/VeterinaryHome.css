@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
 
-.vet-container {
+.vet-container-v {
   display: flex;
   height: 100vh;
   background-color: #d3f0f7;
@@ -20,11 +20,11 @@
   max-height: 100vh;
 }
 
-.vet-sidebar-panel {
+.vet-sidebar-panel-v {
   width: 100%;
 }
 
-.vet-img-container {
+.vet-img-container-v {
   position: relative;
   display: flex;
   justify-content: center;
@@ -33,7 +33,7 @@
   margin: 0 auto 20px;
 }
 
-.veterinarian-profile-image {
+.veterinarian-profile-image-v {
   width: 150px;
   height: 150px;
   border-radius: 50%;
@@ -41,7 +41,7 @@
   border: 3px solid #ffb6c1;
 }
 
-.edit-icon {
+.edit-icon-v {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -86,7 +86,7 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  gap: 5px; 
+  gap: 5px;
 }
 
 .signout-btn-v {
@@ -108,13 +108,13 @@
   transform: translateY(-2px);
 }
 
-.content {
+.content-v {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
 }
 
-.panel-container {
+.panel-container-v {
   background: white;
   padding: 20px;
   border-radius: 10px;
@@ -137,26 +137,32 @@ th {
   background-color: #ffb6c1;
 }
 
-.appointments-panel {
+.appointments-panel-v {
   padding: 10px;
+  background-color: #fdf6c2;
 }
 
-.schedule-panel {
+.schedule-panel-v {
   padding: 10px;
   background-color: #c2f0d1;
 }
 
-.vet-info-panel {
+.vet-info-panel-v {
   background-color: #ffe4e6;
 }
 
-.panel h3 {
+.health-records-panel-v {
+  padding: 10px;
+  background-color: #e0f7fa;
+}
+
+.panel-v h3 {
   font-size: 24px;
   margin-bottom: 20px;
   color: #ff4081;
 }
 
-.vet-info-img {
+.vet-info-img-v {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -165,7 +171,7 @@ th {
   border: 3px solid #ffb6c1;
 }
 
-.edit-vet-btn {
+.edit-vet-btn-v {
   margin-top: 15px;
   background-color: #ff4081;
   color: white;
@@ -175,22 +181,11 @@ th {
   cursor: pointer;
 }
 
-.edit-vet-btn:hover {
+.edit-vet-btn-v:hover {
   background-color: #f50057;
 }
 
-.edit-remark-icon {
-  margin-left: 10px;
-  cursor: pointer;
-  color: #ff4081;
-}
-
-.edit-remark-icon:hover {
-  color: #f50057;
-}
-
-/* Modal Overlay with Z-Index Adjustments */
-.modal-overlay {
+.modal-overlay-v {
   position: fixed;
   top: 0;
   left: 0;
@@ -200,12 +195,7 @@ th {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Default z-index for modals */
-}
-
-/* Higher z-index for the remarks modal to ensure it appears on top */
-.modal-overlay.remarks-modal {
-  z-index: 1100; /* Higher than the default modal z-index */
+  z-index: 1000;
 }
 
 .modal-content-v {
@@ -218,7 +208,7 @@ th {
   position: relative;
 }
 
-.close-button {
+.close-button-v {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -227,13 +217,13 @@ th {
   color: #333;
 }
 
-.modal-content h2 {
+.modal-content-v h2 {
   font-size: 24px;
   color: #ff4081;
   margin-bottom: 20px;
 }
 
-.vet-image-upload-container {
+.vet-image-upload-container-v {
   display: flex;
   justify-content: center;
   padding: 20px;
@@ -242,7 +232,7 @@ th {
   border-top-right-radius: 10px;
 }
 
-.vet-image-upload {
+.vet-image-upload-v {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -257,12 +247,12 @@ th {
   border: 3px solid #fff;
 }
 
-.vet-image-upload .camera-icon {
+.vet-image-upload-v .camera-icon-v {
   font-size: 24px;
   color: #ff4081;
 }
 
-.vet-image-upload p {
+.vet-image-upload-v p {
   margin: 5px 0 0;
   font-size: 14px;
   color: #333;
@@ -289,7 +279,7 @@ th {
   font-size: 16px;
 }
 
-.form-actions {
+.form-actions-v {
   display: flex;
   justify-content: space-between;
   gap: 10px;
@@ -314,7 +304,7 @@ th {
   cursor: not-allowed;
 }
 
-.cancel-btn-v  {
+.cancel-btn-v {
   background-color: #999;
   color: white;
   padding: 10px 20px;
@@ -327,7 +317,19 @@ th {
   background-color: #666;
 }
 
-/* Custom Syncfusion Schedule styles */
+.modal-close-btn-v {
+  background-color: #ff4081;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.modal-close-btn-v:hover {
+  background-color: #f50057;
+}
+
 .e-schedule {
   border: 1px solid #ffb6c1;
   border-radius: 5px;
@@ -339,7 +341,7 @@ th {
 }
 
 .e-schedule .e-appointment {
-  background-color: #ff4081 !important; /* Override Syncfusion default */
+  background-color: #ff4081 !important;
   border: none;
 }
 
@@ -347,32 +349,69 @@ th {
   background-color: #f50057 !important;
 }
 
-
-
-.signout-confirm-modal {
+.signout-confirm-modal-v {
   padding: 20px;
   text-align: center;
 }
 
-.signout-success-modal {
+.signout-success-modal-v {
   padding: 10px;
   text-align: center;
 }
 
-.success-content {
+.success-content-v {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.success-image {
+.success-image-v {
   width: 40px;
   height: 40px;
   margin-right: 15px;
 }
 
-.signout-success-modal p {
+.signout-success-modal-v p {
   margin: 0;
   font-size: 18px;
   font-weight: bold;
+}
+
+.remarks-overlay-v {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+}
+
+.remarks-content-v {
+  background-color: #d3f0f7;
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90%;
+  text-align: center;
+}
+
+.remarks-close-button-v {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+}
+
+.remarks-textarea-v {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
 }
