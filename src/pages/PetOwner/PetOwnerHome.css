@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
 
 /* General Layout */
-.pet-owner-container {
+.pet-owner-container-p {
   display: flex;
   height: 100vh;
   background-color: #d3f0f7;
@@ -9,7 +9,7 @@
 }
 
 /* Sidebar Styling */
-.sidebar {
+.sidebar-p {
   width: 250px;
   background-color: #EDBFC6;
   padding: 20px;
@@ -21,7 +21,7 @@
   min-height: 100vh;
 }
 
-.sidebar h2 {
+.sidebar-p h2 {
   font-size: 24px;
   color: #ff4081;
   margin-bottom: 20px;
@@ -29,7 +29,7 @@
   padding-bottom: 10px;
 }
 
-.sidebar button {
+.sidebar-p button {
   width: 100%;
   padding: 12px;
   font-size: 16px;
@@ -44,24 +44,24 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.sidebar button:hover {
+.sidebar-p button:hover {
   background-color: #ffcdd2;
   transform: translateY(-2px);
 }
 
-.sidebar button.active {
+.sidebar-p button.active {
   background-color: #ff8c94;
   color: #fff;
   font-weight: bold;
 }
 
 /* Owner Sidebar Panel */
-.owner-sidebar-panel {
+.owner-sidebar-panel-p {
   width: 100%;
   margin-top: 90px;
 }
 
-.owner-img-container {
+.owner-img-container-p {
   position: relative;
   display: flex;
   justify-content: center;
@@ -70,7 +70,7 @@
   margin: 0 auto 20px;
 }
 
-.owner-profile-image {
+.owner-profile-image-p {
   width: 150px;
   height: 150px;
   border-radius: 50%;
@@ -79,7 +79,7 @@
 }
 
 /* Sidebar Buttons Container */
-.sidebar-buttons {
+.sidebar-buttons-p {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -88,7 +88,7 @@
 }
 
 /* Content Area */
-.content {
+.content-p {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
@@ -96,7 +96,7 @@
 }
 
 /* Panel Container */
-.panel-container {
+.panel-container-p {
   background: white;
   padding: 20px;
   border-radius: 10px;
@@ -136,12 +136,13 @@ tr:hover {
 }
 
 /* Panel Colors */
-.profile-panel { background-color: #e4e8ff; }
-.pet-details-panel { background-color: #ffe4e6; }
-.appointments-panel { background-color: #fdf6c2; }
+.profile-panel-p { background-color: #e4e8ff; }
+.pet-details-panel-p { background-color: #ffe4e6; }
+.appointments-panel-p { background-color: #fdf6c2; }
+.health-records-panel-p { background-color: #e0f7fa; }
 
 /* Panel Headers */
-.panel h3 {
+.panel-p h3 {
   font-size: 24px;
   margin-bottom: 20px;
   color: #ff4081;
@@ -150,31 +151,31 @@ tr:hover {
 }
 
 /* Pet Name Link */
-.pet-name-link {
+.pet-name-link-p {
   color: #ff4081;
   text-decoration: underline;
   cursor: pointer;
 }
 
-.pet-name-link:hover {
+.pet-name-link-p:hover {
   color: #f50057;
 }
 
 /* Pet Details Header */
-.pet-details-header {
+.pet-details-header-p {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
 
-.pet-details-header h3 {
+.pet-details-header-p h3 {
   margin: 0;
   font-size: 24px;
   color: #ff4081;
 }
 
-.addpetbutt {
+.addpetbutt-p {
   background-color: #ff69b4;
   color: white;
   padding: 12px 20px;
@@ -185,7 +186,7 @@ tr:hover {
   transition: background-color 0.3s;
 }
 
-.addpetbutt:hover {
+.addpetbutt-p:hover {
   background-color: #ff1493;
 }
 
@@ -196,20 +197,20 @@ form {
   gap: 15px;
 }
 
-.form-group {
+.form-group-p {
   margin-bottom: 15px;
   text-align: left;
 }
 
-.form-group label {
+.form-group-p label {
   display: block;
   margin-bottom: 5px;
   color: #333;
   font-weight: bold;
 }
 
-.form-group input,
-.form-group select {
+.form-group-p input,
+.form-group-p select {
   width: 95%;
   padding: 10px;
   border: 1px solid #ddd;
@@ -218,19 +219,19 @@ form {
   transition: border-color 0.3s;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group-p input:focus,
+.form-group-p select:focus {
   border-color: #ff4081;
   outline: none;
 }
 
-.form-actions {
+.form-actions-p {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
-.submit-btn {
+.submit-btn-p {
   background-color: #ff4081;
   color: white;
   padding: 10px 20px;
@@ -240,16 +241,16 @@ form {
   transition: background-color 0.3s;
 }
 
-.submit-btn:hover {
+.submit-btn-p:hover {
   background-color: #f50057;
 }
 
-.submit-btn:disabled {
+.submit-btn-p:disabled {
   background-color: #ccc;
   cursor: not-allowed;
 }
 
-.cancel-btn {
+.cancel-btn-p {
   background-color: #999;
   color: white;
   padding: 10px 20px;
@@ -259,12 +260,12 @@ form {
   transition: background-color 0.3s;
 }
 
-.cancel-btn:hover {
+.cancel-btn-p:hover {
   background-color: #666;
 }
 
 /* Modal Styling */
-.modal-overlay {
+.modal-overlay-p {
   position: fixed;
   top: 0;
   left: 0;
@@ -277,7 +278,7 @@ form {
   z-index: 1000;
 }
 
-.modal-content {
+.modal-content-p {
   background-color: #d3f0f7;
   border-radius: 10px;
   width: 500px;
@@ -290,7 +291,7 @@ form {
   text-align: center;
 }
 
-.close-button {
+.close-button-p {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -299,38 +300,38 @@ form {
   color: #333;
 }
 
-.modal-content h2 {
+.modal-content-p h2 {
   font-size: 24px;
   color: #ff4081;
   margin-bottom: 20px;
 }
 
-.pet-info-grid {
+.pet-info-grid-p {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
   margin-bottom: 20px;
 }
 
-.info-item {
+.info-item-p {
   padding: 10px;
   background-color: #fff5f6;
   border-radius: 4px;
   text-align: left;
 }
 
-.info-item strong {
+.info-item-p strong {
   color: #555;
 }
 
-.modal-actions {
+.modal-actions-p {
   display: flex;
   justify-content: center;
   gap: 10px;
   margin-top: 20px;
 }
 
-.modal-close-btn {
+.modal-close-btn-p {
   background-color: #ff4081;
   color: white;
   padding: 10px 20px;
@@ -340,12 +341,12 @@ form {
   transition: background-color 0.3s;
 }
 
-.modal-close-btn:hover {
+.modal-close-btn-p:hover {
   background-color: #f50057;
 }
 
 /* Pet Image Upload */
-.pet-image-upload-container {
+.pet-image-upload-container-p {
   display: flex;
   justify-content: center;
   padding: 20px;
@@ -354,7 +355,7 @@ form {
   border-top-right-radius: 10px;
 }
 
-.pet-image-upload {
+.pet-image-upload-p {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -370,35 +371,35 @@ form {
   transition: transform 0.3s;
 }
 
-.pet-image-upload:hover {
+.pet-image-upload-p:hover {
   transform: scale(1.05);
 }
 
-.pet-image-upload .camera-icon {
+.pet-image-upload-p .camera-icon-p {
   font-size: 24px;
   color: #ff4081;
 }
 
-.pet-image-upload p {
+.pet-image-upload-p p {
   margin: 5px 0 0;
   font-size: 14px;
   color: #333;
 }
 
 /* Pet Image in Modal */
-.pet-image-container {
+.pet-image-container-p {
   display: flex;
   justify-content: center;
   background-image: url("https://us.123rf.com/450wm/pliskova/pliskova1706/pliskova170600317/81354009-pet-seamless-pattern-on-a-blue-background-illustration.jpg");
   margin-bottom: 20px;
 }
 
-.pet-image-wrapper {
+.pet-image-wrapper-p {
   position: relative;
   display: inline-block;
 }
 
-.pet-image {
+.pet-image-p {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -406,7 +407,7 @@ form {
   border: 3px solid #ffb6c1;
 }
 
-.edit-image-icon {
+.edit-image-icon-p {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -423,7 +424,7 @@ form {
 }
 
 /* Success and Error Messages */
-.success-message {
+.success-message-p {
   color: #4caf50;
   margin-bottom: 15px;
   padding: 8px;
@@ -431,7 +432,7 @@ form {
   background-color: #e8f5e9;
 }
 
-.error-message {
+.error-message-p {
   color: #ff1744;
   margin-bottom: 15px;
   padding: 8px;
@@ -440,24 +441,24 @@ form {
 }
 
 /* Add Pet Modal */
-.add-pet-modal {
+.add-pet-modal-p {
   padding: 0;
 }
 
-.add-pet-modal form {
+.add-pet-modal-p form {
   padding: 20px;
 }
 
 /* Profile Panel */
-.profile-panel {
+.profile-panel-p {
   background-color: #e4e8ff;
 }
 
-.owner-details {
+.owner-details-p {
   text-align: center;
 }
 
-.owner-info-img {
+.owner-info-img-p {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -466,7 +467,7 @@ form {
   border: 3px solid #ffb6c1;
 }
 
-.edit-owner-btn {
+.edit-owner-btn-p {
   background-color: #ff4081;
   color: white;
   padding: 8px 16px;
@@ -477,6 +478,6 @@ form {
   margin-top: 15px;
 }
 
-.edit-owner-btn:hover {
+.edit-owner-btn-p:hover {
   background-color: #f50057;
 }
