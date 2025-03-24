@@ -137,9 +137,18 @@ th {
   background-color: #ffb6c1;
 }
 
-.appointments-panel { background-color: #fdf6c2; }
-.schedule-panel { background-color: #c2f0d1; }
-.vet-info-panel { background-color: #ffe4e6; }
+.appointments-panel {
+  padding: 10px;
+}
+
+.schedule-panel {
+  padding: 10px;
+  background-color: #c2f0d1;
+}
+
+.vet-info-panel {
+  background-color: #ffe4e6;
+}
 
 .panel h3 {
   font-size: 24px;
@@ -180,6 +189,7 @@ th {
   color: #f50057;
 }
 
+/* Modal Overlay with Z-Index Adjustments */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -190,7 +200,12 @@ th {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1000; /* Default z-index for modals */
+}
+
+/* Higher z-index for the remarks modal to ensure it appears on top */
+.modal-overlay.remarks-modal {
+  z-index: 1100; /* Higher than the default modal z-index */
 }
 
 .modal-content-v {
@@ -253,21 +268,21 @@ th {
   color: #333;
 }
 
-.form-group {
+.form-group-v {
   margin-bottom: 15px;
   text-align: left;
 }
 
-.form-group label {
+.form-group-v label {
   display: block;
   margin-bottom: 5px;
   color: #333;
   font-weight: bold;
 }
 
-.form-group input,
-.form-group textarea {
-  width: 100%;
+.form-group-v input,
+.form-group-v textarea {
+  width: 95%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
@@ -281,7 +296,7 @@ th {
   margin-top: 20px;
 }
 
-.submit-btn {
+.submit-btn-v {
   background-color: #ff4081;
   color: white;
   padding: 10px 20px;
@@ -290,16 +305,16 @@ th {
   cursor: pointer;
 }
 
-.submit-btn:hover {
+.submit-btn-v:hover {
   background-color: #f50057;
 }
 
-.submit-btn:disabled {
+.submit-btn-v:disabled {
   background-color: #ccc;
   cursor: not-allowed;
 }
 
-.cancel-btn {
+.cancel-btn-v  {
   background-color: #999;
   color: white;
   padding: 10px 20px;
@@ -308,9 +323,31 @@ th {
   cursor: pointer;
 }
 
-.cancel-btn:hover {
+.cancel-btn-v:hover {
   background-color: #666;
 }
+
+/* Custom Syncfusion Schedule styles */
+.e-schedule {
+  border: 1px solid #ffb6c1;
+  border-radius: 5px;
+}
+
+.e-schedule .e-schedule-toolbar {
+  background-color: #ffb6c1;
+  border-bottom: 1px solid #ff8c94;
+}
+
+.e-schedule .e-appointment {
+  background-color: #ff4081 !important; /* Override Syncfusion default */
+  border: none;
+}
+
+.e-schedule .e-appointment:hover {
+  background-color: #f50057 !important;
+}
+
+
 
 .signout-confirm-modal {
   padding: 20px;
