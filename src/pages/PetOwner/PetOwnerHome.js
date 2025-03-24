@@ -13,12 +13,40 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { FaCamera } from "react-icons/fa";
+import {
+  ScheduleComponent,
+  ViewsDirective,
+  ViewDirective,
+  Day,
+  Week,
+  WorkWeek,
+  Month,
+  Agenda,
+  Inject,
+} from "@syncfusion/ej2-react-schedule";
+import { registerLicense } from "@syncfusion/ej2-base";
+
+// Import Syncfusion CSS
+import "@syncfusion/ej2-base/styles/material.css";
+import "@syncfusion/ej2-buttons/styles/material.css";
+import "@syncfusion/ej2-calendars/styles/material.css";
+import "@syncfusion/ej2-dropdowns/styles/material.css";
+import "@syncfusion/ej2-inputs/styles/material.css";
+import "@syncfusion/ej2-navigations/styles/material.css";
+import "@syncfusion/ej2-popups/styles/material.css";
+import "@syncfusion/ej2-react-schedule/styles/material.css";
 
 const PetOwnerHome = () => {
+  // Register Syncfusion license (replace with your valid key if different)
+  registerLicense(
+    "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
+  );
+
   const [activePanel, setActivePanel] = useState("petDetails");
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState([]);
+  const [pastAppointments, setPastAppointments] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showAddPetModal, setShowAddPetModal] = useState(false);
   const [showEditOwnerModal, setShowEditOwnerModal] = useState(false);
@@ -53,29 +81,25 @@ const PetOwnerHome = () => {
 
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
+    let date;
     if (dateValue && typeof dateValue.toDate === "function") {
-      return dateValue.toDate().toLocaleString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      });
+      date = dateValue.toDate();
+    } else if (typeof dateValue === "string") {
+      date = new Date(dateValue);
+    } else {
+      date = dateValue;
     }
-    if (typeof dateValue === "string") {
-      try {
-        return new Date(dateValue).toLocaleString("en-US", {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        });
-      } catch (e) {
-        return dateValue;
-      }
-    }
-    return String(dateValue);
+
+    if (!(date instanceof Date) || isNaN(date)) return "N/A";
+
+    return date.toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).replace(",", " at");
   };
 
   const formatDOB = (dateValue) => {
@@ -95,7 +119,7 @@ const PetOwnerHome = () => {
       year: "numeric",
     });
 
-    const today = new Date("2025-03-23"); // Current date as per context
+    const today = new Date("2025-03-24"); // Current date as per context
     let age = today.getFullYear() - dob.getFullYear();
     const monthDiff = today.getMonth() - dob.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
@@ -319,6 +343,7 @@ const PetOwnerHome = () => {
 
   const fetchAppointments = async () => {
     try {
+      setLoading(true);
       const currentUser = auth.currentUser;
       if (currentUser) {
         const appointmentsQuery = query(
@@ -326,36 +351,45 @@ const PetOwnerHome = () => {
           where("owner", "==", doc(db, "users", currentUser.uid))
         );
         const querySnapshot = await getDocs(appointmentsQuery);
-        const appointmentsList = [];
-  
+        const currentAppointmentsList = [];
+        const pastAppointmentsList = [];
+        const today = new Date("2025-03-24"); // Current date as per context
+
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
           const clinicDoc = await getDoc(data.clinic);
-          appointmentsList.push({
-            id: doc.id,
+          const startTime = data.dateofAppointment.toDate();
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Assuming 1-hour duration
+
+          const appointmentDetails = {
+            Id: doc.id,
+            Subject: `${data.petName || "Unknown Pet"} - ${data.serviceType || "N/A"}`,
+            StartTime: startTime,
+            EndTime: endTime,
             petName: data.petName || "Unknown Pet",
             clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
             serviceType: data.serviceType || "N/A",
             veterinarian: data.veterinarian || "N/A",
-            dateofAppointment: data.dateofAppointment,
-          });
-        }
-  
-        appointmentsList.sort((a, b) => {
-          const dateA = a.dateofAppointment && typeof a.dateofAppointment.toDate === "function"
-            ? a.dateofAppointment.toDate()
-            : new Date(a.dateofAppointment || 0);
-          const dateB = b.dateofAppointment && typeof b.dateofAppointment.toDate === "function"
-            ? b.dateofAppointment.toDate()
-            : new Date(b.dateofAppointment || 0);
+            remarks: data.remarks || "No remarks",
+            dateofAppointment: startTime,
+          };
 
-          return dateA - dateB;
-        });
-  
-        setAppointments(appointmentsList);
+          if (startTime < today) {
+            pastAppointmentsList.push(appointmentDetails);
+          } else {
+            currentAppointmentsList.push(appointmentDetails);
+          }
+        }
+
+        setAppointments(currentAppointmentsList);
+        setPastAppointments(pastAppointmentsList);
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
+      setAppointments([]);
+      setPastAppointments([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -438,16 +472,20 @@ const PetOwnerHome = () => {
     setImageUploadError("");
   };
 
+  const onCellClick = (args) => {
+    args.cancel = true; // Prevent adding new events
+  };
+
   return (
-    <div className="pet-owner-container">
-      <div className="sidebar">
+    <div className="pet-owner-container-p">
+      <div className="sidebar-p">
         {ownerInfo && (
-          <div className="owner-sidebar-panel">
-            <div className="owner-img-container">
+          <div className="owner-sidebar-panel-p">
+            <div className="owner-img-container-p">
               <img
                 src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
                 alt="Owner Profile"
-                className="owner-profile-image"
+                className="owner-profile-image-p"
               />
             </div>
             <button
@@ -458,7 +496,7 @@ const PetOwnerHome = () => {
             </button>
           </div>
         )}
-        <div className="sidebar-buttons">
+        <div className="sidebar-buttons-p">
           <button
             className={activePanel === "petDetails" ? "active" : ""}
             onClick={() => setActivePanel("petDetails")}
@@ -471,35 +509,41 @@ const PetOwnerHome = () => {
           >
             Appointments
           </button>
+          <button
+            className={activePanel === "healthRecords" ? "active" : ""}
+            onClick={() => setActivePanel("healthRecords")}
+          >
+            Health Records
+          </button>
         </div>
       </div>
 
-      <div className="content">
-        <div className="panel-container">
+      <div className="content-p">
+        <div className="panel-container-p">
           {activePanel === "profile" && ownerInfo && (
-            <div className="panel profile-panel">
+            <div className="panel-p profile-panel-p">
               <h3>Profile</h3>
-              <div className="owner-details">
+              <div className="owner-details-p">
                 <img
                   src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
                   alt="Owner"
-                  className="owner-info-img"
+                  className="owner-info-img-p"
                 />
                 <p><strong>First Name:</strong> {ownerInfo.FirstName}</p>
                 <p><strong>Last Name:</strong> {ownerInfo.LastName}</p>
                 <p><strong>Contact Number:</strong> {ownerInfo.contactNumber || "N/A"}</p>
                 <p><strong>Email:</strong> {ownerInfo.email}</p>
-                <button className="edit-owner-btn" onClick={openEditOwnerModal}>
+                <button className="edit-owner-btn-p" onClick={openEditOwnerModal}>
                   Edit Profile
                 </button>
               </div>
             </div>
           )}
           {activePanel === "petDetails" && (
-            <div className="panel pet-details-panel">
-              <div className="pet-details-header">
+            <div className="panel-p pet-details-panel-p">
+              <div className="pet-details-header-p">
                 <h3>Pet Details</h3>
-                <button className="addpetbutt" onClick={openAddPetModal}>
+                <button className="addpetbutt-p" onClick={openAddPetModal}>
                   Add A Pet
                 </button>
               </div>
@@ -523,7 +567,7 @@ const PetOwnerHome = () => {
                                 e.preventDefault();
                                 handlePetClick(pet);
                               }}
-                              className="pet-name-link"
+                              className="pet-name-link-p"
                             >
                               {pet.petName}
                             </a>
@@ -541,63 +585,101 @@ const PetOwnerHome = () => {
             </div>
           )}
           {activePanel === "appointments" && (
-            <div className="panel appointments-panel">
+            <div className="panel-p appointments-panel-p">
               <h3>Appointments</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Pet Name</th>
-                    <th>Date & Time</th>
-                    <th>Clinic</th>
-                    <th>Service</th>
-                    <th>Veterinarian</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {appointments.length > 0 ? (
-                    appointments.map((appointment) => (
-                      <tr key={appointment.id}>
-                        <td>{appointment.petName}</td>
-                        <td>{formatDate(appointment.dateofAppointment)}</td>
-                        <td>{appointment.clinicName}</td>
-                        <td>{appointment.serviceType}</td>
-                        <td>{appointment.veterinarian}</td>
-                      </tr>
-                    ))
-                  ) : (
+              {loading ? (
+                <p>Loading appointments...</p>
+              ) : (
+                <ScheduleComponent
+                  width="100%"
+                  height="650px"
+                  currentDate={new Date(2025, 2, 24)} // March 24, 2025
+                  eventSettings={{
+                    dataSource: appointments,
+                    fields: {
+                      id: "Id",
+                      subject: { name: "Subject" },
+                      startTime: { name: "StartTime" },
+                      endTime: { name: "EndTime" },
+                    },
+                  }}
+                  cellClick={onCellClick}
+                  readOnly={true}
+                >
+                  <ViewsDirective>
+                    <ViewDirective option="Day" />
+                    <ViewDirective option="Week" />
+                    <ViewDirective option="WorkWeek" />
+                    <ViewDirective option="Month" />
+                    <ViewDirective option="Agenda" />
+                  </ViewsDirective>
+                  <Inject services={[Day, Week, WorkWeek, Month, Agenda]} />
+                </ScheduleComponent>
+              )}
+            </div>
+          )}
+          {activePanel === "healthRecords" && (
+            <div className="panel-p health-records-panel-p">
+              <h3>Health Records</h3>
+              {loading ? (
+                <p>Loading health records...</p>
+              ) : (
+                <table>
+                  <thead>
                     <tr>
-                      <td colSpan="5">No appointments found</td>
+                      <th>Date of Appointment</th>
+                      <th>Pet Name</th>
+                      <th>Service</th>
+                      <th>Veterinarian</th>
+                      <th>Remarks</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {pastAppointments.length > 0 ? (
+                      pastAppointments.map((record) => (
+                        <tr key={record.Id}>
+                          <td>{formatDate(record.dateofAppointment)}</td>
+                          <td>{record.petName}</td>
+                          <td>{record.serviceType}</td>
+                          <td>{record.veterinarian}</td>
+                          <td>{record.remarks}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5">No past appointments found</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
         </div>
       </div>
 
       {showModal && selectedPet && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <span className="close-button" onClick={closeModal}>×</span>
-            <div className="pet-image-container">
-              <div className="pet-image-wrapper">
+        <div className="modal-overlay-p">
+          <div className="modal-content-p">
+            <span className="close-button-p" onClick={closeModal}>×</span>
+            <div className="pet-image-container-p">
+              <div className="pet-image-wrapper-p">
                 {newImagePreview ? (
                   <img
                     src={newImagePreview}
                     alt={`${selectedPet.petName}`}
-                    className="pet-image"
+                    className="pet-image-p"
                   />
                 ) : (
                   <img
                     src={selectedPet.petImageURL || DEFAULT_PET_IMAGE}
                     alt={`${selectedPet.petName}`}
-                    className="pet-image"
+                    className="pet-image-p"
                   />
                 )}
                 <div
-                  className="edit-image-icon"
-                  onClick={() => document.getElementById("pet-image-edit").click()}
+                  className="edit-image-icon-p"
+                  onClick={() => document.getElementById("pet-image-edit-p").click()}
                 >
                   <img
                     src="https://www.freeiconspng.com/thumbs/camera-icon/camera-icon-21.png"
@@ -607,38 +689,38 @@ const PetOwnerHome = () => {
                 </div>
                 <input
                   type="file"
-                  id="pet-image-edit"
+                  id="pet-image-edit-p"
                   accept="image/jpeg, image/jpg, image/png"
                   onChange={handleModalImageChange}
                   style={{ display: "none" }}
                 />
               </div>
             </div>
-            {imageUploadError && <div className="error-message">{imageUploadError}</div>}
+            {imageUploadError && <div className="error-message-p">{imageUploadError}</div>}
             <h2>{selectedPet.petName}</h2>
-            <div className="pet-info-grid">
-              <div className="info-item">
+            <div className="pet-info-grid-p">
+              <div className="info-item-p">
                 <strong>Species:</strong> {selectedPet.Species || "N/A"}
               </div>
-              <div className="info-item">
+              <div className="info-item-p">
                 <strong>Breed:</strong> {selectedPet.Breed || "N/A"}
               </div>
-              <div className="info-item">
+              <div className="info-item-p">
                 <strong>Color:</strong> {selectedPet.Color || "N/A"}
               </div>
-              <div className="info-item">
+              <div className="info-item-p">
                 <strong>Gender:</strong> {selectedPet.Gender || "N/A"}
               </div>
-              <div className="info-item">
+              <div className="info-item-p">
                 <strong>Weight:</strong> {selectedPet.Weight ? `${selectedPet.Weight} kg` : "N/A"}
               </div>
-              <div className="info-item">
+              <div className="info-item-p">
                 <strong>Date of Birth:</strong> {formatDOB(selectedPet.dateofBirth)}
               </div>
             </div>
-            <div className="modal-actions">
+            <div className="modal-actions-p">
               <button
-                className="modal-close-btn"
+                className="modal-close-btn-p"
                 onClick={handleSavePetImage}
                 disabled={isSavingImage}
               >
@@ -650,27 +732,27 @@ const PetOwnerHome = () => {
       )}
 
       {showEditOwnerModal && ownerInfo && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <span className="close-button" onClick={closeEditOwnerModal}>×</span>
+        <div className="modal-overlay-p">
+          <div className="modal-content-p">
+            <span className="close-button-p" onClick={closeEditOwnerModal}>×</span>
             <h2>Edit Profile</h2>
-            {imageUploadError && <div className="error-message">{imageUploadError}</div>}
-            <div className="pet-image-container">
-              <div className="pet-image-wrapper">
+            {imageUploadError && <div className="error-message-p">{imageUploadError}</div>}
+            <div className="pet-image-container-p">
+              <div className="pet-image-wrapper-p">
                 <img
                   src={ownerImagePreview || ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
                   alt="Owner"
-                  className="pet-image"
+                  className="pet-image-p"
                 />
                 <div
-                  className="edit-image-icon"
-                  onClick={() => document.getElementById("owner-image-edit").click()}
+                  className="edit-image-icon-p"
+                  onClick={() => document.getElementById("owner-image-edit-p").click()}
                 >
                   <FaCamera />
                 </div>
                 <input
                   type="file"
-                  id="owner-image-edit"
+                  id="owner-image-edit-p"
                   accept="image/jpeg, image/jpg, image/png"
                   onChange={handleOwnerImageChange}
                   style={{ display: "none" }}
@@ -678,7 +760,7 @@ const PetOwnerHome = () => {
               </div>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSaveOwnerProfile(); }}>
-              <div className="form-group">
+              <div className="form-group-p">
                 <label htmlFor="FirstName">First Name</label>
                 <input
                   type="text"
@@ -689,7 +771,7 @@ const PetOwnerHome = () => {
                   required
                 />
               </div>
-              <div className="form-group">
+              <div className="form-group-p">
                 <label htmlFor="LastName">Last Name</label>
                 <input
                   type="text"
@@ -700,7 +782,7 @@ const PetOwnerHome = () => {
                   required
                 />
               </div>
-              <div className="form-group">
+              <div className="form-group-p">
                 <label htmlFor="contactNumber">Contact Number</label>
                 <input
                   type="tel"
@@ -710,11 +792,11 @@ const PetOwnerHome = () => {
                   onChange={handleOwnerInputChange}
                 />
               </div>
-              <div className="modal-actions">
-                <button type="button" className="cancel-btn" onClick={closeEditOwnerModal}>
+              <div className="modal-actions-p">
+                <button type="button" className="cancel-btn-p" onClick={closeEditOwnerModal}>
                   Cancel
                 </button>
-                <button type="submit" className="submit-btn" disabled={loading}>
+                <button type="submit" className="submit-btn-p" disabled={loading}>
                   {loading ? "Saving..." : "Save"}
                 </button>
               </div>
@@ -724,35 +806,35 @@ const PetOwnerHome = () => {
       )}
 
       {showAddPetModal && (
-        <div className="modal-overlay">
-          <div className="modal-content add-pet-modal">
-            <span className="close-button" onClick={closeAddPetModal}>×</span>
+        <div className="modal-overlay-p">
+          <div className="modal-content-p add-pet-modal-p">
+            <span className="close-button-p" onClick={closeAddPetModal}>×</span>
             <h2>Add New Pet</h2>
-            {addPetSuccess && <div className="success-message">Pet added successfully!</div>}
-            {addPetError && <div className="error-message">{addPetError}</div>}
+            {addPetSuccess && <div className="success-message-p">Pet added successfully!</div>}
+            {addPetError && <div className="error-message-p">{addPetError}</div>}
             <form onSubmit={handleAddPet}>
-              <div className="pet-image-upload-container">
+              <div className="pet-image-upload-container-p">
                 <label
-                  htmlFor="pet-image-upload"
-                  className="pet-image-upload"
+                  htmlFor="pet-image-upload-p"
+                  className="pet-image-upload-p"
                   style={imagePreview ? { backgroundImage: `url(${imagePreview})` } : {}}
                 >
                   {!imagePreview && (
                     <>
-                      <FaCamera className="camera-icon" />
+                      <FaCamera className="camera-icon-p" />
                       <p>Upload Pet Photo</p>
                     </>
                   )}
                   <input
                     type="file"
-                    id="pet-image-upload"
+                    id="pet-image-upload-p"
                     accept="image/jpeg, image/jpg, image/png"
                     onChange={handleImageChange}
                     style={{ display: "none" }}
                   />
                 </label>
               </div>
-              <div className="form-group">
+              <div className="form-group-p">
                 <label htmlFor="petName">Pet Name *</label>
                 <input
                   type="text"
@@ -763,7 +845,7 @@ const PetOwnerHome = () => {
                   required
                 />
               </div>
-              <div className="form-group">
+              <div className="form-group-p">
                 <label htmlFor="Species">Species *</label>
                 <input
                   type="text"
@@ -773,7 +855,7 @@ const PetOwnerHome = () => {
                   onChange={handleInputChange}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-group-p">
                 <label htmlFor="Breed">Breed</label>
                 <input
                   type="text"
@@ -783,7 +865,7 @@ const PetOwnerHome = () => {
                   onChange={handleInputChange}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-group-p">
                 <label htmlFor="Color">Color</label>
                 <input
                   type="text"
@@ -793,7 +875,7 @@ const PetOwnerHome = () => {
                   onChange={handleInputChange}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-group-p">
                 <label htmlFor="Gender">Gender *</label>
                 <select
                   id="Gender"
@@ -807,7 +889,7 @@ const PetOwnerHome = () => {
                   <option value="Female">Female</option>
                 </select>
               </div>
-              <div className="form-group">
+              <div className="form-group-p">
                 <label htmlFor="Weight">Weight (kg)</label>
                 <input
                   type="number"
@@ -819,7 +901,7 @@ const PetOwnerHome = () => {
                   min="0"
                 />
               </div>
-              <div className="form-group">
+              <div className="form-group-p">
                 <label htmlFor="dateofBirth">Date of Birth</label>
                 <input
                   type="date"
@@ -830,11 +912,11 @@ const PetOwnerHome = () => {
                   max={new Date().toISOString().split("T")[0]}
                 />
               </div>
-              <div className="form-actions">
-                <button type="button" className="cancel-btn" onClick={closeAddPetModal}>
+              <div className="form-actions-p">
+                <button type="button" className="cancel-btn-p" onClick={closeAddPetModal}>
                   Cancel
                 </button>
-                <button type="submit" className="submit-btn" disabled={addingPet}>
+                <button type="submit" className="submit-btn-p" disabled={addingPet}>
                   {addingPet ? "Adding..." : "Add Pet"}
                 </button>
               </div>
