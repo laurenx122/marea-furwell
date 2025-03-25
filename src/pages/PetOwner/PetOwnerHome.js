@@ -39,7 +39,7 @@ import "@syncfusion/ej2-react-schedule/styles/material.css";
 const PetOwnerHome = () => {
   // Register Syncfusion license (replace with your valid key if different)
   registerLicense(
-    "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
+    process.env.SYNC_REGISTER_LICENSE
   );
 
   const [activePanel, setActivePanel] = useState("petDetails");
@@ -99,7 +99,7 @@ const PetOwnerHome = () => {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-    }).replace(",", " at");
+    }).replace(",", ",");
   };
 
   const formatDOB = (dateValue) => {
@@ -353,7 +353,7 @@ const PetOwnerHome = () => {
         const querySnapshot = await getDocs(appointmentsQuery);
         const currentAppointmentsList = [];
         const pastAppointmentsList = [];
-        const today = new Date("2025-03-24"); // Current date as per context
+        const today = new Date(); // Current date as per context
 
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
@@ -593,7 +593,7 @@ const PetOwnerHome = () => {
                 <ScheduleComponent
                   width="100%"
                   height="650px"
-                  currentDate={new Date(2025, 2, 24)} // March 24, 2025
+                  currentDate={new Date()} // March 24, 2025
                   eventSettings={{
                     dataSource: appointments,
                     fields: {
@@ -635,8 +635,10 @@ const PetOwnerHome = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {pastAppointments.length > 0 ? (
-                      pastAppointments.map((record) => (
+                  {pastAppointments.length > 0 ? (
+                      [...pastAppointments] // Create a shallow copy to avoid mutating the original array
+                        .sort((a, b) => b.dateofAppointment - a.dateofAppointment) // Sort by date descending
+                        .map((record) => (
                         <tr key={record.Id}>
                           <td>{formatDate(record.dateofAppointment)}</td>
                           <td>{record.petName}</td>

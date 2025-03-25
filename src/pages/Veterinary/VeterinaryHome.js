@@ -30,7 +30,7 @@ import "@syncfusion/ej2-react-schedule/styles/material.css";
 
 const VeterinaryHome = () => {
   registerLicense(
-    "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
+    process.env.SYNC_REGISTER_LICENSE
   );
 
   const [activePanel, setActivePanel] = useState("appointments");
@@ -77,7 +77,7 @@ const VeterinaryHome = () => {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-    }).replace(",", " at");
+    }).replace(",", ",");
   };
 
   const calculateAge = (dateOfBirth) => {
@@ -277,7 +277,7 @@ const VeterinaryHome = () => {
         const querySnapshot = await getDocs(appointmentsQuery);
         const currentAppointmentsList = [];
         const pastAppointmentsList = [];
-        const today = new Date("2025-03-24"); // Current date as per context
+        const today = new Date(); // Current date as per context
 
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
@@ -507,7 +507,7 @@ const VeterinaryHome = () => {
                   ref={scheduleObj}
                   width="100%"
                   height="650px"
-                  currentDate={new Date(2025, 2, 24)}
+                  currentDate={new Date()}
                   eventSettings={{
                     dataSource: appointments,
                     fields: {
@@ -588,15 +588,17 @@ const VeterinaryHome = () => {
                   </thead>
                   <tbody>
                     {pastAppointments.length > 0 ? (
-                      pastAppointments.map((record) => (
-                        <tr key={record.Id}>
-                          <td>{formatDate(record.dateofAppointment)}</td>
-                          <td>{record.petName}</td>
-                          <td>{record.owner}</td>
-                          <td>{record.service}</td>
-                          <td>{record.remarks || "N/A"}</td>
-                        </tr>
-                      ))
+                      [...pastAppointments] // Create a shallow copy to avoid mutating the original array
+                        .sort((a, b) => b.dateofAppointment - a.dateofAppointment) // Sort by date descending
+                        .map((record) => (
+                          <tr key={record.Id}>
+                            <td>{formatDate(record.dateofAppointment)}</td>
+                            <td>{record.petName}</td>
+                            <td>{record.owner}</td>
+                            <td>{record.service}</td>
+                            <td>{record.remarks || "N/A"}</td>
+                          </tr>
+                        ))
                     ) : (
                       <tr>
                         <td colSpan="5">No past appointments found</td>
