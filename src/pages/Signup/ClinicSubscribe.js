@@ -409,9 +409,11 @@ const ClinicSubscribe = () => {
 
         let updatedCity = city || town || village || '';
         let updatedProvince = administrative_area || state || county || '';
+        let updatedPostalCode = postcode || '';
 
         if (updatedCity.toLowerCase() === 'cebu' || updatedCity.toLowerCase() === 'cebu city') {
           updatedProvince = 'Cebu';
+          updatedPostalCode = '6000';
           console.log(`City detected as '${updatedCity}', setting province to 'Cebu'`);
         } else {
           console.log(`City is '${updatedCity}', province remains '${updatedProvince}'`);
@@ -422,7 +424,7 @@ const ClinicSubscribe = () => {
           streetAddress: road ? road : (neighbourhood || suburb || quarter || hamlet || ''),
           city: updatedCity,
           province: updatedProvince,
-          postalCode: postcode || '',
+          postalCode: updatedPostalCode,
         }));
 
         // Log the extracted address details for debugging
@@ -430,7 +432,7 @@ const ClinicSubscribe = () => {
           streetAddress: road ? road : (neighbourhood || suburb || quarter || hamlet || ''),
           city: updatedCity,
           province: updatedProvince,
-          postalCode: postcode || '',
+          postalCode: updatedPostalCode,
         });
 
       } else {
@@ -618,7 +620,7 @@ const ClinicSubscribe = () => {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-container">
-            <div className="modal-header">
+            <div className="modal-header-CS">
               <h2>Business Verification</h2>
               <p>Please provide the necessary documents to verify your clinic.</p>
             </div>
@@ -757,7 +759,7 @@ const ClinicSubscribe = () => {
             {currentStep === 3 && (
               <div>
                 <h3>Business Address</h3>
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>Street Address <span className="required">*</span></label>
                   <input
                     type="text"
@@ -767,7 +769,7 @@ const ClinicSubscribe = () => {
                     required />
 
                 </div>
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>City <span className="required">*</span></label>
                   <input
                     type="text"
@@ -776,7 +778,7 @@ const ClinicSubscribe = () => {
                     onChange={handleAddressChange}
                     required />
                 </div>
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>Province/State <span className="required">*</span></label>
                   <input
                     type="text"
@@ -785,7 +787,7 @@ const ClinicSubscribe = () => {
                     onChange={handleAddressChange}
                     required />
                 </div>
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>Postal Code <span className="required">*</span></label>
                   <input
                     type="text"
@@ -796,7 +798,7 @@ const ClinicSubscribe = () => {
                 </div>
 
                 {/* Search User Address */}
-                <div className="form-group">
+                <div className="form-group-CS">
                   <button
                     type="button"
                     className="location-search-btn"
@@ -822,7 +824,7 @@ const ClinicSubscribe = () => {
                 <h3>Business Verification</h3>
 
                 {/* Read-only clinic name */}
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>Clinic Name</label>
                   <input
                     type="text"
@@ -833,7 +835,7 @@ const ClinicSubscribe = () => {
                 </div>
 
                 {/* Document uploads */}
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>BIR 2303 Form <span className="required">*</span></label>
                   <div className="file-upload-container">
                     <FiUpload className="upload-icon" />
@@ -847,7 +849,7 @@ const ClinicSubscribe = () => {
                   </div>
                 </div>
 
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>Business Permit <span className="required">*</span></label>
                   <div className="file-upload-container">
                     <FiUpload className="upload-icon" />
