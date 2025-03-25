@@ -113,12 +113,7 @@ const ClinicLocator = () => {
                     icon: userIcon,
                 }).addTo(mapRef.current);
 
-                // userMarkerRef.current.on('dragend', function (event) {
-                //     const marker = event.target;
-                //     const position = marker.getLatLng();
-                //     setUserLat(position.lat);
-                //     setUserLng(position.lng);
-                // });
+            
                 console.log("BEFORE: Map initialized at:", userLat, userLng);
 
                 userMarkerRef.current.on('dragend', function (event) {
@@ -200,9 +195,6 @@ const ClinicLocator = () => {
                             console.log("Clinic ID clicked:", clinicId);
                             navigate('/FindClinic', { state: { selectedClinicId: clinicId } });
                         });
-                        // button.addEventListener('click', () => {
-                        //     navigate('/FindClinic', { state: { selectedClinicId: clinic.id } });
-                        // });
                     }
                 });
 
@@ -250,32 +242,6 @@ const ClinicLocator = () => {
             alert('Error fetching clinics. Please try again.');
         }
     };
-
-    // const handleClinicSearch = async () => {
-    //     if (mapRef.current && clinicMarkersRef.current) {
-    //         clinicMarkersRef.current.forEach(marker => mapRef.current.removeLayer(marker));
-    //         clinicMarkersRef.current = [];
-    //     }
-
-    //     try {
-    //         const clinicsCollection = collection(db, 'clinics');
-    //         const querySnapshot = await getDocs(clinicsCollection);
-    //         const markers = querySnapshot.docs.map(doc => {
-    //             const data = doc.data();
-    //             if (data.lat && data.lng) {
-    //                 const marker = L.marker([data.lat, data.lng]).addTo(mapRef.current);
-    //                 clinicMarkersRef.current.push(marker);
-    //                 return marker;
-    //             }
-    //             return null;
-    //         }).filter(marker => marker !== null);
-
-    //         setClinicMarkers(markers);
-    //     } catch (error) {
-    //         console.error('Error fetching clinics:', error);
-    //         alert('Error fetching clinics. Please try again.');
-    //     }
-    // };
 
     return (
         <div className="clinicLocatorContainer">
