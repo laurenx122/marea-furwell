@@ -30,7 +30,8 @@ import "@syncfusion/ej2-react-schedule/styles/material.css";
 
 const VeterinaryHome = () => {
   registerLicense(
-    process.env.SYNC_REGISTER_LICENSE
+    "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
+    // process.env.SYNC_REGISTER_LICENSE
   );
 
   const [activePanel, setActivePanel] = useState("appointments");
