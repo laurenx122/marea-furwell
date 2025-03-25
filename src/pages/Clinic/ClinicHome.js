@@ -242,6 +242,7 @@ const ClinicHome = () => {
           const clinicData = clinicDoc.data();
           setClinicInfo({
             id: clinicDoc.id,
+            clinicDescription: clinicData.clinicDescription || "",
             clinicName: clinicData.clinicName || `Clinic of ${userFirstName}`,
             phone: clinicData.phone || "",
             streetAddress: clinicData.streetAddress || "",
@@ -250,6 +251,7 @@ const ClinicHome = () => {
           });
           setEditedClinicInfo({
             id: clinicDoc.id,
+            clinicDescription: clinicData.clinicDescription || "",
             clinicName: clinicData.clinicName || `Clinic of ${userFirstName}`,
             phone: clinicData.phone || "",
             streetAddress: clinicData.streetAddress || "",
@@ -431,6 +433,7 @@ const ClinicHome = () => {
         }
 
         await updateDoc(clinicRef, {
+          clinicDescription: editedClinicInfo.clinicDescription,
           clinicName: editedClinicInfo.clinicName,
           phone: editedClinicInfo.phone,
           streetAddress: editedClinicInfo.streetAddress,
@@ -733,6 +736,9 @@ const ClinicHome = () => {
                   <strong>Address:</strong> {clinicInfo.streetAddress || "N/A"},{" "}
                   {clinicInfo.city || "N/A"}
                 </p>
+                <p>
+                  <strong>Description:</strong> {clinicInfo.clinicDescription || "N/A"}
+                </p>
                 <button
                   className="edit-clinic-btn-c"
                   onClick={() => {
@@ -987,6 +993,16 @@ const ClinicHome = () => {
                       style={{ display: "none" }}
                     />
                   </label>
+                </div>
+                <div className="form-group-c">
+                  <label htmlFor="clinicDescription">Clinic Description</label>
+                  <input
+                    type="text"
+                    id="clinicDescription"
+                    name="clinicDescription"
+                    value={editedClinicInfo.clinicDescription || ""}
+                    onChange={handleClinicInputChange}
+                  />
                 </div>
                 <div className="form-group-c">
                   <label htmlFor="clinicName">Clinic Name</label>

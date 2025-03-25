@@ -37,19 +37,27 @@
   text-align: center;
 }
 
-.actions {
+.A-actions {
   gap: 10px;
   display: flex;
   justify-content: center;
 }
+.A-actions .icon-buttoncheck {
+  
+  background-color: rgb(247, 0, 152);
+  border-color: rgb(247, 0, 152);;
+  color:white;
+}
 
-.icon-button.delete {
-  color: red;
+.A-actions .icon-buttondelete {
+  background-color: rgb(247, 0, 152);
+  border-color: rgb(247, 0, 152);
+  color:white;
 
 }
 
 /* flitered buttons */
-.button-container {
+ .button-container {
   display: flex; 
   justify-content: center; 
 }

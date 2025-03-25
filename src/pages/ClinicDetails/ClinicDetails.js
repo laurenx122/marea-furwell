@@ -15,6 +15,7 @@ const ClinicDetails = () => {
   const [selectedVet, setSelectedVet] = useState(null); // State for selected veterinarian
   const [user, setUser] = useState(null);
   const [userPets, setUserPets] = useState([]);
+  const [showFullEmail, setShowFullEmail] = useState(false);
   const [appointmentData, setAppointmentData] = useState({
     petId: "",
     veterinarianId: "",
@@ -111,8 +112,7 @@ const ClinicDetails = () => {
 
     return () => unsubscribe();
   }, [auth]);
-
-  useEffect(() => {
+ useEffect(() => {
     async function fetchClinicData() {
       if (clinicData) {
         const formattedServices = [];
@@ -137,6 +137,7 @@ const ClinicDetails = () => {
         
         if (clinicDoc.exists()) {
           const data = clinicDoc.data();
+          console.log("Fetched Clinic Data:", data); 
           
           const formattedServices = [];
           if (data.servicePrices) {
@@ -160,7 +161,7 @@ const ClinicDetails = () => {
             services: formattedServices.length > 0 
               ? formattedServices 
               : (data.services || []).map(s => typeof s === 'object' ? s : { name: s }),
-            description: data.description || 'No description available',
+            clinicDescription: data.clinicDescription || 'No description available',
             image: data.imgURL || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
             phone: data.phone || 'Not available',
             email: data.email || 'Not available',
@@ -168,6 +169,7 @@ const ClinicDetails = () => {
             lat: data.lat,
             lng: data.lng
           });
+         
         } else {
           console.error("No clinic found with ID:", clinicId);
           navigate('/FindClinic');
@@ -372,9 +374,10 @@ const ClinicDetails = () => {
           </div>
           
           <div className="clinic-info-section">
-            <h2>About This Clinic</h2>
-            <p className="clinic-description">{clinic.description}</p>
-            
+          <h2>About This Clinic</h2>
+          <p className="clinic-description">
+          {clinic?.clinicDescription ?? "No description available"}
+        </p>
             {clinic.services && clinic.services.length > 0 && (
               <>
                 <h2>Services</h2>
@@ -399,9 +402,25 @@ const ClinicDetails = () => {
                   <span className="info-value">{clinic.phone}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Email:</span>
-                  <span className="info-value">{clinic.email}</span>
-                </div>
+                    <span className="info-label">Email:</span>
+                    {clinic.email && clinic.email.includes("@") ? (
+                      <span
+                        className="info-value"
+                        onClick={() => setShowFullEmail(!showFullEmail)}
+                        style={{ cursor: "pointer", textDecoration: "underline" }}
+                      >
+                        {showFullEmail
+                          ? clinic.email
+                          : (() => {
+                              const [name, domain] = clinic.email.split("@");
+                              return `${name.substring(0, 10)}...@${domain}`;
+                            })()}
+                      </span>
+                    ) : (
+                      <span className="info-value" style={{ color: "gray" }}>Not Available</span>
+                    )}
+                  </div>
+
                 <div className="info-item">
                   <span className="info-label">Operating Hours:</span>
                   <span className="info-value">{clinic.hours}</span>

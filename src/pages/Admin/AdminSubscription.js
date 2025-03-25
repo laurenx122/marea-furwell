@@ -99,6 +99,7 @@ const ClinicDashboard = () => {
           servicePrices: clinicToApprove.servicePrices,
           verificationDocs: clinicToApprove.verificationDocs,
           createdAt: clinicToApprove.createdAt,
+          email:clinicToApprove.email,
         };
   
         const userData = {
@@ -294,7 +295,7 @@ return (
 
                   </td>
                 <td>
-                  <div className="actions">
+                  <div className="A-actions">
                     {displayClinics === "registersClinics" ? (
                       <>
                              <button

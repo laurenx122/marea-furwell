@@ -73,7 +73,7 @@ const FindClinic = () => {
           priceCategory: categorizePrice(data.price || 0), // Categorize the price
           // Combine existing services with services from servicePrices
           services: [...(data.services || []), ...servicesFromPrices],
-          description: data.description || 'No description available',
+          clinicDescripton: data.clinicDescription || 'No description available',
           image: data.imgURL || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
           phone: data.phone || 'Not available',
           email: data.email || 'Not available',
@@ -383,10 +383,10 @@ const FindClinic = () => {
               
               {/* Show a truncated description */}
               <p className="clinic-short-description">
-                {clinicDetails.description && 
-                  (clinicDetails.description.length > 150 
-                    ? clinicDetails.description.substring(0, 150) + '...' 
-                    : clinicDetails.description)
+                {clinicDetails.clinicDescripton && 
+                  (clinicDetails.clinicDescripton.length > 150 
+                    ? clinicDetails.clinicDescripton.substring(0, 150) + '...' 
+                    : clinicDetails.clinicDescripton)
                 }
               </p>
               
