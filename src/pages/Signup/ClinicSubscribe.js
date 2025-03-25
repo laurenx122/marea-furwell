@@ -151,6 +151,8 @@ const ClinicSubscribe = () => {
 
       // Reference to the Firestore document
       const clinicRef = doc(db, "registersClinics", auth.currentUser?.uid);
+      // Show success alert
+      alert("Pending Account: Please wait for the admin to confirm the clinic information.");
 
       // Update Firestore with the new verificationDocs
       await setDoc(clinicRef, { verificationDocs: updatedDocs }, { merge: true });
