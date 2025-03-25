@@ -187,17 +187,17 @@ html, body {
     max-height: 90vh;
 }
 
-.modal-header {
+.modal-header-CS {
     margin-bottom: 20px;
 }
 
-.modal-header h2 {
+.modal-header-CS h2 {
     font-size: 24px;
     color: #333;
     margin-bottom: 5px;
 }
 
-.modal-header p {
+.modal-header-CS p {
     color: #666;
     font-size: 14px;
 }
@@ -268,18 +268,18 @@ html, body {
 }
 
 /* Form Fields */
-.form-group {
+.form-group-CS {
     margin-bottom: 15px;
 }
 
-.form-group label {
+.form-group-CS label {
     display: block;
     margin-bottom: 5px;
     font-weight: 500;
     color: #333;
 }
 
-.form-group input {
+.form-group-CS input {
     width: 96%;
     padding: 10px;
     border: 1px solid #ddd;
@@ -287,7 +287,7 @@ html, body {
     font-size: 14px;
 }
 
-.form-group .required {
+.form-group-CS .required {
     color: red;
 }
 

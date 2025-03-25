@@ -62,7 +62,7 @@ const ClinicSubscribe = () => {
       setSelectedServices([...selectedServices, service]);
     }
   };
-  
+
   const handlePriceChange = (service, price) => {
     setServicePrices({ ...servicePrices, [service]: price });
   };
@@ -80,13 +80,13 @@ const ClinicSubscribe = () => {
   const handleRemoveOtherService = (serviceToRemove) => {
     setOtherServices(otherServices.filter(service => service !== serviceToRemove));
     setSelectedServices(selectedServices.filter(service => service !== serviceToRemove));
-    
+
     // Remove price if service is removed
     const updatedPrices = { ...servicePrices };
     delete updatedPrices[serviceToRemove];
     setServicePrices(updatedPrices);
   };
-   // Handle input changes for the initial form
+  // Handle input changes for the initial form
   const handleInitialFormChange = (e) => {
     const { name, value, type, checked } = e.target;
     setClinicInfo({
@@ -94,40 +94,40 @@ const ClinicSubscribe = () => {
       [name]: type === 'checkbox' ? checked : value
     });
   };
-  
+
   const handleFileChange = async (e) => {
     const { name, files } = e.target;
     const file = files[0];
-  
+
     if (!file) return;
-  
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "furwell"); // Cloudinary upload preset
-  
+
     try {
       const response = await fetch("https://api.cloudinary.com/v1_1/dbqoga68a/upload", {
         method: "POST",
         body: formData,
       });
-  
+
       const data = await response.json();
-  
+
       if (data.secure_url) {
         console.log("File uploaded to Cloudinary:", data.secure_url);
-  
+
         // Update verificationDocs state with the new URL
         setVerificationDocs((prevDocs) => {
           const updatedDocs = {
             ...prevDocs,
             [name]: data.secure_url, // Use the input name (e.g., "birDoc" or "businessPermit") as the key
           };
-  
+
           // Call updateFirestoreVerificationDocs to save the updated docs to Firestore
           updateFirestoreVerificationDocs(updatedDocs).catch((error) => {
             console.error("Error updating Firestore:", error);
           });
-  
+
           return updatedDocs;
         });
       } else {
@@ -138,23 +138,23 @@ const ClinicSubscribe = () => {
       alert("Failed to upload document. Please try again.");
     }
   };
- 
+
   const updateFirestoreVerificationDocs = async (updatedDocs) => {
     try {
       // Validate updatedDocs
       if (!updatedDocs || typeof updatedDocs !== "object") {
         throw new Error("Invalid updatedDocs object");
       }
-  
+
       // Log for debugging
       console.log("Updating Firestore with:", updatedDocs);
-  
+
       // Reference to the Firestore document
       const clinicRef = doc(db, "registersClinics", auth.currentUser?.uid);
-  
+
       // Update Firestore with the new verificationDocs
       await setDoc(clinicRef, { verificationDocs: updatedDocs }, { merge: true });
-  
+
       // Log success
       console.log("Verification docs updated in Firestore:", updatedDocs);
     } catch (error) {
@@ -166,7 +166,7 @@ const ClinicSubscribe = () => {
     const phRegex = /^(\+63|0)9\d{9}$/;
     return phRegex.test(number);
   };
-  
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!isValidPhilippinesNumber(clinicInfo.phone)) {
@@ -180,7 +180,7 @@ const ClinicSubscribe = () => {
     setError('');
     setShowModal(true);
   };
-  
+
   const retryOperation = (operation, delay, retries) => new Promise((resolve, reject) => {
     return operation()
       .then(resolve)
@@ -194,14 +194,30 @@ const ClinicSubscribe = () => {
       });
   });
   const nextStep = async () => {
+
     if (currentStep < 4) {
+      if (currentStep === 1) {
+        // Require at least one service to be selected
+        if (selectedServices.length === 0) {
+          alert("Please select at least one service to proceed.");
+          return;
+        }
+      }
       if (currentStep === 2) {
         const hasAllPrices = selectedServices
           .filter(service => service !== "Others")
           .every(service => servicePrices[service]);
-  
+
         if (!hasAllPrices) {
           alert("Please set prices for all selected services.");
+          return;
+        }
+      }
+      if (currentStep === 3) {
+        // Validate all address fields are filled
+        const { streetAddress, city, province, postalCode } = clinicInfo;
+        if (!streetAddress || !city || !province || !postalCode) {
+          alert("Please fill in all address fields to proceed.");
           return;
         }
       }
@@ -213,17 +229,17 @@ const ClinicSubscribe = () => {
           alert("Please upload the required documents.");
           return;
         }
-  
+
         // Step 1: Create user in Firebase Authentication
         const userCredential = await createUserWithEmailAndPassword(
           auth,
           clinicInfo.email,
           clinicInfo.password
         );
-  
+
         const user = userCredential.user;
         console.log("✅ Firebase Auth User Created:", user.uid);
-  
+
         // Prepare user data for Firestore
         const userData = {
           clinicName: clinicInfo.clinicName,
@@ -242,23 +258,23 @@ const ClinicSubscribe = () => {
           verificationDocs, // Include the verificationDocs object
           createdAt: new Date(),
         };
-  
+
         console.log("🔥 Storing user data in Firestore:", userData);
-  
+
         // Ensure Firestore is initialized
         if (!db) {
           console.error("Firestore is not initialized.");
           return;
         }
-  
+
         // Retry Firestore update
         await retryOperation(() => setDoc(doc(db, "registersClinics", user.uid), userData), 1000, 3);
-  
+
         console.log("✅ Firestore Document Created for:", user.uid);
-  
+
         // Show success alert
         alert("Pending Account: Please wait for the admin to confirm the clinic information.");
-     
+
         navigate("/Home");
       } catch (error) {
         console.error("❌ Error creating user or storing data:", error);
@@ -293,9 +309,9 @@ const ClinicSubscribe = () => {
   const markerRef = useRef(null);
 
   useEffect(() => {
-    console.log("useEffect triggered, currentStep:", currentStep);
+
     if (currentStep === 3 && mapContainerRef.current) {
-      console.log("Current step is 2 and map container exists.");
+
       if (!mapRef.current) {
         console.log("Initializing map.");
         mapRef.current = L.map(mapContainerRef.current).setView([clinicInfo.lat, clinicInfo.lng], 13);
@@ -305,9 +321,9 @@ const ClinicSubscribe = () => {
         }).addTo(mapRef.current);
 
         const myIcon = L.icon({
-          iconUrl: '/images/pawPin3.png', 
-          iconSize: [32, 32], 
-          iconAnchor: [16, 32], 
+          iconUrl: '/images/pawPin3.png',
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
           popupAnchor: [0, -32],
         });
 
@@ -324,18 +340,19 @@ const ClinicSubscribe = () => {
             lat: position.lat,
             lng: position.lng
           }));
+          reverseGeocode(position.lat, position.lng); // Reverse geocode on drag end
         });
       } else {
-        console.log("Updating existing map.");
+
         mapRef.current.setView([clinicInfo.lat, clinicInfo.lng], 15);
         markerRef.current.setLatLng([clinicInfo.lat, clinicInfo.lng]);
       }
     }
 
     return () => {
-      console.log("Cleanup triggered, currentStep:", currentStep);
+
       if (mapRef.current && currentStep !== 3) {
-        console.log("Removing map and marker.");
+
         if (markerRef.current) {
           mapRef.current.removeLayer(markerRef.current);
           markerRef.current = null;
@@ -370,6 +387,7 @@ const ClinicSubscribe = () => {
           mapRef.current.setView([lat, lon], 15);
           markerRef.current.setLatLng([lat, lon]);
         }
+
       } else {
         console.log("Location not found.");
         alert('Location not found. Please check the address details.');
@@ -377,6 +395,51 @@ const ClinicSubscribe = () => {
     } catch (error) {
       console.error('Error searching location:', error);
       alert('Error searching for location. Please try again.');
+    }
+  };
+
+  // Reverse geocoding function with detailed address extraction
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+      const data = await response.json();
+
+      if (data && data.address) {
+        const { road, neighbourhood, suburb, city, town, village, county, state, postcode, administrative_area, hamlet, quarter, } = data.address;
+
+        let updatedCity = city || town || village || '';
+        let updatedProvince = administrative_area || state || county || '';
+        let updatedPostalCode = postcode || '';
+
+        if (updatedCity.toLowerCase() === 'cebu' || updatedCity.toLowerCase() === 'cebu city') {
+          updatedProvince = 'Cebu';
+          updatedPostalCode = '6000';
+          console.log(`City detected as '${updatedCity}', setting province to 'Cebu'`);
+        } else {
+          console.log(`City is '${updatedCity}', province remains '${updatedProvince}'`);
+        }
+
+        setClinicInfo(prevState => ({
+          ...prevState,
+          streetAddress: road ? road : (neighbourhood || suburb || quarter || hamlet || ''),
+          city: updatedCity,
+          province: updatedProvince,
+          postalCode: updatedPostalCode,
+        }));
+
+        // Log the extracted address details for debugging
+        console.log("Reverse Geocoding Result:", {
+          streetAddress: road ? road : (neighbourhood || suburb || quarter || hamlet || ''),
+          city: updatedCity,
+          province: updatedProvince,
+          postalCode: updatedPostalCode,
+        });
+
+      } else {
+        console.error('Reverse geocoding failed: Address not found.');
+      }
+    } catch (error) {
+      console.error('Error during reverse geocoding:', error);
     }
   };
 
@@ -415,7 +478,7 @@ const ClinicSubscribe = () => {
         console.error("Error fetching services:", error);
       }
     };
- 
+
     fetchServices();
   }, []);
 
@@ -501,14 +564,14 @@ const ClinicSubscribe = () => {
             <div className="CS_input-container">
               <CiUnlock className="icon" />
               <input
-                type={showPassword ? "text" : "password"} 
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Enter your password"
                 value={clinicInfo.password}
                 onChange={handleInitialFormChange}
                 required
               />
-               <div className="cpassword-toggle" onClick={togglePasswordVisibility}>
+              <div className="cpassword-toggle" onClick={togglePasswordVisibility}>
                 {showPassword ? (
                   <img src="https://www.freeiconspng.com/thumbs/eye-icon/eyeball-icon-png-eye-icon-1.png" alt="Hide" className="ceye-icon" />
                 ) : (
@@ -519,7 +582,7 @@ const ClinicSubscribe = () => {
             <div className="CS_input-container">
               <CiUnlock className="icon" />
               <input
-                type={showPassword ? "text" : "password"} 
+                type={showPassword ? "text" : "password"}
                 name="confirmPassword"
                 placeholder="Enter your password"
                 value={clinicInfo.confirmPassword}
@@ -557,7 +620,7 @@ const ClinicSubscribe = () => {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-container">
-            <div className="modal-header">
+            <div className="modal-header-CS">
               <h2>Business Verification</h2>
               <p>Please provide the necessary documents to verify your clinic.</p>
             </div>
@@ -582,121 +645,121 @@ const ClinicSubscribe = () => {
                 <span className="step-label">Verification</span>
               </div>
             </div>
-            
+
             {/* Step 1: Offered Services */}
             {currentStep === 1 && (
-  <div>
-    <h3>Select Services</h3>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-        {[...services, "Others"].map((service) => (
-          <CustomChip
-            key={service}
-            label={service}
-            onClick={() => handleServiceToggle(service)}
-            isSelected={selectedServices.includes(service)}
-          />
-        ))}
-      </div>
-
-    {selectedServices.includes("Others") && (
-      <div style={{ marginTop: '15px' }}>
-        <h4>Add Custom Services</h4>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-          <input
-            type="text"
-            placeholder="Enter service name"
-            value={newOtherService}
-            onChange={(e) => setNewOtherService(e.target.value)}
-            style={{ padding: '8px', marginRight: '8px', width: '200px' }}
-          />
-          <button
-            onClick={handleAddOtherService}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: '#2196F3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Add
-          </button>
-        </div>
-
-        {otherServices.length > 0 && (
-          <div style={{ marginTop: '10px' }}>
-            <h4>Added Custom Services:</h4>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {otherServices.map((service, index) => (
-                <div key={index} style={{ display: 'flex', alignItems: 'center', margin: '4px' }}>
-                  <span style={{ 
-                    backgroundColor: '#e1f5fe', 
-                    padding: '6px 10px', 
-                    borderRadius: '16px',
-                    marginRight: '5px' 
-                  }}>
-                    {service}
-                  </span>
-                  <button
-                    onClick={() => handleRemoveOtherService(service)}
-                    style={{
-                      backgroundColor: '#f44336',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '20px',
-                      height: '20px',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
-                  >
-                    ×
-                  </button>
+              <div>
+                <h3>Select Services</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {[...services, "Others"].map((service) => (
+                    <CustomChip
+                      key={service}
+                      label={service}
+                      onClick={() => handleServiceToggle(service)}
+                      isSelected={selectedServices.includes(service)}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    )}
-  </div>
-)}
 
-{currentStep === 2 && (
-  <div>
-    <h3>Set Prices for Selected Services</h3>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      {selectedServices
-        .filter(service => service !== "Others")
-        .map((service) => (
-          <div key={service} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '200px', fontWeight: 'bold' }}>{service}</div>
-            <input
-              type="number"
-              placeholder="Enter price"
-              value={servicePrices[service] || ""}
-              onChange={(e) => handlePriceChange(service, e.target.value)}
-              style={{
-                padding: '8px',
-                width: '150px',
-              }}
-            />
-          </div>
-        ))}
-    </div>
-  </div>
-)}
+                {selectedServices.includes("Others") && (
+                  <div style={{ marginTop: '15px' }}>
+                    <h4>Add Custom Services</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                      <input
+                        type="text"
+                        placeholder="Enter service name"
+                        value={newOtherService}
+                        onChange={(e) => setNewOtherService(e.target.value)}
+                        style={{ padding: '8px', marginRight: '8px', width: '200px' }}
+                      />
+                      <button
+                        onClick={handleAddOtherService}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#2196F3',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Add
+                      </button>
+                    </div>
+
+                    {otherServices.length > 0 && (
+                      <div style={{ marginTop: '10px' }}>
+                        <h4>Added Custom Services:</h4>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {otherServices.map((service, index) => (
+                            <div key={index} style={{ display: 'flex', alignItems: 'center', margin: '4px' }}>
+                              <span style={{
+                                backgroundColor: '#e1f5fe',
+                                padding: '6px 10px',
+                                borderRadius: '16px',
+                                marginRight: '5px'
+                              }}>
+                                {service}
+                              </span>
+                              <button
+                                onClick={() => handleRemoveOtherService(service)}
+                                style={{
+                                  backgroundColor: '#f44336',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '20px',
+                                  height: '20px',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '12px'
+                                }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {currentStep === 2 && (
+              <div>
+                <h3>Set Prices for Selected Services</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {selectedServices
+                    .filter(service => service !== "Others")
+                    .map((service) => (
+                      <div key={service} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '200px', fontWeight: 'bold' }}>{service}</div>
+                        <input
+                          type="number"
+                          placeholder="Enter price"
+                          value={servicePrices[service] || ""}
+                          onChange={(e) => handlePriceChange(service, e.target.value)}
+                          style={{
+                            padding: '8px',
+                            width: '150px',
+                          }}
+                        />
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
 
 
             {/* Step 3: Address */}
             {currentStep === 3 && (
               <div>
                 <h3>Business Address</h3>
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>Street Address <span className="required">*</span></label>
                   <input
                     type="text"
@@ -706,7 +769,7 @@ const ClinicSubscribe = () => {
                     required />
 
                 </div>
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>City <span className="required">*</span></label>
                   <input
                     type="text"
@@ -715,7 +778,7 @@ const ClinicSubscribe = () => {
                     onChange={handleAddressChange}
                     required />
                 </div>
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>Province/State <span className="required">*</span></label>
                   <input
                     type="text"
@@ -724,7 +787,7 @@ const ClinicSubscribe = () => {
                     onChange={handleAddressChange}
                     required />
                 </div>
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>Postal Code <span className="required">*</span></label>
                   <input
                     type="text"
@@ -735,7 +798,7 @@ const ClinicSubscribe = () => {
                 </div>
 
                 {/* Search User Address */}
-                <div className="form-group">
+                <div className="form-group-CS">
                   <button
                     type="button"
                     className="location-search-btn"
@@ -761,7 +824,7 @@ const ClinicSubscribe = () => {
                 <h3>Business Verification</h3>
 
                 {/* Read-only clinic name */}
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>Clinic Name</label>
                   <input
                     type="text"
@@ -772,28 +835,28 @@ const ClinicSubscribe = () => {
                 </div>
 
                 {/* Document uploads */}
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>BIR 2303 Form <span className="required">*</span></label>
                   <div className="file-upload-container">
                     <FiUpload className="upload-icon" />
                     <input
                       type="file"
                       name="birDoc"
-                      accept="image/*" 
+                      accept="image/*"
                       onChange={handleFileChange}
                       required
                     />
                   </div>
                 </div>
 
-                <div className="form-group">
+                <div className="form-group-CS">
                   <label>Business Permit <span className="required">*</span></label>
                   <div className="file-upload-container">
                     <FiUpload className="upload-icon" />
                     <input
                       type="file"
                       name="businessPermit"
-                      accept="image/*" 
+                      accept="image/*"
                       onChange={handleFileChange}
                       required
                     />
@@ -813,7 +876,7 @@ const ClinicSubscribe = () => {
                 </div> */}
               </div>
             )}
-            
+
 
             <div className="modal-actions">
               <button
@@ -823,7 +886,7 @@ const ClinicSubscribe = () => {
                 {currentStep > 1 ? 'Back' : 'Cancel'}
               </button>
               <button className="btn btn-next" onClick={nextStep}>
-                {currentStep < 4 ? `Next step: ${currentStep === 1 ? 'Price': currentStep === 2 ? 'Address' : 'Verifications'}` : 'Submit'}
+                {currentStep < 4 ? `Next step: ${currentStep === 1 ? 'Price' : currentStep === 2 ? 'Address' : 'Verifications'}` : 'Submit'}
               </button>
             </div>
           </div>
