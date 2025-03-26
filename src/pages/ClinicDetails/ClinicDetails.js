@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '../../firebase';
 import Footer from '../../components/Footer/Footer';
 import './ClinicDetails.css';
+
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const ClinicDetails = () => {
   const [clinic, setClinic] = useState(null);
@@ -23,12 +26,14 @@ const ClinicDetails = () => {
     dateofAppointment: "",
   });
   const [bookingStatus, setBookingStatus] = useState({ loading: false, success: false, error: null });
-  
+
   const { clinicId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const auth = getAuth();
-  
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
+
   const clinicData = location.state?.clinicData;
 
   const [veterinarians, setVeterinarians] = useState([]);
@@ -112,8 +117,12 @@ const ClinicDetails = () => {
 
     return () => unsubscribe();
   }, [auth]);
- useEffect(() => {
+
+
+  useEffect(() => {
     async function fetchClinicData() {
+      let initialClinicInfo = null;
+
       if (clinicData) {
         const formattedServices = [];
         if (clinicData.servicePrices) {
@@ -121,35 +130,49 @@ const ClinicDetails = () => {
             formattedServices.push({ name: serviceName, price });
           });
         }
-        
-        setClinic({
+        initialClinicInfo = {
           ...clinicData,
-          services: formattedServices.length > 0 
-            ? formattedServices 
+          services: formattedServices.length > 0
+            ? formattedServices
             : clinicData.services?.map(s => typeof s === 'object' ? s : { name: s }) || []
+        };
+        console.log("Initial clinic data from location.state:", {
+          name: initialClinicInfo.clinicName,
+          uid: initialClinicInfo.id,
+          lat: initialClinicInfo.lat,
+          lng: initialClinicInfo.lng
         });
-        setLoading(false);
-        return;
+        setClinic(initialClinicInfo);
+        // setClinic({
+        //   ...clinicData,
+        //   services: formattedServices.length > 0
+        //     ? formattedServices
+        //     : clinicData.services?.map(s => typeof s === 'object' ? s : { name: s }) || []
+        // });
+
+        // setLoading(false);
+        // return;
       }
-      
+
+      // Always fetch from Firestore to ensure complete data
       try {
         const clinicDoc = await getDoc(doc(db, "clinics", clinicId));
-        
+
         if (clinicDoc.exists()) {
           const data = clinicDoc.data();
-          console.log("Fetched Clinic Data:", data); 
-          
+          console.log("Fetched Clinic Data from Firestore:", data);
+
           const formattedServices = [];
           if (data.servicePrices) {
             Object.entries(data.servicePrices).forEach(([serviceName, price]) => {
-              formattedServices.push({ 
-                name: serviceName, 
-                price: price 
+              formattedServices.push({
+                name: serviceName,
+                price: price
               });
             });
           }
-          
-          setClinic({
+
+          const clinicInfo = {
             id: clinicDoc.id,
             clinicName: data.clinicName || 'Unnamed Clinic',
             streetAddress: data.streetAddress || '',
@@ -158,8 +181,8 @@ const ClinicDetails = () => {
             postalCode: data.postalCode || '',
             priceCategory: categorizePrice(data.price || 0),
             price: data.price || 0,
-            services: formattedServices.length > 0 
-              ? formattedServices 
+            services: formattedServices.length > 0
+              ? formattedServices
               : (data.services || []).map(s => typeof s === 'object' ? s : { name: s }),
             clinicDescription: data.clinicDescription || 'No description available',
             image: data.imgURL || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
@@ -167,12 +190,24 @@ const ClinicDetails = () => {
             email: data.email || 'Not available',
             hours: data.operatingHours || 'Not available',
             lat: data.lat,
-            lng: data.lng
+            lng: data.lng,
+            ...(initialClinicInfo || {}) // Merge with initialClinicInfo, Firestore data takes precedence
+          };
+
+          setClinic(clinicInfo);
+          console.log("Clinic details loaded from Firestore (merged):", {
+            name: clinicInfo.clinicName,
+            uid: clinicInfo.id,
+            lat: clinicInfo.lat,
+            lng: clinicInfo.lng
           });
-         
         } else {
+
           console.error("No clinic found with ID:", clinicId);
-          navigate('/FindClinic');
+          if (!initialClinicInfo) {
+            navigate('/FindClinic');
+          }
+
         }
       } catch (error) {
         console.error("Error fetching clinic data:", error);
@@ -180,10 +215,71 @@ const ClinicDetails = () => {
         setLoading(false);
       }
     }
-    
+
     fetchClinicData();
     fetchVeterinarians();
   }, [clinicId, clinicData, navigate]);
+
+  // Leaflet Map Integration
+  useEffect(() => {
+    if (clinic && clinic.lat && clinic.lng) {
+      console.log("Initializing/Updating map with:", {
+        name: clinic.clinicName,
+        uid: clinic.id,
+        lat: clinic.lat,
+        lng: clinic.lng
+      });
+      if (!mapRef.current) {
+        // Initialize the map
+        mapRef.current = L.map('mapClinicLocator').setView([clinic.lat, clinic.lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(mapRef.current);
+
+        console.log("Map initialized at:", clinic.lat, clinic.lng);
+
+        // Custom icon for the clinic marker
+        const clinicIcon = L.icon({
+          iconUrl: '/images/fur.png',
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
+          popupAnchor: [0, -32],
+        });
+
+        // Add marker for the clinic
+        const streetViewUrl = `https://www.google.com/maps?q=&layer=c&cbll=${clinic.lat},${clinic.lng}&cbp=11,0,0,0,0`;
+        markerRef.current = L.marker([clinic.lat, clinic.lng], { icon: clinicIcon })
+        .addTo(mapRef.current)
+        .bindPopup(
+          `<b>${clinic.clinicName}</b><br>${clinic.streetAddress}, ${clinic.city}<br>` +
+          `<a href="${streetViewUrl}" target="_blank" style="color: #007bff; text-decoration: underline;">View in Google Street View</a>`
+        )
+        .openPopup();
+        
+        // markerRef.current = L.marker([clinic.lat, clinic.lng], { icon: clinicIcon })
+        //   .addTo(mapRef.current)
+        //   .bindPopup(`<b>${clinic.clinicName}</b><br>${clinic.streetAddress}, ${clinic.city}`)
+        //   .openPopup();
+
+        console.log("Map initialized at:", clinic.lat, clinic.lng);
+      } else {
+        // Update map view if clinic changes
+        mapRef.current.setView([clinic.lat, clinic.lng], 15);
+        markerRef.current.setLatLng([clinic.lat, clinic.lng]);
+        markerRef.current.setPopupContent(`<b>${clinic.clinicName}</b><br>${clinic.streetAddress}, ${clinic.city}`);
+        console.log("Map view updated to:", clinic.lat, clinic.lng);
+      }
+    }
+
+    // Cleanup map on unmount
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+        markerRef.current = null;
+      }
+    };
+  }, [loading, clinic]);
 
   const fetchUserPets = async (userId) => {
     try {
@@ -224,16 +320,16 @@ const ClinicDetails = () => {
       setShowLoginModal(true);
       return;
     }
-    
+
     fetchVeterinarians();
-    
+
     setAppointmentData({
       petId: userPets.length > 0 ? userPets[0].id : "",
       veterinarianId: "",
       serviceType: "",
       dateofAppointment: "",
     });
-    
+
     setShowModal(true);
   };
 
@@ -264,19 +360,19 @@ const ClinicDetails = () => {
 
   const handleSubmitAppointment = async (e) => {
     e.preventDefault();
-    
+
     const { petId, veterinarianId, serviceType, dateofAppointment } = appointmentData;
     if (!petId || !veterinarianId || !serviceType || !dateofAppointment) {
-      setBookingStatus({ 
-        loading: false, 
-        success: false, 
-        error: "Please fill in all required fields" 
+      setBookingStatus({
+        loading: false,
+        success: false,
+        error: "Please fill in all required fields"
       });
       return;
     }
-    
+
     setBookingStatus({ loading: true, success: false, error: null });
-    
+
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("You must be logged in to book an appointment");
@@ -298,24 +394,24 @@ const ClinicDetails = () => {
         clinicId: clinicId,
         clinicName: clinic.clinicName,
         veterinarianId,
-        veterinarian: veterinarians.find((v) => v.id === veterinarianId).FirstName + " " + 
-                     veterinarians.find((v) => v.id === veterinarianId).LastName,
+        veterinarian: veterinarians.find((v) => v.id === veterinarianId).FirstName + " " +
+          veterinarians.find((v) => v.id === veterinarianId).LastName,
         serviceType,
-        dateofAppointment: new Date(dateofAppointment),        createdAt: serverTimestamp()
+        dateofAppointment: new Date(dateofAppointment), createdAt: serverTimestamp()
       });
-      
+
       setBookingStatus({ loading: false, success: true, error: null });
-      
+
       setTimeout(() => {
         setShowModal(false);
         setBookingStatus({ loading: false, success: false, error: null });
       }, 3000);
     } catch (error) {
       console.error("Error creating appointment:", error);
-      setBookingStatus({ 
-        loading: false, 
-        success: false, 
-        error: error.message || "Failed to book appointment. Please try again." 
+      setBookingStatus({
+        loading: false,
+        success: false,
+        error: error.message || "Failed to book appointment. Please try again."
       });
     }
   };
@@ -346,24 +442,27 @@ const ClinicDetails = () => {
     clinic.postalCode
   ].filter(Boolean).join(', ');
 
+
+
+
   return (
     <div className="clinic-details-container">
       <div className="main-content">
         <button className="back-button" onClick={() => navigate('/FindClinic')}>
           ← Back to Clinics
         </button>
-        
+
         <div className="clinic-details-content">
           <div className="clinic-header">
             <h1>{clinic.clinicName}</h1>
             <p className="clinic-address">{fullAddress}</p>
             <p className="price-category">Price Range: {clinic.priceCategory}</p>
           </div>
-          
+
           <div className="clinic-image-container">
-            <img 
-              src={clinic.image} 
-              alt={clinic.clinicName} 
+            <img
+              src={clinic.image}
+              alt={clinic.clinicName}
               className="clinic-detail-image"
             />
             <div className="cta-section">
@@ -372,12 +471,12 @@ const ClinicDetails = () => {
               </button>
             </div>
           </div>
-          
+
           <div className="clinic-info-section">
-          <h2>About This Clinic</h2>
-          <p className="clinic-description">
-          {clinic?.clinicDescription ?? "No description available"}
-        </p>
+            <h2>About This Clinic</h2>
+            <p className="clinic-description">
+              {clinic?.clinicDescription ?? "No description available"}
+            </p>
             {clinic.services && clinic.services.length > 0 && (
               <>
                 <h2>Services</h2>
@@ -393,7 +492,7 @@ const ClinicDetails = () => {
                 </ul>
               </>
             )}
-            
+
             <div className="contact-info">
               <h2>Contact Information</h2>
               <div className="info-grid">
@@ -401,25 +500,23 @@ const ClinicDetails = () => {
                   <span className="info-label">Phone:</span>
                   <span className="info-value">{clinic.phone}</span>
                 </div>
-                <div className="info-item">
-                    <span className="info-label">Email:</span>
-                    {clinic.email && clinic.email.includes("@") ? (
-                      <span
-                        className="info-value"
-                        onClick={() => setShowFullEmail(!showFullEmail)}
-                        style={{ cursor: "pointer", textDecoration: "underline" }}
-                      >
-                        {showFullEmail
-                          ? clinic.email
-                          : (() => {
-                              const [name, domain] = clinic.email.split("@");
-                              return `${name.substring(0, 10)}...@${domain}`;
-                            })()}
+
+                <div className="info-item email-item">
+                  <span className="info-label">Email:</span>
+                  {clinic.email && clinic.email.includes("@") ? (
+                    <span className="info-value email-value">
+                      <span className="truncated">
+                        {(() => {
+                          const [name, domain] = clinic.email.split("@");
+                          return `${name.substring(0, 10)}...@${domain}`;
+                        })()}
                       </span>
-                    ) : (
-                      <span className="info-value" style={{ color: "gray" }}>Not Available</span>
-                    )}
-                  </div>
+                      <span className="full-text">{clinic.email}</span>
+                    </span>
+                  ) : (
+                    <span className="info-value" style={{ color: "gray" }}>Not Available</span>
+                  )}
+                </div>
 
                 <div className="info-item">
                   <span className="info-label">Operating Hours:</span>
@@ -427,16 +524,16 @@ const ClinicDetails = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="map-container">
               <h2>Location</h2>
-              <div className="clinic-map">
-                {clinic.lat && clinic.lng ? (
-                  <p className="map-placeholder">
-                    Map location: {clinic.lat}, {clinic.lng}
-                  </p>
+              <div id="mapClinicLocator" className="clinic-map" style={{ height: '400px', width: '100%' }}>
+                {(!clinic.lat || !clinic.lng) ? (
+                  <p className="map-placeholder">Map coordinates not available</p>
                 ) : (
-                  <p className="map-placeholder">Map will be displayed here</p>
+                  <p className="map-coordinates">
+                    Coordinates: Lat: {clinic.lat}, Lng: {clinic.lng}
+                  </p>
                 )}
               </div>
             </div>
@@ -478,7 +575,7 @@ const ClinicDetails = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Login Modal */}
       {showLoginModal && (
         <div className="modal-overlay">
@@ -493,7 +590,7 @@ const ClinicDetails = () => {
           </div>
         </div>
       )}
-      
+
       {/* Appointment Booking Modal */}
       {showModal && (
         <div className="modal-overlay">
@@ -502,13 +599,13 @@ const ClinicDetails = () => {
               <h2>Book an Appointment</h2>
               <button className="close-button" onClick={() => setShowModal(false)}>×</button>
             </div>
-            
+
             <div className="modal-body">
               {bookingStatus.success ? (
                 <div className="success-message">
                   <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                    <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-                    <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                    <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
                   </svg>
                   <p>Appointment booked successfully!</p>
                 </div>
@@ -607,22 +704,22 @@ const ClinicDetails = () => {
                       placeholder="Any specific concerns or requests?"
                     />
                   </div>
-                  
+
                   {bookingStatus.error && (
                     <div className="error-message">{bookingStatus.error}</div>
                   )}
-                  
+
                   <div className="form-actions">
-                    <button 
-                      type="button" 
-                      className="cancel-btn" 
+                    <button
+                      type="button"
+                      className="cancel-btn"
                       onClick={() => setShowModal(false)}
                     >
                       Cancel
                     </button>
-                    <button 
-                      type="submit" 
-                      className="submit-btn" 
+                    <button
+                      type="submit"
+                      className="submit-btn"
                       disabled={bookingStatus.loading || userPets.length === 0}
                     >
                       {bookingStatus.loading ? 'Booking...' : 'Book Appointment'}
@@ -670,7 +767,7 @@ const ClinicDetails = () => {
           </div>
         </div>
       )}
-      
+
       <Footer />
     </div>
   );
