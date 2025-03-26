@@ -276,6 +276,7 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   margin-bottom: 35px;
+  position: relative;
 }
 
 .info-item {
@@ -284,6 +285,8 @@
   border-radius: 12px;
   transition: all 0.3s ease;
   border: 1px solid #eaeaea;
+  width: 280px; /* Fixed width to match grid’s minimum */
+  box-sizing: border-box;
 }
 
 .info-item:hover {
@@ -304,6 +307,38 @@
   color: #444;
   font-size: 1rem;
   line-height: 1.5;
+  max-width: 100%;
+}
+
+/* Default state: show truncated text, hide full text */
+.email-value {
+  cursor: pointer; 
+  display: block; 
+  width: 100%;
+}
+
+.email-value .truncated {
+  display: inline; 
+  white-space: nowrap; 
+  word-break: normal;
+}
+
+.email-value .full-text {
+  display: none; 
+}
+
+/* On hover: hide truncated text, show full text */
+.email-item:hover .email-value .truncated {
+  display: none;
+}
+
+.email-item:hover .email-value .full-text {
+  display: block; 
+  white-space: normal; 
+  word-break: break-word;
+  color: #444; 
+  font-size: 1rem; 
+  line-height: 1.5; 
 }
 
 .map-container {
