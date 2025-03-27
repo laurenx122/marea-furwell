@@ -40,7 +40,7 @@ const PetOwnerHome = () => {
   // Register Syncfusion license (replace with your valid key if different)
   registerLicense(
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
-    // process.env.SYNC_REGISTER_LICENSE
+  
   );
 
   const [activePanel, setActivePanel] = useState("petDetails");
