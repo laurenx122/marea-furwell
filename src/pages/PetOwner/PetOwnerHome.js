@@ -40,12 +40,13 @@ const PetOwnerHome = () => {
   // Register Syncfusion license (replace with your valid key if different)
   registerLicense(
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
-    // process.env.SYNC_REGISTER_LICENSE
+  
   );
 
   const [activePanel, setActivePanel] = useState("petDetails");
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [pastAppointments, setPastAppointments] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -120,7 +121,7 @@ const PetOwnerHome = () => {
       year: "numeric",
     });
 
-    const today = new Date("2025-03-24"); // Current date as per context
+    const today = new Date(); // Current date as per context
     let age = today.getFullYear() - dob.getFullYear();
     const monthDiff = today.getMonth() - dob.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
