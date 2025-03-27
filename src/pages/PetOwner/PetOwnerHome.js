@@ -129,7 +129,15 @@ const PetOwnerHome = () => {
 
     return `${formattedDate} (${age})`;
   };
+  const [searchQuery, setSearchQuery] = useState("");
 
+  const filteredAppointments = pastAppointments.filter(record => {
+    const monthName = new Date(record.dateofAppointment).toLocaleString('en-US', { month: 'long' });
+  
+    return Object.values(record).some(value =>
+      typeof value === "string" && value.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || monthName.toLowerCase().includes(searchQuery.toLowerCase());
+  });
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -622,6 +630,16 @@ const PetOwnerHome = () => {
           {activePanel === "healthRecords" && (
             <div className="panel-p health-records-panel-p">
               <h3>Health Records</h3>
+                <form className="psearch-bar-container">
+                  <input
+                    type="text"
+                    id="searchRecords"
+                    placeholder="Search records (Pet Name, Clinic, Service, Veterinarian, Remarks, Month)..."
+                    className="search-bar-p"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </form>
               {loading ? (
                 <p>Loading health records...</p>
               ) : (
@@ -630,27 +648,29 @@ const PetOwnerHome = () => {
                     <tr>
                       <th>Date of Appointment</th>
                       <th>Pet Name</th>
+                      <th>Cinic</th>
                       <th>Service</th>
                       <th>Veterinarian</th>
                       <th>Remarks</th>
                     </tr>
                   </thead>
                   <tbody>
-                  {pastAppointments.length > 0 ? (
-                      [...pastAppointments] // Create a shallow copy to avoid mutating the original array
+                    {filteredAppointments.length > 0 ? (
+                      [...filteredAppointments] // Create a shallow copy to avoid mutating the original array
                         .sort((a, b) => b.dateofAppointment - a.dateofAppointment) // Sort by date descending
                         .map((record) => (
-                        <tr key={record.Id}>
-                          <td>{formatDate(record.dateofAppointment)}</td>
-                          <td>{record.petName}</td>
-                          <td>{record.serviceType}</td>
-                          <td>{record.veterinarian}</td>
-                          <td>{record.remarks}</td>
-                        </tr>
-                      ))
+                          <tr key={record.Id}>
+                            <td>{formatDate(record.dateofAppointment)}</td>
+                            <td>{record.petName}</td>
+                            <td>{record.clinicName}</td>
+                            <td>{record.serviceType}</td>
+                            <td>{record.veterinarian}</td>
+                            <td>{record.remarks}</td>
+                          </tr>
+                        ))
                     ) : (
                       <tr>
-                        <td colSpan="5">No past appointments found</td>
+                        <td colSpan="5">No matching records found</td>
                       </tr>
                     )}
                   </tbody>
