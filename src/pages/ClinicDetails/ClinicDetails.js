@@ -5,7 +5,6 @@ import { getAuth } from 'firebase/auth';
 import { db } from '../../firebase';
 import Footer from '../../components/Footer/Footer';
 import './ClinicDetails.css';
-
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -14,11 +13,10 @@ const ClinicDetails = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showVetModal, setShowVetModal] = useState(false); // State for veterinarian modal
-  const [selectedVet, setSelectedVet] = useState(null); // State for selected veterinarian
+  const [showVetModal, setShowVetModal] = useState(false);
+  const [selectedVet, setSelectedVet] = useState(null);
   const [user, setUser] = useState(null);
   const [userPets, setUserPets] = useState([]);
-  const [showFullEmail, setShowFullEmail] = useState(false);
   const [appointmentData, setAppointmentData] = useState({
     petId: "",
     veterinarianId: "",
@@ -26,16 +24,13 @@ const ClinicDetails = () => {
     dateofAppointment: "",
   });
   const [bookingStatus, setBookingStatus] = useState({ loading: false, success: false, error: null });
-
   const { clinicId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const auth = getAuth();
   const mapRef = useRef(null);
   const markerRef = useRef(null);
-
   const clinicData = location.state?.clinicData;
-
   const [veterinarians, setVeterinarians] = useState([]);
   const [loadingVeterinarians, setLoadingVeterinarians] = useState(false);
   const [vetServices, setVetServices] = useState({});
@@ -118,7 +113,6 @@ const ClinicDetails = () => {
     return () => unsubscribe();
   }, [auth]);
 
-
   useEffect(() => {
     async function fetchClinicData() {
       let initialClinicInfo = null;
@@ -136,39 +130,17 @@ const ClinicDetails = () => {
             ? formattedServices
             : clinicData.services?.map(s => typeof s === 'object' ? s : { name: s }) || []
         };
-        console.log("Initial clinic data from location.state:", {
-          name: initialClinicInfo.clinicName,
-          uid: initialClinicInfo.id,
-          lat: initialClinicInfo.lat,
-          lng: initialClinicInfo.lng
-        });
         setClinic(initialClinicInfo);
-        // setClinic({
-        //   ...clinicData,
-        //   services: formattedServices.length > 0
-        //     ? formattedServices
-        //     : clinicData.services?.map(s => typeof s === 'object' ? s : { name: s }) || []
-        // });
-
-        // setLoading(false);
-        // return;
       }
 
-      // Always fetch from Firestore to ensure complete data
       try {
         const clinicDoc = await getDoc(doc(db, "clinics", clinicId));
-
         if (clinicDoc.exists()) {
           const data = clinicDoc.data();
-          console.log("Fetched Clinic Data from Firestore:", data);
-
           const formattedServices = [];
           if (data.servicePrices) {
             Object.entries(data.servicePrices).forEach(([serviceName, price]) => {
-              formattedServices.push({
-                name: serviceName,
-                price: price
-              });
+              formattedServices.push({ name: serviceName, price });
             });
           }
 
@@ -191,23 +163,12 @@ const ClinicDetails = () => {
             hours: data.operatingHours || 'Not available',
             lat: data.lat,
             lng: data.lng,
-            ...(initialClinicInfo || {}) // Merge with initialClinicInfo, Firestore data takes precedence
+            ...(initialClinicInfo || {})
           };
 
           setClinic(clinicInfo);
-          console.log("Clinic details loaded from Firestore (merged):", {
-            name: clinicInfo.clinicName,
-            uid: clinicInfo.id,
-            lat: clinicInfo.lat,
-            lng: clinicInfo.lng
-          });
-        } else {
-
-          console.error("No clinic found with ID:", clinicId);
-          if (!initialClinicInfo) {
-            navigate('/FindClinic');
-          }
-
+        } else if (!initialClinicInfo) {
+          navigate('/FindClinic');
         }
       } catch (error) {
         console.error("Error fetching clinic data:", error);
@@ -218,27 +179,21 @@ const ClinicDetails = () => {
 
     fetchClinicData();
     fetchVeterinarians();
-  }, [clinicId, clinicData, navigate]);
 
-  // Leaflet Map Integration
+    // Check if we should open the appointment modal
+    if (location.state?.openAppointmentModal && auth.currentUser) {
+      setShowModal(true);
+    }
+  }, [clinicId, clinicData, navigate, location.state, auth]);
+
   useEffect(() => {
     if (clinic && clinic.lat && clinic.lng) {
-      console.log("Initializing/Updating map with:", {
-        name: clinic.clinicName,
-        uid: clinic.id,
-        lat: clinic.lat,
-        lng: clinic.lng
-      });
       if (!mapRef.current) {
-        // Initialize the map
         mapRef.current = L.map('mapClinicLocator').setView([clinic.lat, clinic.lng], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors'
         }).addTo(mapRef.current);
 
-        console.log("Map initialized at:", clinic.lat, clinic.lng);
-
-        // Custom icon for the clinic marker
         const clinicIcon = L.icon({
           iconUrl: '/images/fur.png',
           iconSize: [32, 32],
@@ -246,32 +201,21 @@ const ClinicDetails = () => {
           popupAnchor: [0, -32],
         });
 
-        // Add marker for the clinic
         const streetViewUrl = `https://www.google.com/maps?q=&layer=c&cbll=${clinic.lat},${clinic.lng}&cbp=11,0,0,0,0`;
         markerRef.current = L.marker([clinic.lat, clinic.lng], { icon: clinicIcon })
-        .addTo(mapRef.current)
-        .bindPopup(
-          `<b>${clinic.clinicName}</b><br>${clinic.streetAddress}, ${clinic.city}<br>` +
-          `<a href="${streetViewUrl}" target="_blank" style="color: #007bff; text-decoration: underline;">View in Google Street View</a>`
-        )
-        .openPopup();
-        
-        // markerRef.current = L.marker([clinic.lat, clinic.lng], { icon: clinicIcon })
-        //   .addTo(mapRef.current)
-        //   .bindPopup(`<b>${clinic.clinicName}</b><br>${clinic.streetAddress}, ${clinic.city}`)
-        //   .openPopup();
-
-        console.log("Map initialized at:", clinic.lat, clinic.lng);
+          .addTo(mapRef.current)
+          .bindPopup(
+            `<b>${clinic.clinicName}</b><br>${clinic.streetAddress}, ${clinic.city}<br>` +
+            `<a href="${streetViewUrl}" target="_blank" style="color: #007bff; text-decoration: underline;">View in Google Street View</a>`
+          )
+          .openPopup();
       } else {
-        // Update map view if clinic changes
         mapRef.current.setView([clinic.lat, clinic.lng], 15);
         markerRef.current.setLatLng([clinic.lat, clinic.lng]);
         markerRef.current.setPopupContent(`<b>${clinic.clinicName}</b><br>${clinic.streetAddress}, ${clinic.city}`);
-        console.log("Map view updated to:", clinic.lat, clinic.lng);
       }
     }
 
-    // Cleanup map on unmount
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
@@ -322,14 +266,12 @@ const ClinicDetails = () => {
     }
 
     fetchVeterinarians();
-
     setAppointmentData({
       petId: userPets.length > 0 ? userPets[0].id : "",
       veterinarianId: "",
       serviceType: "",
       dateofAppointment: "",
     });
-
     setShowModal(true);
   };
 
@@ -397,7 +339,8 @@ const ClinicDetails = () => {
         veterinarian: veterinarians.find((v) => v.id === veterinarianId).FirstName + " " +
           veterinarians.find((v) => v.id === veterinarianId).LastName,
         serviceType,
-        dateofAppointment: new Date(dateofAppointment), createdAt: serverTimestamp()
+        dateofAppointment: new Date(dateofAppointment),
+        createdAt: serverTimestamp()
       });
 
       setBookingStatus({ loading: false, success: true, error: null });
@@ -418,10 +361,9 @@ const ClinicDetails = () => {
 
   const handleLoginRedirect = () => {
     setShowLoginModal(false);
-    navigate('/login', { state: { from: `/clinic/${clinicId}` } });
+    navigate('/login', { state: { from: `/clinic/${clinicId}`, openAppointmentModal: true } });
   };
 
-  // Function to handle opening the veterinarian modal
   const handleVetClick = (vet) => {
     setSelectedVet(vet);
     setShowVetModal(true);
@@ -441,9 +383,6 @@ const ClinicDetails = () => {
     clinic.province,
     clinic.postalCode
   ].filter(Boolean).join(', ');
-
-
-
 
   return (
     <div className="clinic-details-container">
@@ -500,7 +439,6 @@ const ClinicDetails = () => {
                   <span className="info-label">Phone:</span>
                   <span className="info-value">{clinic.phone}</span>
                 </div>
-
                 <div className="info-item email-item">
                   <span className="info-label">Email:</span>
                   {clinic.email && clinic.email.includes("@") ? (
@@ -517,7 +455,6 @@ const ClinicDetails = () => {
                     <span className="info-value" style={{ color: "gray" }}>Not Available</span>
                   )}
                 </div>
-
                 <div className="info-item">
                   <span className="info-label">Operating Hours:</span>
                   <span className="info-value">{clinic.hours}</span>
@@ -551,7 +488,7 @@ const ClinicDetails = () => {
                       onClick={() => handleVetClick(vet)}
                     >
                       <img
-                        src={vet.profileImageURL || 'https://via.placeholder.com/50'} // Fallback image if profileImage is not available
+                        src={vet.profileImageURL || 'https://via.placeholder.com/50'}
                         alt={`${vet.FirstName} ${vet.LastName}`}
                         className="vet-profile-image"
                       />
@@ -576,7 +513,6 @@ const ClinicDetails = () => {
         </div>
       </div>
 
-      {/* Login Modal */}
       {showLoginModal && (
         <div className="modal-overlay">
           <div className="login-modal">
@@ -586,12 +522,12 @@ const ClinicDetails = () => {
             </div>
             <div className="modal-body login-modal-body">
               <p>You need to be logged in to book an appointment.</p>
+              
             </div>
           </div>
         </div>
       )}
 
-      {/* Appointment Booking Modal */}
       {showModal && (
         <div className="modal-overlay">
           <div className="appointment-modal">
@@ -599,7 +535,6 @@ const ClinicDetails = () => {
               <h2>Book an Appointment</h2>
               <button className="close-button" onClick={() => setShowModal(false)}>×</button>
             </div>
-
             <div className="modal-body">
               {bookingStatus.success ? (
                 <div className="success-message">
@@ -628,7 +563,6 @@ const ClinicDetails = () => {
                       ))}
                     </select>
                   </div>
-
                   <div className="form-group">
                     <label htmlFor="veterinarianId">Veterinarian *</label>
                     <select
@@ -653,7 +587,6 @@ const ClinicDetails = () => {
                       )}
                     </select>
                   </div>
-
                   <div className="form-group">
                     <label htmlFor="serviceType">Service Type *</label>
                     <select
@@ -673,7 +606,6 @@ const ClinicDetails = () => {
                         ))}
                     </select>
                   </div>
-
                   <div className="form-group">
                     <label htmlFor="dateofAppointment">Date & Time *</label>
                     <select
@@ -692,7 +624,6 @@ const ClinicDetails = () => {
                       ))}
                     </select>
                   </div>
-
                   <div className="form-group">
                     <label htmlFor="notes">Additional Notes (Optional)</label>
                     <textarea
@@ -704,11 +635,9 @@ const ClinicDetails = () => {
                       placeholder="Any specific concerns or requests?"
                     />
                   </div>
-
                   {bookingStatus.error && (
                     <div className="error-message">{bookingStatus.error}</div>
                   )}
-
                   <div className="form-actions">
                     <button
                       type="button"
@@ -732,7 +661,6 @@ const ClinicDetails = () => {
         </div>
       )}
 
-      {/* Veterinarian Details Modal */}
       {showVetModal && selectedVet && (
         <div className="modal-overlay">
           <div className="vet-modal">
