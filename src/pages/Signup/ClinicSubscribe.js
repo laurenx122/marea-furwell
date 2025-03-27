@@ -8,6 +8,7 @@ import { auth, db } from '../../firebase'; // Ensure this path is correct
 import { confirmPasswordReset, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { CiUser, CiUnlock } from "react-icons/ci";
+import { onAuthStateChanged } from "firebase/auth";
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -17,7 +18,6 @@ const ClinicSubscribe = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
   // to show password
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -95,199 +95,228 @@ const ClinicSubscribe = () => {
     });
   };
 
+  const isValidPhilippinesNumber = (number) => {
+    const phRegex = /^(\+63|0)9\d{9}$/;
+    return phRegex.test(number);
+  };
+
   const handleFileChange = async (e) => {
     const { name, files } = e.target;
-    const file = files[0];
-
-    if (!file) return;
-
+    if (!files[0]) return;
+  
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "furwell"); // Cloudinary upload preset
-
+    formData.append("file", files[0]);
+    formData.append("upload_preset", "furwell");
+  
     try {
       const response = await fetch("https://api.cloudinary.com/v1_1/dbqoga68a/upload", {
         method: "POST",
         body: formData,
       });
-
       const data = await response.json();
-
+  
       if (data.secure_url) {
-        console.log("File uploaded to Cloudinary:", data.secure_url);
-
-        // Update verificationDocs state with the new URL
         setVerificationDocs((prevDocs) => {
-          const updatedDocs = {
-            ...prevDocs,
-            [name]: data.secure_url, // Use the input name (e.g., "birDoc" or "businessPermit") as the key
-          };
-
-          // Call updateFirestoreVerificationDocs to save the updated docs to Firestore
-          updateFirestoreVerificationDocs(updatedDocs).catch((error) => {
-            console.error("Error updating Firestore:", error);
-          });
-
+          const updatedDocs = { ...prevDocs, [name]: data.secure_url };
+          updateFirestoreVerificationDocs(updatedDocs); // 🔥 Ensure Firestore is updated
           return updatedDocs;
         });
       } else {
         throw new Error("No secure URL received from Cloudinary.");
       }
     } catch (error) {
-      console.error("Error uploading file:", error);
+      console.error("❌ Error uploading file:", error);
       alert("Failed to upload document. Please try again.");
     }
   };
-
+  
   const updateFirestoreVerificationDocs = async (updatedDocs) => {
     try {
-      // Validate updatedDocs
-      if (!updatedDocs || typeof updatedDocs !== "object") {
-        throw new Error("Invalid updatedDocs object");
-      }
-
-      // Log for debugging
-      console.log("Updating Firestore with:", updatedDocs);
-
-      // Reference to the Firestore document
+      if (!updatedDocs || typeof updatedDocs !== "object") throw new Error("Invalid updatedDocs object");
+  
+      // Wait for authentication state change
+      await new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          if (user) {
+            resolve(user);
+            unsubscribe(); // Stop listening once user is found
+          }
+        });
+      });
+  
       const clinicRef = doc(db, "registersClinics", auth.currentUser?.uid);
-      // Show success alert
-      alert("Pending Account: Please wait for the admin to confirm the clinic information.");
-
-      // Update Firestore with the new verificationDocs
+      if (!auth.currentUser?.uid) throw new Error("No authenticated user found");
+  
       await setDoc(clinicRef, { verificationDocs: updatedDocs }, { merge: true });
-
-      // Log success
-      console.log("Verification docs updated in Firestore:", updatedDocs);
+  
+      console.log("✅ Firestore updated successfully with verification documents.");
     } catch (error) {
-      console.error("Error updating Firestore:", error);
-      throw error; // Re-throw the error to handle it in the calling function
+      console.error("❌ Error updating Firestore:", error);
     }
   };
-  const isValidPhilippinesNumber = (number) => {
-    const phRegex = /^(\+63|0)9\d{9}$/;
-    return phRegex.test(number);
-  };
-
+  
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!isValidPhilippinesNumber(clinicInfo.phone)) {
-      setError("Invalid Philippines contact number");
-      return;
-    }
-    if (clinicInfo.password !== clinicInfo.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-    setError('');
+    if (!isValidPhilippinesNumber(clinicInfo.phone)) return setError("Invalid Philippines contact number");
+    if (clinicInfo.password !== clinicInfo.confirmPassword) return setError("Passwords do not match");
+    setError("");
     setShowModal(true);
   };
-
+  
   const retryOperation = (operation, delay, retries) => new Promise((resolve, reject) => {
-    return operation()
-      .then(resolve)
-      .catch((reason) => {
-        if (retries > 0) {
-          return setTimeout(() => {
-            retryOperation(operation, delay, retries - 1).then(resolve).catch(reject);
-          }, delay);
-        }
-        return reject(reason);
-      });
-  });
+    operation().then(resolve).catch((reason) => {
+      if (retries > 0) setTimeout(() => retryOperation(operation, delay, retries - 1).then(resolve).catch(reject), delay);
+      else reject(reason);
+    });
+   });
+
+   const storeClinicDatas = async (user) => {
+    try {
+      const userData = {
+        clinicName: clinicInfo.clinicName,
+        FirstName: clinicInfo.ownerFirstName,
+        LastName: clinicInfo.ownerLastName,
+        email: clinicInfo.email,
+        contactNumber: clinicInfo.phone,
+        streetAddress: clinicInfo.streetAddress,
+        city: clinicInfo.city,
+        province: clinicInfo.province,
+        postalCode: clinicInfo.postalCode,
+        lat: clinicInfo.lat,
+        lng: clinicInfo.lng,
+        servicePrices: servicePrices,
+        verificationDocs, // Attach uploaded documents
+        status: "pending", // Pending approval
+        createdAt: new Date(),
+      };
+  
+      console.log("🔥 Storing user data in Firestore:", userData);
+      
+      // ✅ Store user data in Firestore
+      await setDoc(doc(db, "registersClinics", user.uid), userData);
+  
+      console.log("✅ Firestore Document Created for:", user.uid);
+  
+      // ✅ Show success message and navigate
+      alert("Clinic registration successful. Please wait for approval.");
+      setTimeout(() => {
+        navigate("/Home");
+      }, 3000);
+      
+    } catch (error) {
+      console.error("❌ Error storing data in Firestore:", error);
+      alert(`Error: ${error.message}`);
+    }
+  };
+
   const nextStep = async () => {
-
     if (currentStep < 4) {
-      if (currentStep === 1) {
-        // Require at least one service to be selected
-        if (selectedServices.length === 0) {
-          alert("Please select at least one service to proceed.");
-          return;
-        }
-      }
-      if (currentStep === 2) {
-        const hasAllPrices = selectedServices
-          .filter(service => service !== "Others")
-          .every(service => servicePrices[service]);
-
-        if (!hasAllPrices) {
-          alert("Please set prices for all selected services.");
-          return;
-        }
-      }
-      if (currentStep === 3) {
-        // Validate all address fields are filled
-        const { streetAddress, city, province, postalCode } = clinicInfo;
-        if (!streetAddress || !city || !province || !postalCode) {
-          alert("Please fill in all address fields to proceed.");
-          return;
-        }
-      }
+      if (currentStep === 1 && selectedServices.length === 0) return alert("Please select at least one service.");
+      if (currentStep === 2 && !selectedServices.every(service => service === "Others" || servicePrices[service])) 
+        return alert("Please set prices for all selected services.");
+      if (currentStep === 3 && Object.values(clinicInfo).some(val => !val))
+        return alert("Please fill in all required fields.");
+  
       setCurrentStep(currentStep + 1);
     } else {
       try {
-        // Check if all required documents are uploaded
-        if (!verificationDocs.birDoc || !verificationDocs.businessPermit) {
+        // ✅ Ensure required documents are uploaded
+        if (!verificationDocs?.birDoc || !verificationDocs?.businessPermit) {
           alert("Please upload the required documents.");
           return;
         }
-
-        // Step 1: Create user in Firebase Authentication
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          clinicInfo.email,
-          clinicInfo.password
-        );
-
+  
+        // ✅ Create user in Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, clinicInfo.email, clinicInfo.password);
         const user = userCredential.user;
+  
         console.log("✅ Firebase Auth User Created:", user.uid);
-
-        // Prepare user data for Firestore
-        const userData = {
-          clinicName: clinicInfo.clinicName,
-          FirstName: clinicInfo.ownerFirstName,
-          LastName: clinicInfo.ownerLastName,
-          email: clinicInfo.email,
-          contactNumber: clinicInfo.phone,
-          streetAddress: clinicInfo.streetAddress,
-          city: clinicInfo.city,
-          province: clinicInfo.province,
-          postalCode: clinicInfo.postalCode,
-          lat: clinicInfo.lat,
-          lng: clinicInfo.lng,
-          servicePrices: servicePrices,
-          status: "pending",
-          verificationDocs, // Include the verificationDocs object
-          createdAt: new Date(),
-        };
-
-        console.log("🔥 Storing user data in Firestore:", userData);
-
-        // Ensure Firestore is initialized
-        if (!db) {
-          console.error("Firestore is not initialized.");
-          return;
-        }
-
-        // Retry Firestore update
-        await retryOperation(() => setDoc(doc(db, "registersClinics", user.uid), userData), 1000, 3);
-
-        console.log("✅ Firestore Document Created for:", user.uid);
-
-        // Show success alert
-        alert("Pending Account: Please wait for the admin to confirm the clinic information.");
-
-        navigate("/Home");
+  
+        // ✅ Call the function to store user data in Firestore
+        await storeClinicDatas(user);
+        alert("Clinic registration successful. Please wait for approval.");
+        
+        setTimeout(() => {navigate("/Home");}, 3000);
+  
       } catch (error) {
-        console.error("❌ Error creating user or storing data:", error);
+        console.error("❌ Error creating user:", error);
         if (error.code === "auth/email-already-in-use") {
           alert("This email is already registered. Please use a different email.");
         } else {
-          alert(`Error creating user: ${error.message}`);
+          alert(`Error: ${error.message}`);
         }
       }
     }
   };
+  
+  //  const nextStep = async () => {
+  //   if (currentStep < 4) {
+  //     if (currentStep === 1 && selectedServices.length === 0) return alert("Please select at least one service.");
+  //     if (currentStep === 2 && !selectedServices.every(service => service === "Others" || servicePrices[service])) 
+  //       return alert("Please set prices for all selected services.");
+  //     if (currentStep === 3 && Object.values(clinicInfo).some(val => !val))
+  //       return alert("Please fill in all required fields.");
+  
+  //     setCurrentStep(currentStep + 1);
+  //   } else {
+  //     try {
+  //       // ✅ Ensure required documents are uploaded
+  //       if (!verificationDocs?.birDoc || !verificationDocs?.businessPermit) {
+  //         alert("Please upload the required documents.");
+  //         return;
+  //       }
+  
+  //       // ✅ Create user in Firebase Authentication
+  //       const userCredential = await createUserWithEmailAndPassword(auth, clinicInfo.email, clinicInfo.password);
+  //       const user = userCredential.user;
+  
+  //       console.log("✅ Firebase Auth User Created:", user.uid);
+  
+  //       // ✅ Store clinic data in Firestore
+  //       const userData = {
+  //         clinicName: clinicInfo.clinicName,
+  //         FirstName: clinicInfo.ownerFirstName,
+  //         LastName: clinicInfo.ownerLastName,
+  //         email: clinicInfo.email,
+  //         contactNumber: clinicInfo.phone,
+  //         streetAddress: clinicInfo.streetAddress,
+  //         city: clinicInfo.city,
+  //         province: clinicInfo.province,
+  //         postalCode: clinicInfo.postalCode,
+  //         lat: clinicInfo.lat,
+  //         lng: clinicInfo.lng,
+  //         servicePrices: servicePrices,
+  //         verificationDocs, // Attach uploaded documents
+  //         status: "pending", // Pending approval
+  //         createdAt: new Date(),
+  //       };
+  
+  //       console.log("🔥 Storing user data in Firestore:", userData);
+  
+  //       // ✅ Store user data in Firestore with the generated user ID
+  //       await setDoc(doc(db, "registersClinics", user.uid), userData);
+  
+  //       console.log("✅ Firestore Document Created for:", user.uid);
+  
+  //       // ✅ Show success modal instead of alert
+  //       window.alert("Clinic registration successful. Please wait for approval.");
+  //      console.log("✅ Alert should have been triggered.");
+  //       // ✅ Navigate to Home after 3 seconds
+  //       setShowModal(false);
+  //       setTimeout(() => {
+  //         navigate("/Home");
+  //       }, 3000);
+  
+  //     } catch (error) {
+  //       console.error("❌ Error creating user or storing data:", error);
+  //       if (error.code === "auth/email-already-in-use") {
+  //         alert("This email is already registered. Please use a different email.");
+  //       } else {
+  //         alert(`Error: ${error.message}`);
+  //       }
+  //     }
+  //   }
+  // };
   // Get progress bar width based on current step
   const getProgressWidth = () => {
     if (currentStep === 1) return '0%';

@@ -208,7 +208,27 @@ form {
   color: #333;
   font-weight: bold;
 }
+.psearch-bar-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px; 
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: 25px;
+  /* margin-right: auto; */
+  flex-direction: row;
+}
 
+.psearch-bar-container input[type="text"] {
+  width: 70%;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  outline: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
 .form-group-p input,
 .form-group-p select {
   width: 95%;
