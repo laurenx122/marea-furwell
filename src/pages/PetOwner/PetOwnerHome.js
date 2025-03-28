@@ -18,9 +18,6 @@ import {
   ScheduleComponent,
   ViewsDirective,
   ViewDirective,
-  Day,
-  Week,
-  WorkWeek,
   Month,
   Agenda,
   Inject,
@@ -86,6 +83,7 @@ const PetOwnerHome = () => {
   const [isRescheduling, setIsRescheduling] = useState(false);
 
   const [rescheduleDateTime, setRescheduleDateTime] = useState(null); // Combined date-time for rescheduling
+  const [showReschedule, setShowReschedule] = useState(false);
   const [availableSlots, setAvailableSlots] = useState([]); // Available time slots for selected date
   const [takenAppointments, setTakenAppointments] = useState([]); // All taken appointments for the clinic and vet
   const [vetSchedule, setVetSchedule] = useState(null); // Veterinarian's schedule
@@ -396,12 +394,14 @@ const PetOwnerHome = () => {
             veterinarian: data.veterinarian || "N/A",
             veterinarianId: data.veterinarianId,
             remarks: data.remarks || "No remarks",
+            notes: data.notes || "No notes",
+            status: data.status || "N/A",
             dateofAppointment: startTime,
           };
 
           if (startTime < today) {
             pastAppointmentsList.push(appointmentDetails);
-          } else {
+          } else if (appointmentDetails.status === "Accepted") {
             currentAppointmentsList.push(appointmentDetails);
           }
         }
@@ -452,31 +452,35 @@ const PetOwnerHome = () => {
       // Reference to the original appointment
       const appointmentRef = doc(db, "appointments", appointmentId);
       const appointmentSnap = await getDoc(appointmentRef);
-
+  
       if (!appointmentSnap.exists()) {
         throw new Error("Appointment not found");
       }
-
+  
       // Get the appointment data
       const appointmentData = appointmentSnap.data();
-
-      // Add to cancelled-appointments collection with a cancelledAt timestamp
-      await addDoc(collection(db, "cancelled-appointments"), {
-        ...appointmentData,
-        cancelledAt: serverTimestamp(), // Add timestamp of cancellation
-        originalId: appointmentId, // Store original ID for reference
+  
+      // Update the appointment with status "Request Cancel" and a cancelledAt timestamp
+      await updateDoc(appointmentRef, {
+        status: "Request Cancel", // Add or update status to "Request Cancel"
+        cancelledAt: serverTimestamp(), // Add timestamp of cancellation request
       });
+  
+      // Update local state to reflect the new status
+      setAppointments(
+        appointments.map((appt) =>
+          appt.Id === appointmentId
+            ? { ...appt, status: "Request Cancel", cancelledAt: serverTimestamp() }
+            : appt
+        )
+      );
 
-      // Delete from appointments collection
-      await deleteDoc(appointmentRef);
-
-      // Update local state
-      setAppointments(appointments.filter((appt) => appt.Id !== appointmentId));
+      await fetchAppointments();
       setShowAppointmentModal(false);
-      alert("Appointment cancelled successfully!");
+      alert("Appointment cancellation requested successfully!");
     } catch (error) {
-      console.error("Error cancelling appointment:", error);
-      alert("Failed to cancel appointment.");
+      console.error("Error requesting appointment cancellation:", error);
+      alert("Failed to request appointment cancellation.");
     }
   };
 
@@ -506,6 +510,8 @@ const PetOwnerHome = () => {
       setShowAppointmentModal(false);
       setRescheduleDate("");
       setRescheduleTime("");
+      setAvailableSlots([]);
+      setShowReschedule(false);
       alert("Appointment rescheduled successfully!");
     } catch (error) {
       console.error("Error rescheduling appointment:", error);
@@ -520,8 +526,9 @@ const PetOwnerHome = () => {
     const appointment = appointments.find((appt) => appt.Id === args.event.Id);
     setSelectedAppointment(appointment);
     setShowAppointmentModal(true);
-    setRescheduleDate(""); // Reset reschedule fields
-    setRescheduleTime("");
+    setRescheduleDateTime(null);
+    setAvailableSlots([]);
+    setShowReschedule(false);
   };
 
   const handleAppointmentsClick = () => {
@@ -858,13 +865,10 @@ const PetOwnerHome = () => {
                   readOnly={false}
                 >
                   <ViewsDirective>
-                    <ViewDirective option="Day" />
-                    <ViewDirective option="Week" />
-                    <ViewDirective option="WorkWeek" />
                     <ViewDirective option="Month" />
                     <ViewDirective option="Agenda" />
                   </ViewsDirective>
-                  <Inject services={[Day, Week, WorkWeek, Month, Agenda]} />
+                  <Inject services={[Month, Agenda]} />
                 </ScheduleComponent>
               )}
             </div>
@@ -1221,69 +1225,108 @@ const PetOwnerHome = () => {
                 <strong>Remarks:</strong> {selectedAppointment.remarks}
               </div>
             </div>
-            <h3>Reschedule Appointment</h3>
-            <div className="reschedule-container-p">
-              <div className="calendar-container-p">
-                <ScheduleComponent
-                  width="100%"
-                  height="300px"
-                  currentView="Month"
-                  selectedDate={rescheduleDateTime || new Date()}
-                  eventSettings={{ dataSource: [] }} // No events, just background colors
-                  renderCell={onRenderCell}
-                  dateChange={handleDateChange}
-                  cellClick={(args) => args.cancel = true}
-                  popupOpen={(args) => args.cancel = true}
-                >
-                  <ViewsDirective>
-                    <ViewDirective option="Month" />
-                  </ViewsDirective>
-                  <Inject services={[Month]} />
-                </ScheduleComponent>
-              </div>
-              <div className="time-picker-container-p">
-                <label htmlFor="rescheduleTime">Select Time</label>
-                <select
-                  id="rescheduleTime"
-                  value={rescheduleDateTime ? rescheduleDateTime.toISOString() : ""}
-                  onChange={(e) => {
-                    const selectedTime = new Date(e.target.value);
-                    setRescheduleDateTime(selectedTime);
-                  }}
-                  disabled={!rescheduleDateTime || isRescheduling || availableSlots.length === 0}
-                >
-                  <option value="">Select a time</option>
-                  {availableSlots.map((slot, index) => (
-                    <option key={index} value={slot.time.toISOString()}>
-                      {slot.display}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="info-item-p">
+              <strong>Notes:</strong> {selectedAppointment.notes}
             </div>
-            <div className="modal-actions-p">
-              <button
-                className="submit-btn-p"
-                onClick={() => handleCancelAppointment(selectedAppointment.Id)}
-                disabled={isRescheduling}
-              >
-                Cancel Appointment
-              </button>
-              <button
-                className="submit-btn-p"
-                onClick={() => handleRescheduleAppointment(selectedAppointment.Id)}
-                disabled={isRescheduling}
-              >
-                {isRescheduling ? "Rescheduling..." : "Reschedule"}
-              </button>
-              <button
-                className="modal-close-btn-p"
-                onClick={() => setShowAppointmentModal(false)}
-                disabled={isRescheduling}
-              >
-                Close
-              </button>
-            </div>
+
+            {!showReschedule ? (
+              <div className="modal-actions-p">
+                <button
+                  className="submit-btn-p"
+                  onClick={() => handleCancelAppointment(selectedAppointment.Id)}
+                  disabled={isRescheduling}
+                >
+                  Cancel Appointment
+                </button>
+                <button
+                  className="submit-btn-p"
+                  onClick={() => setShowReschedule(!showReschedule)}// Toggle reschedule section
+                  disabled={isRescheduling}
+                >
+                  Reschedule
+                </button>
+                <button
+                  className="modal-close-btn-p"
+                  onClick={() => setShowAppointmentModal(false)}
+                  disabled={isRescheduling}
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3>Reschedule Appointment</h3>
+                <div className="reschedule-container-p">
+                  <div className="calendar-container-p">
+                    <ScheduleComponent
+                      width="100%"
+                      height="300px"
+                      currentView="Month"
+                      selectedDate={rescheduleDateTime || new Date()}
+                      eventSettings={{ dataSource: [] }}
+                      renderCell={onRenderCell}
+                      dateChange={handleDateChange}
+                      cellClick={(args) => (args.cancel = true)}
+                      popupOpen={(args) => (args.cancel = true)}
+                    >
+                      <ViewsDirective>
+                        <ViewDirective option="Month" />
+                      </ViewsDirective>
+                      <Inject services={[Month]} />
+                    </ScheduleComponent>
+                  </div>
+                  <div className="time-picker-container-p">
+                    <label htmlFor="rescheduleTime">Select Time</label>
+                    <select
+                      id="rescheduleTime"
+                      value={rescheduleDateTime ? rescheduleDateTime.toISOString() : ""}
+                      onChange={(e) => {
+                        const selectedTime = new Date(e.target.value);
+                        setRescheduleDateTime(selectedTime);
+                      }}
+                      disabled={!rescheduleDateTime || isRescheduling || availableSlots.length === 0}
+                    >
+                      <option value="">Select a time</option>
+                      {availableSlots.map((slot, index) => (
+                        <option key={index} value={slot.time.toISOString()}>
+                          {slot.display}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-actions-p">
+                  <button
+                    className="submit-btn-p"
+                    onClick={() => handleCancelAppointment(selectedAppointment.Id)}
+                    disabled={isRescheduling}
+                  >
+                    Cancel Appointment
+                  </button>
+                  <button
+                    className="submit-btn-p"
+                    onClick={() => handleRescheduleAppointment(selectedAppointment.Id)}
+                    disabled={isRescheduling}
+                  >
+                    {isRescheduling ? "Rescheduling..." : "Save Reschedule"}
+                  </button>
+                  <button
+                    className="submit-btn-p"
+                    onClick={() => setShowReschedule(!showReschedule)} // Toggle reschedule section
+                    disabled={isRescheduling}
+                  >
+                    Hide Reschedule
+                  </button>
+                  <button
+                    className="modal-close-btn-p"
+                    onClick={() => setShowAppointmentModal(false)}
+                    disabled={isRescheduling}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
