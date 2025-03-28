@@ -42,6 +42,9 @@ import "@syncfusion/ej2-inputs/styles/material.css";
 import "@syncfusion/ej2-navigations/styles/material.css";
 import "@syncfusion/ej2-popups/styles/material.css";
 import "@syncfusion/ej2-react-schedule/styles/material.css";
+import { ResponsivePie } from "@nivo/pie";
+import { useTheme } from "@mui/material";
+// import { mockPieData as data } from "../data/mockData";
 
 const ClinicHome = () => {
   // Register Syncfusion license (replace with your valid key if different)
@@ -50,7 +53,7 @@ const ClinicHome = () => {
     // process.env.SYNC_REGISTER_LICENSE
     // "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
   );
-
+  const [pieData, setPieData] = useState([]);
   const [activePanel, setActivePanel] = useState("patients");
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -638,6 +641,33 @@ const ClinicHome = () => {
   const onCellClick = (args) => {
     args.cancel = true; // Prevent adding new events
   };
+  const fetchPieChartData = async () => {
+    try {
+      setLoading(true);
+      const petsQuery = query(collection(db, "pets"));
+      const querySnapshot = await getDocs(petsQuery);
+  
+      const speciesCount = {};
+      querySnapshot.forEach((doc) => {
+        const petData = doc.data();
+        const species = petData.Species || "Unknown";
+        speciesCount[species] = (speciesCount[species] || 0) + 1;
+      });
+  
+      const formattedData = Object.entries(speciesCount).map(([key, value]) => ({
+        id: key,
+        label: key,
+        value: value,
+      }));
+  
+      setPieData(formattedData);
+    } catch (error) {
+      console.error("Error fetching pie chart data:", error);
+      setPieData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const initializeData = async () => {
@@ -646,6 +676,7 @@ const ClinicHome = () => {
       fetchPatients();
       fetchAppointments(); // Ensure this is included
       fetchVeterinarians();
+      fetchPieChartData();
     };
     initializeData();
   }, [userFirstName]);
@@ -952,6 +983,146 @@ const ClinicHome = () => {
               <button className="add-vet-btn-c" onClick={() => setShowAddVetModal(true)}>
                 Add Veterinarian
               </button>
+            </div>
+          )}
+          {activePanel === "analytics" && (
+            <div className="panel-c analytics-panel-c">
+              <h3>Clinic Analytics</h3>
+              {loading ? (
+                <p>Loading analytics...</p>
+              ) : (
+              <div style={{ height: "500px", width: "100%", justifyContent: "flex-start" }}>
+                <ResponsivePie
+                data={pieData}
+                margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                innerRadius={0.5}
+                padAngle={0.7}
+                cornerRadius={3}
+                activeOuterRadiusOffset={8}
+                colors={{ scheme: 'red_purple' }}
+                borderWidth={1}
+                borderColor={{
+                    from: 'color',
+                    modifiers: [
+                        [
+                            'darker',
+                            0.2
+                        ]
+                    ]
+                }}
+                arcLinkLabelsSkipAngle={10}
+                arcLinkLabelsTextColor="#333333"
+                arcLinkLabelsThickness={2}
+                arcLinkLabelsColor={{ from: 'color' }}
+                arcLabelsSkipAngle={10}
+                arcLabelsTextColor={{
+                    from: 'color',
+                    modifiers: [
+                        [
+                            'darker',
+                            2
+                        ]
+                    ]
+                }}
+                defs={[
+                    {
+                        id: 'dots',
+                        type: 'patternDots',
+                        background: 'inherit',
+                        color: 'rgba(255, 255, 255, 0.3)',
+                        size: 4,
+                        padding: 1,
+                        stagger: true
+                    },
+                    {
+                        id: 'lines',
+                        type: 'patternLines',
+                        background: 'inherit',
+                        color: 'rgba(255, 255, 255, 0.3)',
+                        rotation: -45,
+                        lineWidth: 6,
+                        spacing: 10
+                    }
+                ]}
+                fill={[
+                    {
+                        match: {
+                            id: 'ruby'
+                        },
+                        id: 'dots'
+                    },
+                    {
+                        match: {
+                            id: 'c'
+                        },
+                        id: 'dots'
+                    },
+                    {
+                        match: {
+                            id: 'go'
+                        },
+                        id: 'dots'
+                    },
+                    {
+                        match: {
+                            id: 'python'
+                        },
+                        id: 'dots'
+                    },
+                    {
+                        match: {
+                            id: 'scala'
+                        },
+                        id: 'lines'
+                    },
+                    {
+                        match: {
+                            id: 'lisp'
+                        },
+                        id: 'lines'
+                    },
+                    {
+                        match: {
+                            id: 'elixir'
+                        },
+                        id: 'lines'
+                    },
+                    {
+                        match: {
+                            id: 'javascript'
+                        },
+                        id: 'lines'
+                    }
+                ]}
+                legends={[
+                    {
+                        anchor: 'bottom',
+                        direction: 'row',
+                        justify: false,
+                        translateX: 0,
+                        translateY: 56,
+                        itemsSpacing: 0,
+                        itemWidth: 100,
+                        itemHeight: 18,
+                        itemTextColor: '#999',
+                        itemDirection: 'left-to-right',
+                        itemOpacity: 1,
+                        symbolSize: 18,
+                        symbolShape: 'circle',
+                        effects: [
+                            {
+                                on: 'hover',
+                                style: {
+                                    itemTextColor: '#000'
+                                }
+                            }
+                        ]
+                    }
+                ]}
+            ></ResponsivePie>
+            </div>
+              )}
+              
             </div>
           )}
         </div>

@@ -656,3 +656,17 @@ tr:hover {
 .e-schedule .e-appointment:hover {
   background-color: #f50057 !important;
 }
+
+.analytics-panel-c {
+  height: 600px; /* Adjust based on your needs */
+  overflow: hidden; /* Prevent scrolling unless explicitly needed */
+}
+
+.panel-container-c {
+  height: 100%;
+}
+
+.analytics-panel-c {
+  height: 100%;
+  overflow: hidden;
+}
