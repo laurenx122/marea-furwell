@@ -677,7 +677,7 @@ const ClinicDetails = () => {
               />
               <h3>{`Dr. ${selectedVet.FirstName} ${selectedVet.LastName}`}</h3>
               <p><strong>Contact Number:</strong> {selectedVet.contactNumber || 'Not available'}</p>
-              <p><strong>Email:</strong> {selectedVet.Gmail || 'Not available'}</p>
+              <p><strong>Email:</strong> {selectedVet.email || 'Not available'}</p>
               <div className="vet-schedule">
                 <strong>Schedule:</strong>
                 {selectedVet.schedule && selectedVet.schedule.length > 0 ? (
