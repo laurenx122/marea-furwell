@@ -9,9 +9,6 @@ import {
   ScheduleComponent,
   ViewsDirective,
   ViewDirective,
-  Day,
-  Week,
-  WorkWeek,
   Month,
   Agenda,
   Inject,
@@ -317,7 +314,8 @@ const VeterinaryHome = () => {
             age: petAge,
             owner: ownerName,
             service: data.serviceType || "N/A",
-            remarks: data.remarks || "",
+            remarks: data.remarks || "No Remarks",
+            notes: data.notes || "No Notes",
             dateofAppointment: startTime,
           };
 
@@ -519,17 +517,15 @@ const VeterinaryHome = () => {
                     },
                   }}
                   eventClick={onEventClick}
-                  cellClick={onCellClick}
+                  cellClick={(args) => args.cancel = true}
+                  popupOpen={(args) => args.cancel = true}
                   readOnly={true}
                 >
                   <ViewsDirective>
-                    <ViewDirective option="Day" />
-                    <ViewDirective option="Week" />
-                    <ViewDirective option="WorkWeek" />
                     <ViewDirective option="Month" />
                     <ViewDirective option="Agenda" />
                   </ViewsDirective>
-                  <Inject services={[Day, Week, WorkWeek, Month, Agenda]} />
+                  <Inject services={[Month, Agenda]} />
                 </ScheduleComponent>
               )}
             </div>
@@ -559,13 +555,10 @@ const VeterinaryHome = () => {
                   cellClick={onCellClick}
                 >
                   <ViewsDirective>
-                    <ViewDirective option="Day" />
-                    <ViewDirective option="Week" />
-                    <ViewDirective option="WorkWeek" />
                     <ViewDirective option="Month" />
                     <ViewDirective option="Agenda" />
                   </ViewsDirective>
-                  <Inject services={[Day, Week, WorkWeek, Month, Agenda]} />
+                  <Inject services={[Month, Agenda]} />
                 </ScheduleComponent>
               )}
             </div>
@@ -772,27 +765,41 @@ const VeterinaryHome = () => {
       {showDetailsModal && appointmentDetails && (
         <div className="modal-overlay-v">
           <div className="modal-content-v">
-            <span
-              className="close-button-v"
-              onClick={() => {
-                setShowDetailsModal(false);
-                setShowRemarksModal(false);
-              }}
-            >
+            <span className="close-button-v" onClick={() => setShowDetailsModal(false)}>
               ×
             </span>
             <h2>Appointment Details</h2>
-            <div className="form-group-v">
-              <p><strong>Date:</strong> {formatDate(appointmentDetails.dateofAppointment)}</p>
-              <p><strong>Pet Name:</strong> {appointmentDetails.petName}</p>
-              <p><strong>Species:</strong> {appointmentDetails.species}</p>
-              <p><strong>Breed:</strong> {appointmentDetails.breed}</p>
-              <p><strong>Age:</strong> {appointmentDetails.age}</p>
-              <p><strong>Owner:</strong> {appointmentDetails.owner}</p>
-              <p><strong>Service:</strong> {appointmentDetails.service}</p>
-              <p><strong>Remarks:</strong> {appointmentDetails.remarks || "N/A"}</p>
+            <div className="appointment-info-grid-v">
+              <div className="info-item-v">
+                <strong>Patient Name:</strong> {appointmentDetails.petName}
+              </div>
+              <div className="info-item-v">
+                <strong>Owner:</strong> {appointmentDetails.owner}
+              </div>
+              <div className="info-item-v">
+                <strong>Date & Time:</strong> {formatDate(appointmentDetails.dateofAppointment)}
+              </div>
+              <div className="info-item-v">
+                <strong>Service:</strong> {appointmentDetails.service}
+              </div>
+              <div className="info-item-v">
+                <strong>Species:</strong> {appointmentDetails.species}
+              </div>
+              <div className="info-item-v">
+                <strong>Breed:</strong> {appointmentDetails.breed}
+              </div>
+              <div className="info-item-v">
+                <strong>Age:</strong> {appointmentDetails.age}
+              </div>
+              <div className="info-item-v">
+                <strong>Remarks:</strong> {appointmentDetails.remarks}
+              </div>
             </div>
-            <div className="form-actions-v">
+            <div className="appointment-notes-v">
+              <strong>Notes:</strong>
+              <p>{appointmentDetails.notes || "No notes available"}</p>
+            </div>
+            <div className="modal-actions-v">
               <button
                 className="submit-btn-v"
                 onClick={() => openRemarksModal(appointmentDetails)}
@@ -800,11 +807,8 @@ const VeterinaryHome = () => {
                 Edit Remark
               </button>
               <button
-                className="cancel-btn-v"
-                onClick={() => {
-                  setShowDetailsModal(false);
-                  setShowRemarksModal(false);
-                }}
+                className="modal-close-btn-v"
+                onClick={() => setShowDetailsModal(false)}
               >
                 Close
               </button>

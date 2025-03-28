@@ -141,6 +141,57 @@ th {
   padding: 10px;
   background-color: #fdf6c2;
 }
+/* Appointment Info Grid */
+.appointment-info-grid-v {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.info-item-v {
+  padding: 10px;
+  background-color: #fff5f6;
+  border-radius: 4px;
+  text-align: left;
+}
+
+.info-item-v strong {
+  color: #555;
+}
+
+/* Appointment Notes */
+.appointment-notes-v {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #fff5f6;
+  border-radius: 4px;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.appointment-notes-v strong {
+  color: #555;
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.appointment-notes-v p {
+  margin: 0;
+  word-wrap: break-word;
+  color: #333;
+  width: 100%;
+}
+
+/* Modal Actions */
+.modal-actions-v {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
 
 .schedule-panel-v {
   padding: 10px;

@@ -26,9 +26,6 @@ import {
   ScheduleComponent,
   ViewsDirective,
   ViewDirective,
-  Day,
-  Week,
-  WorkWeek,
   Month,
   Agenda,
   Inject,
@@ -560,6 +557,7 @@ const ClinicHome = () => {
             serviceType: appointmentData.serviceType || "N/A",
             veterinarian: vetName, // Directly use the string
             remarks: appointmentData.remarks || "No remarks",
+            notes: appointmentData.notes || "No Notes",
             dateofAppointment: startTime,
           };
 
@@ -713,6 +711,12 @@ const ClinicHome = () => {
           >
             Veterinarians
           </button>
+          <button
+            className={activePanel === "analytics" ? "active" : ""}
+            onClick={() => setActivePanel("analytics")}
+          >
+            Analytics
+          </button>
         </div>
         <button className="signout-btn-c" onClick={handleSignOut}>
           Sign Out
@@ -812,18 +816,17 @@ const ClinicHome = () => {
                       endTime: { name: "EndTime" },
                     },
                   }}
-                  cellClick={onCellClick}
+                  
                   eventClick={onEventClick} // Add this line
+                  cellClick={(args) => args.cancel = true}
+                  popupOpen={(args) => args.cancel = true}
                   readOnly={true}
                 >
                   <ViewsDirective>
-                    <ViewDirective option="Day" />
-                    <ViewDirective option="Week" />
-                    <ViewDirective option="WorkWeek" />
                     <ViewDirective option="Month" />
                     <ViewDirective option="Agenda" />
                   </ViewsDirective>
-                  <Inject services={[Day, Week, WorkWeek, Month, Agenda]} />
+                  <Inject services={[ Month, Agenda]} />
                 </ScheduleComponent>
               )}
             </div>
@@ -1416,6 +1419,9 @@ const ClinicHome = () => {
                 <strong>Remarks:</strong> {selectedAppointment.remarks}
               </div>
             </div>
+            <div className="appointment-notes-c">
+                <strong>Notes:</strong> {selectedAppointment.notes}
+              </div>
             <div className="modal-actions-c">
               <button className="modal-close-btn-c" onClick={closeAppointmentModal}>
                 Close
