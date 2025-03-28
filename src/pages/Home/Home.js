@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import './Home.css';
 import { useNavigate } from 'react-router-dom'; // Importing useNavigate for redirection
 import Footer from '../../components/Footer/Footer';
-
+import SupportEngine from '../../pages/SupportEngine/SupportEngine';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -151,6 +151,9 @@ const Home = () => {
                     <button className="search-button" onClick={handleSearchClick}>Search</button>
                 </div>
             </section>
+
+             {/* Support Engine */}
+        <SupportEngine />
 
             <Footer />
         </div>
