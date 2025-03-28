@@ -41,7 +41,7 @@ const PetOwnerHome = () => {
   // Register Syncfusion license (replace with your valid key if different)
   registerLicense(
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
-  
+
   );
 
   const [activePanel, setActivePanel] = useState("petDetails");
@@ -84,6 +84,11 @@ const PetOwnerHome = () => {
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
+
+  const [rescheduleDateTime, setRescheduleDateTime] = useState(null); // Combined date-time for rescheduling
+  const [availableSlots, setAvailableSlots] = useState([]); // Available time slots for selected date
+  const [takenAppointments, setTakenAppointments] = useState([]); // All taken appointments for the clinic and vet
+  const [vetSchedule, setVetSchedule] = useState(null); // Veterinarian's schedule
 
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
@@ -142,7 +147,7 @@ const PetOwnerHome = () => {
 
   const filteredAppointments = pastAppointments.filter(record => {
     const monthName = new Date(record.dateofAppointment).toLocaleString('en-US', { month: 'long' });
-  
+
     return Object.values(record).some(value =>
       typeof value === "string" && value.toLowerCase().includes(searchQuery.toLowerCase())
     ) || monthName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -386,8 +391,10 @@ const PetOwnerHome = () => {
             EndTime: endTime,
             petName: data.petName || "Unknown Pet",
             clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+            clinicId: data.clinic.id,
             serviceType: data.serviceType || "N/A",
             veterinarian: data.veterinarian || "N/A",
+            veterinarianId: data.veterinarianId,
             remarks: data.remarks || "No remarks",
             dateofAppointment: startTime,
           };
@@ -442,7 +449,28 @@ const PetOwnerHome = () => {
   // Appointment Action Handlers
   const handleCancelAppointment = async (appointmentId) => {
     try {
-      await deleteDoc(doc(db, "appointments", appointmentId));
+      // Reference to the original appointment
+      const appointmentRef = doc(db, "appointments", appointmentId);
+      const appointmentSnap = await getDoc(appointmentRef);
+
+      if (!appointmentSnap.exists()) {
+        throw new Error("Appointment not found");
+      }
+
+      // Get the appointment data
+      const appointmentData = appointmentSnap.data();
+
+      // Add to cancelled-appointments collection with a cancelledAt timestamp
+      await addDoc(collection(db, "cancelled-appointments"), {
+        ...appointmentData,
+        cancelledAt: serverTimestamp(), // Add timestamp of cancellation
+        originalId: appointmentId, // Store original ID for reference
+      });
+
+      // Delete from appointments collection
+      await deleteDoc(appointmentRef);
+
+      // Update local state
       setAppointments(appointments.filter((appt) => appt.Id !== appointmentId));
       setShowAppointmentModal(false);
       alert("Appointment cancelled successfully!");
@@ -453,7 +481,7 @@ const PetOwnerHome = () => {
   };
 
   const handleRescheduleAppointment = async (appointmentId) => {
-    if (!rescheduleDate || !rescheduleTime) {
+    if (!rescheduleDateTime) {
       alert("Please select a new date and time.");
       return;
     }
@@ -500,6 +528,144 @@ const PetOwnerHome = () => {
     setActivePanel("appointments");
     setCurrentView("Agenda"); // Switch to Agenda view when clicked
   };
+
+  // Reschedulesssss
+  // Fetch all appointments for the clinic and veterinarian
+  // Fetch all appointments for the clinic and veterinarian
+  const fetchTakenAppointments = async (clinicId, veterinarianId) => {
+    try {
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        where("clinic", "==", doc(db, "clinics", clinicId)),
+        where("veterinarianId", "==", veterinarianId)
+      );
+      const querySnapshot = await getDocs(appointmentsQuery);
+      const taken = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        dateofAppointment: doc.data().dateofAppointment.toDate(),
+      }));
+      setTakenAppointments(taken);
+    } catch (error) {
+      console.error("Error fetching taken appointments:", error);
+    }
+  };
+
+  // Fetch veterinarian's schedule from users collection
+  const fetchVetSchedule = async (veterinarianId) => {
+    try {
+      const vetRef = doc(db, "users", veterinarianId);
+      const vetDoc = await getDoc(vetRef);
+      if (vetDoc.exists()) {
+        setVetSchedule(vetDoc.data().schedule || {}); // e.g., { monday: { startTime: "09:00", endTime: "17:00" } }
+      }
+    } catch (error) {
+      console.error("Error fetching vet schedule:", error);
+    }
+  };
+
+  // Check if a date is fully taken
+  const isDateFullyTaken = (date, vetSchedule, takenAppointments) => {
+    const dayOfWeek = date.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
+    const vetDaySchedule = vetSchedule?.[dayOfWeek] || { startTime: "09:00", endTime: "17:00" };
+    const startHour = parseInt(vetDaySchedule.startTime.split(":")[0], 10);
+    const endHour = parseInt(vetDaySchedule.endTime.split(":")[0], 10);
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+
+    if (isToday) return false; // Don’t mark today as fully taken
+
+    const slots = [];
+    for (let hour = startHour; hour < endHour; hour++) {
+      const slotTime = new Date(date);
+      slotTime.setHours(hour, 0, 0, 0);
+      const slotEndTime = new Date(slotTime.getTime() + 60 * 60 * 1000);
+
+      const isTaken = takenAppointments.some((appt) => {
+        const apptStart = appt.dateofAppointment;
+        const apptEnd = new Date(apptStart.getTime() + 60 * 60 * 1000);
+        return slotTime < apptEnd && slotEndTime > apptStart;
+      });
+
+      slots.push(!isTaken);
+    }
+
+    return slots.every((available) => !available); // True if all slots are taken
+  };
+
+  // Generate available time slots for a selected date
+  const generateTimeSlots = (selectedDate, vetSchedule, takenAppointments) => {
+    const slots = [];
+    const dayOfWeek = selectedDate.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
+    const vetDaySchedule = vetSchedule?.[dayOfWeek] || { startTime: "09:00", endTime: "17:00" };
+    const startHour = parseInt(vetDaySchedule.startTime.split(":")[0], 10);
+    const endHour = parseInt(vetDaySchedule.endTime.split(":")[0], 10);
+    const today = new Date();
+    const isToday = selectedDate.toDateString() === today.toDateString();
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      const slotTime = new Date(selectedDate);
+      slotTime.setHours(hour, 0, 0, 0);
+
+      if (isToday && slotTime <= today) continue; // Skip past times for today
+
+      const slotEndTime = new Date(slotTime.getTime() + 60 * 60 * 1000);
+      const isTaken = takenAppointments.some((appt) => {
+        const apptStart = appt.dateofAppointment;
+        const apptEnd = new Date(apptStart.getTime() + 60 * 60 * 1000);
+        return slotTime < apptEnd && slotEndTime > apptStart;
+      });
+
+      if (!isTaken) {
+        slots.push({
+          time: slotTime,
+          display: slotTime.toLocaleString("en-US", { hour: "numeric", hour12: true }),
+        });
+      }
+    }
+    return slots;
+  };
+
+  // Handle date selection
+  const handleDateChange = (args) => {
+    const selectedDate = args.value || new Date();
+    if (!isDateFullyTaken(selectedDate, vetSchedule, takenAppointments)) {
+      setRescheduleDateTime(selectedDate);
+      const slots = generateTimeSlots(selectedDate, vetSchedule, takenAppointments);
+      setAvailableSlots(slots);
+    }
+  };
+
+  // Custom cell rendering for calendar
+  const onRenderCell = (args) => {
+    if (args.elementType === "dateCells") {
+      const date = args.date;
+      const today = new Date();
+      const isToday = date.toDateString() === today.toDateString();
+      const hasAppointments = takenAppointments.some((appt) => {
+        return appt.dateofAppointment.toDateString() === date.toDateString();
+      });
+
+      if (isToday) {
+        args.element.style.backgroundColor = "#ffffff"; // White for today
+      } else if (isDateFullyTaken(date, vetSchedule, takenAppointments)) {
+        args.element.style.backgroundColor = "#ffcccc"; // Light red for fully taken
+        args.element.style.pointerEvents = "none"; // Disable clicking
+      } else if (hasAppointments) {
+        args.element.style.backgroundColor = "#ff0000"; // Red for partially taken
+      } else {
+        args.element.style.backgroundColor = "#90ee90"; // Green for available
+      }
+    }
+  };
+
+  // Fetch data when appointment modal opens
+  useEffect(() => {
+    if (selectedAppointment) {
+      fetchTakenAppointments(selectedAppointment.clinicId, selectedAppointment.veterinarianId);
+      fetchVetSchedule(selectedAppointment.veterinarianId);
+    }
+  }, [selectedAppointment]);
 
   const handlePetClick = (pet) => {
     setSelectedPet(pet);
@@ -706,16 +872,16 @@ const PetOwnerHome = () => {
           {activePanel === "healthRecords" && (
             <div className="panel-p health-records-panel-p">
               <h3>Health Records</h3>
-                <form className="psearch-bar-container">
-                  <input
-                    type="text"
-                    id="searchRecords"
-                    placeholder="Search records (Pet Name, Clinic, Service, Veterinarian, Remarks, Month)..."
-                    className="search-bar-p"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </form>
+              <form className="psearch-bar-container">
+                <input
+                  type="text"
+                  id="searchRecords"
+                  placeholder="Search records (Pet Name, Clinic, Service, Veterinarian, Remarks, Month)..."
+                  className="search-bar-p"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </form>
               {loading ? (
                 <p>Loading health records...</p>
               ) : (
@@ -1025,7 +1191,7 @@ const PetOwnerHome = () => {
       )}
 
 
-{showAppointmentModal && selectedAppointment && (
+      {showAppointmentModal && selectedAppointment && (
         <div className="modal-overlay-p">
           <div className="modal-content-p">
             <span
@@ -1056,24 +1222,44 @@ const PetOwnerHome = () => {
               </div>
             </div>
             <h3>Reschedule Appointment</h3>
-            <div className="form-group-p">
-              <label htmlFor="rescheduleDate">New Date</label>
-              <input
-                type="date"
-                id="rescheduleDate"
-                value={rescheduleDate}
-                onChange={(e) => setRescheduleDate(e.target.value)}
-                min={new Date().toISOString().split("T")[0]} // Prevent past dates
-              />
-            </div>
-            <div className="form-group-p">
-              <label htmlFor="rescheduleTime">New Time</label>
-              <input
-                type="time"
-                id="rescheduleTime"
-                value={rescheduleTime}
-                onChange={(e) => setRescheduleTime(e.target.value)}
-              />
+            <div className="reschedule-container-p">
+              <div className="calendar-container-p">
+                <ScheduleComponent
+                  width="100%"
+                  height="300px"
+                  currentView="Month"
+                  selectedDate={rescheduleDateTime || new Date()}
+                  eventSettings={{ dataSource: [] }} // No events, just background colors
+                  renderCell={onRenderCell}
+                  dateChange={handleDateChange}
+                  cellClick={(args) => args.cancel = true}
+                  popupOpen={(args) => args.cancel = true}
+                >
+                  <ViewsDirective>
+                    <ViewDirective option="Month" />
+                  </ViewsDirective>
+                  <Inject services={[Month]} />
+                </ScheduleComponent>
+              </div>
+              <div className="time-picker-container-p">
+                <label htmlFor="rescheduleTime">Select Time</label>
+                <select
+                  id="rescheduleTime"
+                  value={rescheduleDateTime ? rescheduleDateTime.toISOString() : ""}
+                  onChange={(e) => {
+                    const selectedTime = new Date(e.target.value);
+                    setRescheduleDateTime(selectedTime);
+                  }}
+                  disabled={!rescheduleDateTime || isRescheduling || availableSlots.length === 0}
+                >
+                  <option value="">Select a time</option>
+                  {availableSlots.map((slot, index) => (
+                    <option key={index} value={slot.time.toISOString()}>
+                      {slot.display}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="modal-actions-p">
               <button

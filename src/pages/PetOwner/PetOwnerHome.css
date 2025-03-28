@@ -509,3 +509,31 @@ form {
 }
 
 
+/* Cancel and Reschedule Modal*/
+.reschedule-container-p {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.calendar-container-p {
+  width: 100%;
+}
+
+.time-picker-container-p {
+  display: flex;
+  flex-direction: column;
+}
+
+.time-picker-container-p select {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.time-picker-container-p option {
+  padding: 5px;
+}
+
+
