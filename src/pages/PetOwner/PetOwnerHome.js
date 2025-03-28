@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   getDoc,
   updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { FaCamera } from "react-icons/fa";
 import {
@@ -76,6 +77,13 @@ const PetOwnerHome = () => {
   const [newOwnerImage, setNewOwnerImage] = useState(null);
   const [ownerImagePreview, setOwnerImagePreview] = useState(null);
   const [editedOwnerInfo, setEditedOwnerInfo] = useState(null);
+
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [currentView, setCurrentView] = useState("Month");
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [isRescheduling, setIsRescheduling] = useState(false);
 
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
@@ -431,6 +439,68 @@ const PetOwnerHome = () => {
     fetchAppointments();
   }, []);
 
+  // Appointment Action Handlers
+  const handleCancelAppointment = async (appointmentId) => {
+    try {
+      await deleteDoc(doc(db, "appointments", appointmentId));
+      setAppointments(appointments.filter((appt) => appt.Id !== appointmentId));
+      setShowAppointmentModal(false);
+      alert("Appointment cancelled successfully!");
+    } catch (error) {
+      console.error("Error cancelling appointment:", error);
+      alert("Failed to cancel appointment.");
+    }
+  };
+
+  const handleRescheduleAppointment = async (appointmentId) => {
+    if (!rescheduleDate || !rescheduleTime) {
+      alert("Please select a new date and time.");
+      return;
+    }
+
+    setIsRescheduling(true);
+    try {
+      const newDateTime = new Date(`${rescheduleDate}T${rescheduleTime}`);
+      const newEndTime = new Date(newDateTime.getTime() + 60 * 60 * 1000); // Assuming 1-hour duration
+
+      const appointmentRef = doc(db, "appointments", appointmentId);
+      await updateDoc(appointmentRef, {
+        dateofAppointment: newDateTime,
+      });
+
+      setAppointments(
+        appointments.map((appt) =>
+          appt.Id === appointmentId
+            ? { ...appt, StartTime: newDateTime, EndTime: newEndTime, dateofAppointment: newDateTime }
+            : appt
+        )
+      );
+      setShowAppointmentModal(false);
+      setRescheduleDate("");
+      setRescheduleTime("");
+      alert("Appointment rescheduled successfully!");
+    } catch (error) {
+      console.error("Error rescheduling appointment:", error);
+      alert("Failed to reschedule appointment.");
+    } finally {
+      setIsRescheduling(false);
+    }
+  };
+
+  const handleEventClick = (args) => {
+    args.cancel = true; // Prevent default edit popup
+    const appointment = appointments.find((appt) => appt.Id === args.event.Id);
+    setSelectedAppointment(appointment);
+    setShowAppointmentModal(true);
+    setRescheduleDate(""); // Reset reschedule fields
+    setRescheduleTime("");
+  };
+
+  const handleAppointmentsClick = () => {
+    setActivePanel("appointments");
+    setCurrentView("Agenda"); // Switch to Agenda view when clicked
+  };
+
   const handlePetClick = (pet) => {
     setSelectedPet(pet);
     setShowModal(true);
@@ -515,7 +585,8 @@ const PetOwnerHome = () => {
           </button>
           <button
             className={activePanel === "appointments" ? "active" : ""}
-            onClick={() => setActivePanel("appointments")}
+            // onClick={() => setActivePanel("appointments")}
+            onClick={handleAppointmentsClick}
           >
             Appointments
           </button>
@@ -603,6 +674,7 @@ const PetOwnerHome = () => {
                 <ScheduleComponent
                   width="100%"
                   height="650px"
+                  currentView={currentView}
                   currentDate={new Date()} // March 24, 2025
                   eventSettings={{
                     dataSource: appointments,
@@ -613,8 +685,11 @@ const PetOwnerHome = () => {
                       endTime: { name: "EndTime" },
                     },
                   }}
-                  cellClick={onCellClick}
-                  readOnly={true}
+                  eventClick={handleEventClick} // Handle click on agenda item
+                  // cellClick={onCellClick}
+                  cellClick={(args) => args.cancel = true}
+                  popupOpen={(args) => args.cancel = true} // Disable default edit popup
+                  readOnly={false}
                 >
                   <ViewsDirective>
                     <ViewDirective option="Day" />
@@ -945,6 +1020,84 @@ const PetOwnerHome = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+
+{showAppointmentModal && selectedAppointment && (
+        <div className="modal-overlay-p">
+          <div className="modal-content-p">
+            <span
+              className="close-button-p"
+              onClick={() => setShowAppointmentModal(false)}
+            >
+              ×
+            </span>
+            <h2>Appointment Details</h2>
+            <div className="pet-info-grid-p">
+              <div className="info-item-p">
+                <strong>Pet Name:</strong> {selectedAppointment.petName}
+              </div>
+              <div className="info-item-p">
+                <strong>Clinic:</strong> {selectedAppointment.clinicName}
+              </div>
+              <div className="info-item-p">
+                <strong>Service:</strong> {selectedAppointment.serviceType}
+              </div>
+              <div className="info-item-p">
+                <strong>Veterinarian:</strong> {selectedAppointment.veterinarian}
+              </div>
+              <div className="info-item-p">
+                <strong>Date:</strong> {formatDate(selectedAppointment.StartTime)}
+              </div>
+              <div className="info-item-p">
+                <strong>Remarks:</strong> {selectedAppointment.remarks}
+              </div>
+            </div>
+            <h3>Reschedule Appointment</h3>
+            <div className="form-group-p">
+              <label htmlFor="rescheduleDate">New Date</label>
+              <input
+                type="date"
+                id="rescheduleDate"
+                value={rescheduleDate}
+                onChange={(e) => setRescheduleDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]} // Prevent past dates
+              />
+            </div>
+            <div className="form-group-p">
+              <label htmlFor="rescheduleTime">New Time</label>
+              <input
+                type="time"
+                id="rescheduleTime"
+                value={rescheduleTime}
+                onChange={(e) => setRescheduleTime(e.target.value)}
+              />
+            </div>
+            <div className="modal-actions-p">
+              <button
+                className="submit-btn-p"
+                onClick={() => handleCancelAppointment(selectedAppointment.Id)}
+                disabled={isRescheduling}
+              >
+                Cancel Appointment
+              </button>
+              <button
+                className="submit-btn-p"
+                onClick={() => handleRescheduleAppointment(selectedAppointment.Id)}
+                disabled={isRescheduling}
+              >
+                {isRescheduling ? "Rescheduling..." : "Reschedule"}
+              </button>
+              <button
+                className="modal-close-btn-p"
+                onClick={() => setShowAppointmentModal(false)}
+                disabled={isRescheduling}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
