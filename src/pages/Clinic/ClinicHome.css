@@ -582,6 +582,30 @@ tr:hover {
   margin-bottom: 20px;
 }
 
+.appointment-notes-c {
+
+  padding: 10px;
+  background-color: #fff5f6;
+  border-radius: 4px;
+  text-align: left;
+  width: 100%; /* Explicitly set to full width */
+  box-sizing: border-box; /* Ensures padding doesn’t increase width beyond container */
+}
+
+.appointment-notes-c strong {
+  color: #555;
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold; /* Optional: Emphasize the "Notes" label */
+}
+
+.appointment-notes-c p {
+  margin: 0;
+  word-wrap: break-word; /* Ensures long text wraps within the container */
+  color: #333;
+  width: 100%; /* Ensures the paragraph takes full width */
+}
+
 .info-item-c {
   padding: 10px;
   background-color: #fff5f6;
