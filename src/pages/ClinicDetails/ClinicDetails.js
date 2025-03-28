@@ -303,7 +303,7 @@ const ClinicDetails = () => {
   const handleSubmitAppointment = async (e) => {
     e.preventDefault();
 
-    const { petId, veterinarianId, serviceType, dateofAppointment } = appointmentData;
+    const { petId, veterinarianId, serviceType, dateofAppointment, notes } = appointmentData;
     if (!petId || !veterinarianId || !serviceType || !dateofAppointment) {
       setBookingStatus({
         loading: false,
@@ -325,7 +325,7 @@ const ClinicDetails = () => {
       const ownerRef = doc(db, "users", currentUser.uid);
       const petRef = doc(db, "pets", petId);
       const clinicRef = doc(db, "clinics", clinicId);
-      const vetRef = doc(db, "users", veterinarianId);
+      //const vetRef = doc(db, "users", veterinarianId);
 
       const appointmentRef = await addDoc(collection(db, "appointments"), {
         petId,
@@ -340,6 +340,7 @@ const ClinicDetails = () => {
           veterinarians.find((v) => v.id === veterinarianId).LastName,
         serviceType,
         dateofAppointment: new Date(dateofAppointment),
+        notes: notes || "",
         createdAt: serverTimestamp()
       });
 
