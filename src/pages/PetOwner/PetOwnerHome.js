@@ -11,15 +11,13 @@ import {
   serverTimestamp,
   getDoc,
   updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { FaCamera } from "react-icons/fa";
 import {
   ScheduleComponent,
   ViewsDirective,
   ViewDirective,
-  Day,
-  Week,
-  WorkWeek,
   Month,
   Agenda,
   Inject,
@@ -40,7 +38,7 @@ const PetOwnerHome = () => {
   // Register Syncfusion license (replace with your valid key if different)
   registerLicense(
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
-  
+
   );
 
   const [activePanel, setActivePanel] = useState("petDetails");
@@ -76,6 +74,19 @@ const PetOwnerHome = () => {
   const [newOwnerImage, setNewOwnerImage] = useState(null);
   const [ownerImagePreview, setOwnerImagePreview] = useState(null);
   const [editedOwnerInfo, setEditedOwnerInfo] = useState(null);
+
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [currentView, setCurrentView] = useState("Month");
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [isRescheduling, setIsRescheduling] = useState(false);
+
+  const [rescheduleDateTime, setRescheduleDateTime] = useState(null); // Combined date-time for rescheduling
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState([]); // Available time slots for selected date
+  const [takenAppointments, setTakenAppointments] = useState([]); // All taken appointments for the clinic and vet
+  const [vetSchedule, setVetSchedule] = useState(null); // Veterinarian's schedule
 
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
@@ -134,7 +145,7 @@ const PetOwnerHome = () => {
 
   const filteredAppointments = pastAppointments.filter(record => {
     const monthName = new Date(record.dateofAppointment).toLocaleString('en-US', { month: 'long' });
-  
+
     return Object.values(record).some(value =>
       typeof value === "string" && value.toLowerCase().includes(searchQuery.toLowerCase())
     ) || monthName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -378,15 +389,19 @@ const PetOwnerHome = () => {
             EndTime: endTime,
             petName: data.petName || "Unknown Pet",
             clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+            clinicId: data.clinic.id,
             serviceType: data.serviceType || "N/A",
             veterinarian: data.veterinarian || "N/A",
+            veterinarianId: data.veterinarianId,
             remarks: data.remarks || "No remarks",
+            notes: data.notes || "No notes",
+            status: data.status || "N/A",
             dateofAppointment: startTime,
           };
 
           if (startTime < today) {
             pastAppointmentsList.push(appointmentDetails);
-          } else {
+          } else if (appointmentDetails.status === "Accepted") {
             currentAppointmentsList.push(appointmentDetails);
           }
         }
@@ -430,6 +445,234 @@ const PetOwnerHome = () => {
     fetchPets();
     fetchAppointments();
   }, []);
+
+  // Appointment Action Handlers
+  const handleCancelAppointment = async (appointmentId) => {
+    try {
+      // Reference to the original appointment
+      const appointmentRef = doc(db, "appointments", appointmentId);
+      const appointmentSnap = await getDoc(appointmentRef);
+  
+      if (!appointmentSnap.exists()) {
+        throw new Error("Appointment not found");
+      }
+  
+      // Get the appointment data
+      const appointmentData = appointmentSnap.data();
+  
+      // Update the appointment with status "Request Cancel" and a cancelledAt timestamp
+      await updateDoc(appointmentRef, {
+        status: "Request Cancel", // Add or update status to "Request Cancel"
+        cancelledAt: serverTimestamp(), // Add timestamp of cancellation request
+      });
+  
+      // Update local state to reflect the new status
+      setAppointments(
+        appointments.map((appt) =>
+          appt.Id === appointmentId
+            ? { ...appt, status: "Request Cancel", cancelledAt: serverTimestamp() }
+            : appt
+        )
+      );
+
+      await fetchAppointments();
+      setShowAppointmentModal(false);
+      alert("Appointment cancellation requested successfully!");
+    } catch (error) {
+      console.error("Error requesting appointment cancellation:", error);
+      alert("Failed to request appointment cancellation.");
+    }
+  };
+
+  const handleRescheduleAppointment = async (appointmentId) => {
+    if (!rescheduleDateTime) {
+      alert("Please select a new date and time.");
+      return;
+    }
+
+    setIsRescheduling(true);
+    try {
+      const newDateTime = new Date(`${rescheduleDate}T${rescheduleTime}`);
+      const newEndTime = new Date(newDateTime.getTime() + 60 * 60 * 1000); // Assuming 1-hour duration
+
+      const appointmentRef = doc(db, "appointments", appointmentId);
+      await updateDoc(appointmentRef, {
+        dateofAppointment: newDateTime,
+      });
+
+      setAppointments(
+        appointments.map((appt) =>
+          appt.Id === appointmentId
+            ? { ...appt, StartTime: newDateTime, EndTime: newEndTime, dateofAppointment: newDateTime }
+            : appt
+        )
+      );
+      setShowAppointmentModal(false);
+      setRescheduleDate("");
+      setRescheduleTime("");
+      setAvailableSlots([]);
+      setShowReschedule(false);
+      alert("Appointment rescheduled successfully!");
+    } catch (error) {
+      console.error("Error rescheduling appointment:", error);
+      alert("Failed to reschedule appointment.");
+    } finally {
+      setIsRescheduling(false);
+    }
+  };
+
+  const handleEventClick = (args) => {
+    args.cancel = true; // Prevent default edit popup
+    const appointment = appointments.find((appt) => appt.Id === args.event.Id);
+    setSelectedAppointment(appointment);
+    setShowAppointmentModal(true);
+    setRescheduleDateTime(null);
+    setAvailableSlots([]);
+    setShowReschedule(false);
+  };
+
+  const handleAppointmentsClick = () => {
+    setActivePanel("appointments");
+    setCurrentView("Agenda"); // Switch to Agenda view when clicked
+  };
+
+  // Reschedulesssss
+  // Fetch all appointments for the clinic and veterinarian
+  // Fetch all appointments for the clinic and veterinarian
+  const fetchTakenAppointments = async (clinicId, veterinarianId) => {
+    try {
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        where("clinic", "==", doc(db, "clinics", clinicId)),
+        where("veterinarianId", "==", veterinarianId)
+      );
+      const querySnapshot = await getDocs(appointmentsQuery);
+      const taken = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        dateofAppointment: doc.data().dateofAppointment.toDate(),
+      }));
+      setTakenAppointments(taken);
+    } catch (error) {
+      console.error("Error fetching taken appointments:", error);
+    }
+  };
+
+  // Fetch veterinarian's schedule from users collection
+  const fetchVetSchedule = async (veterinarianId) => {
+    try {
+      const vetRef = doc(db, "users", veterinarianId);
+      const vetDoc = await getDoc(vetRef);
+      if (vetDoc.exists()) {
+        setVetSchedule(vetDoc.data().schedule || {}); // e.g., { monday: { startTime: "09:00", endTime: "17:00" } }
+      }
+    } catch (error) {
+      console.error("Error fetching vet schedule:", error);
+    }
+  };
+
+  // Check if a date is fully taken
+  const isDateFullyTaken = (date, vetSchedule, takenAppointments) => {
+    const dayOfWeek = date.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
+    const vetDaySchedule = vetSchedule?.[dayOfWeek] || { startTime: "09:00", endTime: "17:00" };
+    const startHour = parseInt(vetDaySchedule.startTime.split(":")[0], 10);
+    const endHour = parseInt(vetDaySchedule.endTime.split(":")[0], 10);
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+
+    if (isToday) return false; // Don’t mark today as fully taken
+
+    const slots = [];
+    for (let hour = startHour; hour < endHour; hour++) {
+      const slotTime = new Date(date);
+      slotTime.setHours(hour, 0, 0, 0);
+      const slotEndTime = new Date(slotTime.getTime() + 60 * 60 * 1000);
+
+      const isTaken = takenAppointments.some((appt) => {
+        const apptStart = appt.dateofAppointment;
+        const apptEnd = new Date(apptStart.getTime() + 60 * 60 * 1000);
+        return slotTime < apptEnd && slotEndTime > apptStart;
+      });
+
+      slots.push(!isTaken);
+    }
+
+    return slots.every((available) => !available); // True if all slots are taken
+  };
+
+  // Generate available time slots for a selected date
+  const generateTimeSlots = (selectedDate, vetSchedule, takenAppointments) => {
+    const slots = [];
+    const dayOfWeek = selectedDate.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
+    const vetDaySchedule = vetSchedule?.[dayOfWeek] || { startTime: "09:00", endTime: "17:00" };
+    const startHour = parseInt(vetDaySchedule.startTime.split(":")[0], 10);
+    const endHour = parseInt(vetDaySchedule.endTime.split(":")[0], 10);
+    const today = new Date();
+    const isToday = selectedDate.toDateString() === today.toDateString();
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      const slotTime = new Date(selectedDate);
+      slotTime.setHours(hour, 0, 0, 0);
+
+      if (isToday && slotTime <= today) continue; // Skip past times for today
+
+      const slotEndTime = new Date(slotTime.getTime() + 60 * 60 * 1000);
+      const isTaken = takenAppointments.some((appt) => {
+        const apptStart = appt.dateofAppointment;
+        const apptEnd = new Date(apptStart.getTime() + 60 * 60 * 1000);
+        return slotTime < apptEnd && slotEndTime > apptStart;
+      });
+
+      if (!isTaken) {
+        slots.push({
+          time: slotTime,
+          display: slotTime.toLocaleString("en-US", { hour: "numeric", hour12: true }),
+        });
+      }
+    }
+    return slots;
+  };
+
+  // Handle date selection
+  const handleDateChange = (args) => {
+    const selectedDate = args.value || new Date();
+    if (!isDateFullyTaken(selectedDate, vetSchedule, takenAppointments)) {
+      setRescheduleDateTime(selectedDate);
+      const slots = generateTimeSlots(selectedDate, vetSchedule, takenAppointments);
+      setAvailableSlots(slots);
+    }
+  };
+
+  // Custom cell rendering for calendar
+  const onRenderCell = (args) => {
+    if (args.elementType === "dateCells") {
+      const date = args.date;
+      const today = new Date();
+      const isToday = date.toDateString() === today.toDateString();
+      const hasAppointments = takenAppointments.some((appt) => {
+        return appt.dateofAppointment.toDateString() === date.toDateString();
+      });
+
+      if (isToday) {
+        args.element.style.backgroundColor = "#ffffff"; // White for today
+      } else if (isDateFullyTaken(date, vetSchedule, takenAppointments)) {
+        args.element.style.backgroundColor = "#ffcccc"; // Light red for fully taken
+        args.element.style.pointerEvents = "none"; // Disable clicking
+      } else if (hasAppointments) {
+        args.element.style.backgroundColor = "#ff0000"; // Red for partially taken
+      } else {
+        args.element.style.backgroundColor = "#90ee90"; // Green for available
+      }
+    }
+  };
+
+  // Fetch data when appointment modal opens
+  useEffect(() => {
+    if (selectedAppointment) {
+      fetchTakenAppointments(selectedAppointment.clinicId, selectedAppointment.veterinarianId);
+      fetchVetSchedule(selectedAppointment.veterinarianId);
+    }
+  }, [selectedAppointment]);
 
   const handlePetClick = (pet) => {
     setSelectedPet(pet);
@@ -515,7 +758,8 @@ const PetOwnerHome = () => {
           </button>
           <button
             className={activePanel === "appointments" ? "active" : ""}
-            onClick={() => setActivePanel("appointments")}
+            // onClick={() => setActivePanel("appointments")}
+            onClick={handleAppointmentsClick}
           >
             Appointments
           </button>
@@ -603,6 +847,7 @@ const PetOwnerHome = () => {
                 <ScheduleComponent
                   width="100%"
                   height="650px"
+                  currentView={currentView}
                   currentDate={new Date()} // March 24, 2025
                   eventSettings={{
                     dataSource: appointments,
@@ -613,17 +858,17 @@ const PetOwnerHome = () => {
                       endTime: { name: "EndTime" },
                     },
                   }}
-                  cellClick={onCellClick}
-                  readOnly={true}
+                  eventClick={handleEventClick} // Handle click on agenda item
+                  // cellClick={onCellClick}
+                  cellClick={(args) => args.cancel = true}
+                  popupOpen={(args) => args.cancel = true} // Disable default edit popup
+                  readOnly={false}
                 >
                   <ViewsDirective>
-                    <ViewDirective option="Day" />
-                    <ViewDirective option="Week" />
-                    <ViewDirective option="WorkWeek" />
                     <ViewDirective option="Month" />
                     <ViewDirective option="Agenda" />
                   </ViewsDirective>
-                  <Inject services={[Day, Week, WorkWeek, Month, Agenda]} />
+                  <Inject services={[Month, Agenda]} />
                 </ScheduleComponent>
               )}
             </div>
@@ -631,16 +876,16 @@ const PetOwnerHome = () => {
           {activePanel === "healthRecords" && (
             <div className="panel-p health-records-panel-p">
               <h3>Health Records</h3>
-                <form className="psearch-bar-container">
-                  <input
-                    type="text"
-                    id="searchRecords"
-                    placeholder="Search records (Pet Name, Clinic, Service, Veterinarian, Remarks, Month)..."
-                    className="search-bar-p"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </form>
+              <form className="psearch-bar-container">
+                <input
+                  type="text"
+                  id="searchRecords"
+                  placeholder="Search records (Pet Name, Clinic, Service, Veterinarian, Remarks, Month)..."
+                  className="search-bar-p"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </form>
               {loading ? (
                 <p>Loading health records...</p>
               ) : (
@@ -945,6 +1190,143 @@ const PetOwnerHome = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+
+      {showAppointmentModal && selectedAppointment && (
+        <div className="modal-overlay-p">
+          <div className="modal-content-p">
+            <span
+              className="close-button-p"
+              onClick={() => setShowAppointmentModal(false)}
+            >
+              ×
+            </span>
+            <h2>Appointment Details</h2>
+            <div className="pet-info-grid-p">
+              <div className="info-item-p">
+                <strong>Pet Name:</strong> {selectedAppointment.petName}
+              </div>
+              <div className="info-item-p">
+                <strong>Clinic:</strong> {selectedAppointment.clinicName}
+              </div>
+              <div className="info-item-p">
+                <strong>Service:</strong> {selectedAppointment.serviceType}
+              </div>
+              <div className="info-item-p">
+                <strong>Veterinarian:</strong> {selectedAppointment.veterinarian}
+              </div>
+              <div className="info-item-p">
+                <strong>Date:</strong> {formatDate(selectedAppointment.StartTime)}
+              </div>
+              <div className="info-item-p">
+                <strong>Remarks:</strong> {selectedAppointment.remarks}
+              </div>
+            </div>
+            <div className="info-item-p">
+              <strong>Notes:</strong> {selectedAppointment.notes}
+            </div>
+
+            {!showReschedule ? (
+              <div className="modal-actions-p">
+                <button
+                  className="submit-btn-p"
+                  onClick={() => handleCancelAppointment(selectedAppointment.Id)}
+                  disabled={isRescheduling}
+                >
+                  Cancel Appointment
+                </button>
+                <button
+                  className="submit-btn-p"
+                  onClick={() => setShowReschedule(!showReschedule)}// Toggle reschedule section
+                  disabled={isRescheduling}
+                >
+                  Reschedule
+                </button>
+                <button
+                  className="modal-close-btn-p"
+                  onClick={() => setShowAppointmentModal(false)}
+                  disabled={isRescheduling}
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3>Reschedule Appointment</h3>
+                <div className="reschedule-container-p">
+                  <div className="calendar-container-p">
+                    <ScheduleComponent
+                      width="100%"
+                      height="300px"
+                      currentView="Month"
+                      selectedDate={rescheduleDateTime || new Date()}
+                      eventSettings={{ dataSource: [] }}
+                      renderCell={onRenderCell}
+                      dateChange={handleDateChange}
+                      cellClick={(args) => (args.cancel = true)}
+                      popupOpen={(args) => (args.cancel = true)}
+                    >
+                      <ViewsDirective>
+                        <ViewDirective option="Month" />
+                      </ViewsDirective>
+                      <Inject services={[Month]} />
+                    </ScheduleComponent>
+                  </div>
+                  <div className="time-picker-container-p">
+                    <label htmlFor="rescheduleTime">Select Time</label>
+                    <select
+                      id="rescheduleTime"
+                      value={rescheduleDateTime ? rescheduleDateTime.toISOString() : ""}
+                      onChange={(e) => {
+                        const selectedTime = new Date(e.target.value);
+                        setRescheduleDateTime(selectedTime);
+                      }}
+                      disabled={!rescheduleDateTime || isRescheduling || availableSlots.length === 0}
+                    >
+                      <option value="">Select a time</option>
+                      {availableSlots.map((slot, index) => (
+                        <option key={index} value={slot.time.toISOString()}>
+                          {slot.display}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-actions-p">
+                  <button
+                    className="submit-btn-p"
+                    onClick={() => handleCancelAppointment(selectedAppointment.Id)}
+                    disabled={isRescheduling}
+                  >
+                    Cancel Appointment
+                  </button>
+                  <button
+                    className="submit-btn-p"
+                    onClick={() => handleRescheduleAppointment(selectedAppointment.Id)}
+                    disabled={isRescheduling}
+                  >
+                    {isRescheduling ? "Rescheduling..." : "Save Reschedule"}
+                  </button>
+                  <button
+                    className="submit-btn-p"
+                    onClick={() => setShowReschedule(!showReschedule)} // Toggle reschedule section
+                    disabled={isRescheduling}
+                  >
+                    Hide Reschedule
+                  </button>
+                  <button
+                    className="modal-close-btn-p"
+                    onClick={() => setShowAppointmentModal(false)}
+                    disabled={isRescheduling}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
