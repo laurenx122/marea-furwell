@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./VeterinaryHome.css";
 import { db, auth } from "../../firebase";
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
+import { collection, query, setDoc,where, getDocs, doc, getDoc, updateDoc,addDoc,deleteDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 import { FaCamera, FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { FaTrash, FaCheck } from "react-icons/fa";
 import {
   ScheduleComponent,
   ViewsDirective,
@@ -51,7 +52,7 @@ const VeterinaryHome = () => {
   const [newRemark, setNewRemark] = useState("");
   const [appointmentDetails, setAppointmentDetails] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-
+  const [pendingAppointments, setPendingAppointments] = useState([]);
   const navigate = useNavigate();
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_VET_IMAGE =
@@ -256,6 +257,141 @@ const VeterinaryHome = () => {
     }
   };
 
+  //pending appointments
+ 
+  const fetchPendingAppointments = async () => {
+    try {
+      setLoading(true);
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const pendingAppointmentsQuery = query(
+          collection(db, "pendingAppointments"),
+          where("veterinarianId", "==", currentUser.uid)
+        );
+        const querySnapshot = await getDocs(pendingAppointmentsQuery);
+  
+        // Map over the documents and resolve references
+        const pendingAppointmentsList = await Promise.all(
+          querySnapshot.docs.map(async (doc) => {
+            const data = doc.data();
+  
+            // Resolve the owner reference
+            const ownerRef = data.owner;
+            let ownerData = {};
+            if (ownerRef) {
+              const ownerDoc = await getDoc(ownerRef);
+              ownerData = ownerDoc.exists() ? ownerDoc.data() : {};
+            }
+  
+            // Resolve the pet reference
+            const petRef = data.petRef;
+            let petData = {};
+            if (petRef) {
+              const petDoc = await getDoc(petRef);
+              petData = petDoc.exists() ? petDoc.data() : {};
+            }
+  
+            // Resolve the clinic reference
+            const clinicRef = data.clinic;
+            let clinicData = {};
+            if (clinicRef) {
+              const clinicDoc = await getDoc(clinicRef);
+              clinicData = clinicDoc.exists() ? clinicDoc.data() : {};
+            }
+  
+            return {
+              id: doc.id,
+              ...data,
+              owner: ownerData, // Replace the reference with actual data
+              petRef: petData, // Replace the reference with actual data
+              clinic: clinicData, // Replace the reference with actual data
+            };
+          })
+        );
+        console.log("Fetched pendingAppointments:", pendingAppointmentsList); // Log the fetched data
+        setPendingAppointments(pendingAppointmentsList);
+      }
+  
+  setLoading(false);
+    } catch (error) {
+      console.error("Error fetching pending appointments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+ //searchQuery in pending
+ const [searchQuery, setSearchQuery] = useState("");
+
+ const filteredPendingAppointments = pendingAppointments.filter((appointment) => {
+   const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
+   return (
+     (appointment.petName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+     ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+     (appointment.serviceType?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+   );
+ });
+ const handleApproveAppointment = async (appointmentId) => {
+  try {
+    console.log("Approving appointment with ID:", appointmentId);
+    console.log("Current pendingAppointments:", pendingAppointments);
+
+    // Find the appointment in the pendingAppointments state using the appointment ID
+    const appointment = pendingAppointments.find((appt) => appt.id === appointmentId);
+
+    if (!appointment) {
+      console.error("Appointment not found in pendingAppointments");
+      return;
+    }
+
+    // Rest of the function...
+    const appointmentData = {
+      clinic: doc(db, "clinics", appointment.clinicId),
+      clinicId: appointment.clinicId,
+      clinicName: appointment.clinicName,
+      createdAt: appointment.createdAt,
+      dateofAppointment: appointment.dateofAppointment,
+      owner: doc(db, "users", appointment.petRef.owner.id),
+      petId: appointment.petId,
+      petName: appointment.petName,
+      petRef: doc(db, "pets", appointment.petId),
+      serviceType: appointment.serviceType,
+      veterinarian: appointment.veterinarian,
+      veterinarianId: appointment.veterinarianId,
+      notes: appointment.notes || "",
+      remarks: appointment.remarks || "",
+    };
+
+    const appointmentsRef = collection(db, "appointments");
+    await addDoc(appointmentsRef, appointmentData);
+
+    const pendingAppointmentRef = doc(db, "pendingAppointments", appointment.id);
+    await deleteDoc(pendingAppointmentRef);
+
+    setPendingAppointments((prev) => prev.filter((appt) => appt.id !== appointment.id));
+    await fetchAppointments();
+
+    alert("Appointment approved successfully!");
+  } catch (error) {
+    console.error("Error approving appointment:", error);
+    alert("Failed to approve the appointment. Please try again.");
+  }
+};
+// Add this function to handle declining an appointment
+const handleDeclineAppointment = async (appointmentId) => {
+  try {
+    // Delete the document from the pendingAppointments collection
+    const pendingAppointmentRef = doc(db, "pendingAppointments", appointmentId);
+    await deleteDoc(pendingAppointmentRef);
+
+    // Update the state to remove the declined appointment
+    setPendingAppointments((prev) => prev.filter((appt) => appt.id !== appointmentId));
+
+    alert("Appointment declined successfully!");
+  } catch (error) {
+    console.error("Error declining appointment:", error);
+    alert("Failed to decline the appointment. Please try again.");
+  }
+};
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -337,7 +473,7 @@ const VeterinaryHome = () => {
       setLoading(false);
     }
   };
-
+ 
   const handleSignOut = () => {
     setIsSignOutConfirmOpen(true);
   };
@@ -410,6 +546,7 @@ const VeterinaryHome = () => {
   useEffect(() => {
     fetchVetInfo();
     fetchAppointments();
+    fetchPendingAppointments(); // Fetch pending appointments
   }, []);
 
   return (
@@ -460,6 +597,12 @@ const VeterinaryHome = () => {
             onClick={() => setActivePanel("healthRecords")}
           >
             Health Records
+          </button>
+          <button
+            className={activePanel === "pendingAppointments" ? "active" : ""}
+            onClick={() => setActivePanel("pendingAppointments")}
+          >
+            Pending Appointments
           </button>
         </div>
         <button className="signout-btn-v" onClick={handleSignOut}>
@@ -601,6 +744,72 @@ const VeterinaryHome = () => {
                   </tbody>
                 </table>
               )}
+            </div>
+          )}
+          {activePanel === "pendingAppointments" && (
+            <div className="panel-v health-records-panel-v">
+              <h3>Pending Appointments</h3>
+              <form className="search-bar-container-v">
+                <input
+                  type="text"
+                  placeholder="Search pending appointments (Pet Name, Owner, Service)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-bar-v"
+                />
+              </form>
+              {loading ? (
+                <p>Loading pending appointments...</p>
+              ) : filteredPendingAppointments.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date of Appointment</th>
+                      <th>Patient Name</th>
+                      <th>Owner</th>
+                      <th>Breed</th>
+                      <th>Age</th>
+                      <th>Service</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                        {filteredPendingAppointments.map((appointment) => {
+                          const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
+                          const petAge = calculateAge(appointment.petRef?.dateofBirth);
+                          console.log("Rendering appointment with ID:", appointment.id); // Add this log
+                          return (
+                            <tr key={appointment.id}>
+                              <td>{formatDate(appointment.dateofAppointment)}</td>
+                              <td>{appointment.petName || "N/A"}</td>
+                              <td>{ownerName}</td>
+                              <td>{appointment.petRef?.Breed || "N/A"}</td>
+                              <td>{petAge}</td>
+                              <td>{appointment.serviceType || "N/A"}</td>
+                              <td>
+                                <div className="v-actions">
+                                  <button
+                                    className="vicon-buttoncheck"
+                                    onClick={() => handleApproveAppointment(appointment.id)}
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    className="vicon-buttondelete"
+                                    onClick={() => handleDeclineAppointment(appointment.id)}
+                                  >
+                                    Decline
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p>No pending appointments found.</p>
+                  )}
             </div>
           )}
         </div>
