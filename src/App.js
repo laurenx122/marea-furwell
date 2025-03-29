@@ -11,7 +11,7 @@ import ClinicLocator from './pages/Home/ClinicLocator';
 import Maps from './pages/Maps/Maps'; 
 import About from './pages/About/About'; 
 import Services from './pages/Services/Services'; 
-import Appointments from './pages/Appointments/Appointments'; 
+// import Appointments from './pages/Appointments/Appointments'; 
 import ClinicSubscribe from './pages/Signup/ClinicSubscribe';
 import ContactUs from './pages/ContactUs/ContactUs'; 
 import ClinicHome from './pages/Clinic/ClinicHome';
@@ -48,7 +48,7 @@ function App() {
           <Route path="/maps" element={<Maps />} />
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
-          <Route path="/appointments" element={<Appointments />} />
+          {/* <Route path="/appointments" element={<Appointments />} /> */}
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/ClinicSubscribe" element={<ClinicSubscribe />} />
           <Route path="/ClinicHome" element={<ClinicHome />} />
