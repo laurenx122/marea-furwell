@@ -6,6 +6,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^7.0.0",
+    "@nivo/bar": "^0.88.0",
     "@nivo/pie": "^0.88.0",
     "@react-google-maps/api": "^2.20.6",
     "@react-leaflet/core": "2.1.0",

@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   getDoc,
   updateDoc,
+  count,
 } from "firebase/firestore";
 import {
   getAuth,
@@ -43,8 +44,7 @@ import "@syncfusion/ej2-navigations/styles/material.css";
 import "@syncfusion/ej2-popups/styles/material.css";
 import "@syncfusion/ej2-react-schedule/styles/material.css";
 import { ResponsivePie } from "@nivo/pie";
-import { useTheme } from "@mui/material";
-// import { mockPieData as data } from "../data/mockData";
+import { ResponsiveBar } from "@nivo/bar";
 
 const ClinicHome = () => {
   // Register Syncfusion license (replace with your valid key if different)
@@ -53,7 +53,8 @@ const ClinicHome = () => {
     // process.env.SYNC_REGISTER_LICENSE
     // "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
   );
-  const [pieData, setPieData] = useState([]);
+  const [speciesData, setSpeciesData] = useState([]);
+  const [ageData, setAgeData] = useState([]);
   const [activePanel, setActivePanel] = useState("patients");
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -641,33 +642,65 @@ const ClinicHome = () => {
   const onCellClick = (args) => {
     args.cancel = true; // Prevent adding new events
   };
-  const fetchPieChartData = async () => {
+
+  const fetchChartData = async () => {
     try {
       setLoading(true);
       const petsQuery = query(collection(db, "pets"));
       const querySnapshot = await getDocs(petsQuery);
-  
+
       const speciesCount = {};
+      const ageCounts = {};
+      let totalPets = 0;
+
       querySnapshot.forEach((doc) => {
         const petData = doc.data();
+        console.log("Pet Data:", petData);
+        // Count species
         const species = petData.Species || "Unknown";
         speciesCount[species] = (speciesCount[species] || 0) + 1;
+        totalPets++;
+
+        // Count ages
+        const dateOfBirth = petData.dateofBirth ? (typeof petData.dateofBirth.toDate === 'function' ? petData.dateofBirth.toDate() : new Date(petData.dateofBirth)) : undefined;
+          if (dateOfBirth) {
+              const now = new Date();
+              const ageInYears = now.getFullYear() - dateOfBirth.getFullYear();
+              ageCounts[ageInYears] = (ageCounts[ageInYears] || 0) + 1;
+          }
       });
-  
-      const formattedData = Object.entries(speciesCount).map(([key, value]) => ({
+
+      console.log("Species Count:", speciesCount); // ADD THIS LINE
+      console.log("Age Counts:", ageCounts); // ADD THIS LINE
+        
+      // Format species data for pie chart
+      const formattedSpeciesData = Object.entries(speciesCount).map(([key, value]) => ({
         id: key,
         label: key,
-        value: value,
+        count: value,
+        value: ((value / totalPets) * 100),
+        formattedValue: `${((value / totalPets) * 100)}%`
       }));
-  
-      setPieData(formattedData);
+
+      // Format age data for pie chart
+      const formattedAgeData = Object.entries(ageCounts).map(([age, count]) => ({
+        id: `${age} years`,
+        label: `${age} years`,
+        value: count,
+      }));
+
+      setSpeciesData(formattedSpeciesData);
+      setAgeData(formattedAgeData);
+
     } catch (error) {
-      console.error("Error fetching pie chart data:", error);
-      setPieData([]);
+      console.error("Error fetching chart data:", error);
+      setSpeciesData([]);
+      setAgeData([]);
     } finally {
       setLoading(false);
     }
   };
+  
 
   useEffect(() => {
     const initializeData = async () => {
@@ -675,8 +708,8 @@ const ClinicHome = () => {
       await fetchClinicInfo();
       fetchPatients();
       fetchAppointments(); // Ensure this is included
-      fetchVeterinarians();
-      fetchPieChartData();
+ // Ensure this is included      fetchVeterinarians();
+      fetchChartData();
     };
     initializeData();
   }, [userFirstName]);
@@ -991,135 +1024,226 @@ const ClinicHome = () => {
               {loading ? (
                 <p>Loading analytics...</p>
               ) : (
-              <div style={{ height: "500px", width: "100%", justifyContent: "flex-start" }}>
-                <ResponsivePie
-                data={pieData}
-                margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
-                innerRadius={0.5}
-                padAngle={0.7}
-                cornerRadius={3}
-                activeOuterRadiusOffset={8}
-                colors={{ scheme: 'red_purple' }}
-                borderWidth={1}
-                borderColor={{
-                    from: 'color',
-                    modifiers: [
-                        [
-                            'darker',
-                            0.2
-                        ]
-                    ]
-                }}
-                arcLinkLabelsSkipAngle={10}
-                arcLinkLabelsTextColor="#333333"
-                arcLinkLabelsThickness={2}
-                arcLinkLabelsColor={{ from: 'color' }}
-                arcLabelsSkipAngle={10}
-                arcLabelsTextColor={{
-                    from: 'color',
-                    modifiers: [
-                        [
-                            'darker',
-                            2
-                        ]
-                    ]
-                }}
-                defs={[
-                    {
-                        id: 'dots',
-                        type: 'patternDots',
-                        background: 'inherit',
-                        color: 'rgba(255, 255, 255, 0.3)',
-                        size: 4,
-                        padding: 1,
-                        stagger: true
-                    },
-                    {
-                        id: 'lines',
-                        type: 'patternLines',
-                        background: 'inherit',
-                        color: 'rgba(255, 255, 255, 0.3)',
-                        rotation: -45,
-                        lineWidth: 6,
-                        spacing: 10
-                    }
-                ]}
-                fill={[
-                    {
-                        match: {
-                            id: 'ruby'
-                        },
-                        id: 'dots'
-                    },
-                    {
-                        match: {
-                            id: 'c'
-                        },
-                        id: 'dots'
-                    },
-                    {
-                        match: {
-                            id: 'go'
-                        },
-                        id: 'dots'
-                    },
-                    {
-                        match: {
-                            id: 'python'
-                        },
-                        id: 'dots'
-                    },
-                    {
-                        match: {
-                            id: 'scala'
-                        },
-                        id: 'lines'
-                    },
-                    {
-                        match: {
-                            id: 'lisp'
-                        },
-                        id: 'lines'
-                    },
-                    {
-                        match: {
-                            id: 'elixir'
-                        },
-                        id: 'lines'
-                    },
-                    {
-                        match: {
-                            id: 'javascript'
-                        },
-                        id: 'lines'
-                    }
-                ]}
-                legends={[
-                    {
-                        anchor: 'bottom',
-                        direction: 'row',
-                        justify: false,
-                        translateX: 0,
-                        translateY: 56,
-                        itemsSpacing: 0,
-                        itemWidth: 100,
-                        itemHeight: 18,
-                        itemTextColor: '#999',
-                        itemDirection: 'left-to-right',
-                        itemOpacity: 1,
-                        symbolSize: 18,
-                        symbolShape: 'circle',
-                        effects: [
+                <div style={{ display: 'flex', width: '100%' }}>
+                  <div style={{ height: "400px", width: "50%" }}>
+                  <div><h2 style= {{marginBottom: "-20px"}}>Age Distribution of Pets</h2></div>
+                  {/* change this to another chart bc why did i use another pie in here??? */}
+                    <ResponsivePie
+                        data={ageData}
+                        margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                        activeOuterRadiusOffset={8}
+                        colors={{ scheme: 'pink_yellowGreen' }}
+                        borderWidth={1}
+                        borderColor={{
+                            from: 'color',
+                            modifiers: [
+                                ['darker', 0.2]
+                            ]
+                        }}
+                        arcLinkLabelsSkipAngle={10}
+                        arcLinkLabelsTextColor="#333333"
+                        arcLinkLabelsThickness={2}
+                        arcLinkLabelsColor={{ from: 'color' }}
+                        arcLabelsSkipAngle={10}
+                        arcLabelsTextColor={{
+                            from: 'color',
+                            modifiers: [['darker', 2]]
+                        }}
+                        defs={[
                             {
-                                on: 'hover',
-                                style: {
-                                    itemTextColor: '#000'
-                                }
+                                id: 'dots',
+                                type: 'patternDots',
+                                background: 'inherit',
+                                color: 'rgba(255, 255, 255, 0.3)',
+                                size: 4,
+                                padding: 1,
+                                stagger: true
+                            },
+                            {
+                                id: 'lines',
+                                type: 'patternLines',
+                                background: 'inherit',
+                                color: 'rgba(255, 255, 255, 0.3)',
+                                rotation: -45,
+                                lineWidth: 6,
+                                spacing: 10
                             }
+                        ]}
+                        fill={[
+                            { match: { id: 'ruby' }, id: 'dots' },
+                            { match: { id: 'c' }, id: 'dots' },
+                            { match: { id: 'go' }, id: 'dots' },
+                            { match: { id: 'python' }, id: 'dots' },
+                            { match: { id: 'scala' }, id: 'lines' },
+                            { match: { id: 'lisp' }, id: 'lines' },
+                            { match: { id: 'elixir' }, id: 'lines' },
+                            { match: { id: 'javascript' }, id: 'lines' }
+                        ]}
+                        legends={[
+                            {
+                                anchor: 'bottom',
+                                direction: 'row',
+                                justify: false,
+                                translateX: 0,
+                                translateY: 56,
+                                itemsSpacing: 0,
+                                itemWidth: 100,
+                                itemHeight: 18,
+                                itemTextColor: '#999',
+                                itemDirection: 'left-to-right',
+                                itemOpacity: 1,
+                                symbolSize: 18,
+                                symbolShape: 'circle',
+                                effects: [{ on: 'hover', style: { itemTextColor: '#000' } }]
+                            }
+                        ]}
+                    />
+                </div>
+                <div style={{ height: "700px", width: "75%" }}>
+                  <div><h2 style= {{textAlign: "center", marginBottom: "-30px"}}>Pet Type Distribution</h2></div>
+                <ResponsivePie
+                    data={speciesData}
+                    margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+                    innerRadius={0.5}
+                    padAngle={0.7}
+                    cornerRadius={3}
+                    activeOuterRadiusOffset={8}
+                    colors={{ scheme: 'red_purple' }}
+                    borderWidth={1}
+                    borderColor={{
+                        from: 'color',
+                        modifiers: [
+                            [
+                                'darker',
+                                0.2
+                            ]
                         ]
-                    }
-                ]}
-            ></ResponsivePie>
+                    }}
+                    arcLinkLabelsSkipAngle={10}
+                    arcLinkLabelsTextColor="#333333"
+                    arcLinkLabelsThickness={2}
+                    arcLinkLabelsColor={{ from: 'color' }}
+                    arcLabelsSkipAngle={10}
+                    arcLabelsTextColor={{
+                        from: 'color',
+                        modifiers: [
+                            [
+                                'darker',
+                                2
+                            ]
+                        ]
+                    }}
+                    arcLabel={(d) => d.data.formattedValue} // Use formattedValue here
+                    tooltip={({ datum }) => ( // Custom tooltip
+                      <div
+                          style={{
+                              padding: '12px 16px',
+                              color: '#333',
+                              background: '#fff',
+                              borderRadius: '2px',
+                              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.15)',
+                          }}
+                      >
+                          <strong>{datum.id}</strong>: {datum.data.count}
+                      </div>
+                  )}
+                    defs={[
+                        {
+                            id: 'dots',
+                            type: 'patternDots',
+                            background: 'inherit',
+                            color: 'rgba(255, 255, 255, 0.3)',
+                            size: 4,
+                            padding: 1,
+                            stagger: true
+                        },
+                        {
+                            id: 'lines',
+                            type: 'patternLines',
+                            background: 'inherit',
+                            color: 'rgba(255, 255, 255, 0.3)',
+                            rotation: -45,
+                            lineWidth: 6,
+                            spacing: 10
+                        }
+                    ]}
+                    fill={[
+                        {
+                            match: {
+                                id: 'ruby'
+                            },
+                            id: 'dots'
+                        },
+                        {
+                            match: {
+                                id: 'c'
+                            },
+                            id: 'dots'
+                        },
+                        {
+                            match: {
+                                id: 'go'
+                            },
+                            id: 'dots'
+                        },
+                        {
+                            match: {
+                                id: 'python'
+                            },
+                            id: 'dots'
+                        },
+                        {
+                            match: {
+                                id: 'scala'
+                            },
+                            id: 'lines'
+                        },
+                        {
+                            match: {
+                                id: 'lisp'
+                            },
+                            id: 'lines'
+                        },
+                        {
+                            match: {
+                                id: 'elixir'
+                            },
+                            id: 'lines'
+                        },
+                        {
+                            match: {
+                                id: 'javascript'
+                            },
+                            id: 'lines'
+                        }
+                    ]}
+                    legends={[
+                        {
+                            anchor: 'bottom',
+                            direction: 'row',
+                            justify: false,
+                            translateX: 0,
+                            translateY: 56,
+                            itemsSpacing: 0,
+                            itemWidth: 100,
+                            itemHeight: 18,
+                            itemTextColor: '#999',
+                            itemDirection: 'left-to-right',
+                            itemOpacity: 1,
+                            symbolSize: 18,
+                            symbolShape: 'circle',
+                            effects: [
+                                {
+                                    on: 'hover',
+                                    style: {
+                                        itemTextColor: '#000'
+                                    }
+                                }
+                            ]
+                        }
+                    ]}
+                ></ResponsivePie>
+              </div>
             </div>
               )}
               
