@@ -299,35 +299,34 @@ const ClinicDetails = () => {
       }
     }
   };
-
   const handleSubmitAppointment = async (e) => {
     e.preventDefault();
-
+  
     const { petId, veterinarianId, serviceType, dateofAppointment, notes } = appointmentData;
     if (!petId || !veterinarianId || !serviceType || !dateofAppointment) {
       setBookingStatus({
         loading: false,
         success: false,
-        error: "Please fill in all required fields"
+        error: "Please fill in all required fields",
       });
       return;
     }
-
+  
     setBookingStatus({ loading: true, success: false, error: null });
-
+  
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("You must be logged in to book an appointment");
-
+  
       const selectedPet = userPets.find((pet) => pet.id === petId);
       if (!selectedPet) throw new Error("Selected pet not found");
-
+  
       const ownerRef = doc(db, "users", currentUser.uid);
       const petRef = doc(db, "pets", petId);
       const clinicRef = doc(db, "clinics", clinicId);
-      //const vetRef = doc(db, "users", veterinarianId);
-
-      const appointmentRef = await addDoc(collection(db, "appointments"), {
+  
+      // Save to pendingAppointments collection instead of appointments
+      const pendingAppointmentRef = await addDoc(collection(db, "pendingAppointments"), {
         petId,
         petName: selectedPet.petName,
         petRef,
@@ -341,24 +340,26 @@ const ClinicDetails = () => {
         serviceType,
         dateofAppointment: new Date(dateofAppointment),
         notes: notes || "",
-        createdAt: serverTimestamp()
+        status: "pending", // Add a status field to track approval
+        createdAt: serverTimestamp(),
       });
-
+  
       setBookingStatus({ loading: false, success: true, error: null });
-
+  
       setTimeout(() => {
         setShowModal(false);
         setBookingStatus({ loading: false, success: false, error: null });
       }, 3000);
     } catch (error) {
-      console.error("Error creating appointment:", error);
+      console.error("Error creating pending appointment:", error);
       setBookingStatus({
         loading: false,
         success: false,
-        error: error.message || "Failed to book appointment. Please try again."
+        error: error.message || "Failed to book appointment. Please try again.",
       });
     }
   };
+  
 
   const handleLoginRedirect = () => {
     setShowLoginModal(false);

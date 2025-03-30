@@ -264,9 +264,11 @@ const VeterinaryHome = () => {
       setLoading(true);
       const currentUser = auth.currentUser;
       if (currentUser) {
+        // Query the appointments collection where status is "pending" and veterinarianId matches the current user
         const pendingAppointmentsQuery = query(
-          collection(db, "pendingAppointments"),
-          where("veterinarianId", "==", currentUser.uid)
+          collection(db, "appointments"),
+          where("status", "==", "pending"), // Filter by status "pending"
+          where("veterinarianId", "==", currentUser.uid) // Filter by the current veterinarian's ID
         );
         const querySnapshot = await getDocs(pendingAppointmentsQuery);
   
@@ -308,11 +310,10 @@ const VeterinaryHome = () => {
             };
           })
         );
+  
         console.log("Fetched pendingAppointments:", pendingAppointmentsList); // Log the fetched data
         setPendingAppointments(pendingAppointmentsList);
       }
-  
-  setLoading(false);
     } catch (error) {
       console.error("Error fetching pending appointments:", error);
     } finally {
@@ -330,10 +331,10 @@ const VeterinaryHome = () => {
      (appointment.serviceType?.toLowerCase() || "").includes(searchQuery.toLowerCase())
    );
  });
+
  const handleApproveAppointment = async (appointmentId) => {
   try {
     console.log("Approving appointment with ID:", appointmentId);
-    console.log("Current pendingAppointments:", pendingAppointments);
 
     // Find the appointment in the pendingAppointments state using the appointment ID
     const appointment = pendingAppointments.find((appt) => appt.id === appointmentId);
@@ -343,33 +344,16 @@ const VeterinaryHome = () => {
       return;
     }
 
-    // Rest of the function...
-    const appointmentData = {
-      clinic: doc(db, "clinics", appointment.clinicId),
-      clinicId: appointment.clinicId,
-      clinicName: appointment.clinicName,
-      createdAt: appointment.createdAt,
-      dateofAppointment: appointment.dateofAppointment,
-      owner: doc(db, "users", appointment.petRef.owner.id),
-      petId: appointment.petId,
-      petName: appointment.petName,
-      petRef: doc(db, "pets", appointment.petId),
-      serviceType: appointment.serviceType,
-      veterinarian: appointment.veterinarian,
-      veterinarianId: appointment.veterinarianId,
-      notes: appointment.notes || "",
-      remarks: appointment.remarks || "",
-    };
+    // Update the status of the appointment to "accepted"
+    const appointmentRef = doc(db, "appointments", appointmentId);
+    await updateDoc(appointmentRef, { status: "Accepted" });
 
-    const appointmentsRef = collection(db, "appointments");
-    await addDoc(appointmentsRef, appointmentData);
-
-    const pendingAppointmentRef = doc(db, "pendingAppointments", appointment.id);
-    await deleteDoc(pendingAppointmentRef);
-
-    setPendingAppointments((prev) => prev.filter((appt) => appt.id !== appointment.id));
+    // Update the state to reflect the change
+    setPendingAppointments((prev) =>
+      prev.filter((appt) => appt.id !== appointmentId)
+    );
+    
     await fetchAppointments();
-
     alert("Appointment approved successfully!");
   } catch (error) {
     console.error("Error approving appointment:", error);
@@ -379,12 +363,24 @@ const VeterinaryHome = () => {
 // Add this function to handle declining an appointment
 const handleDeclineAppointment = async (appointmentId) => {
   try {
-    // Delete the document from the pendingAppointments collection
-    const pendingAppointmentRef = doc(db, "pendingAppointments", appointmentId);
-    await deleteDoc(pendingAppointmentRef);
+    console.log("Declining appointment with ID:", appointmentId);
 
-    // Update the state to remove the declined appointment
-    setPendingAppointments((prev) => prev.filter((appt) => appt.id !== appointmentId));
+    // Find the appointment in the pendingAppointments state using the appointment ID
+    const appointment = pendingAppointments.find((appt) => appt.id === appointmentId);
+
+    if (!appointment) {
+      console.error("Appointment not found in pendingAppointments");
+      return;
+    }
+
+    // Update the status of the appointment to "Declined"
+    const appointmentRef = doc(db, "appointments", appointmentId);
+    await updateDoc(appointmentRef, { status: "Declined" });
+
+    // Remove the declined appointment from the pendingAppointments state
+    setPendingAppointments((prev) =>
+      prev.filter((appt) => appt.id !== appointmentId)
+    );
 
     alert("Appointment declined successfully!");
   } catch (error) {
@@ -406,7 +402,8 @@ const handleDeclineAppointment = async (appointmentId) => {
 
         const appointmentsQuery = query(
           collection(db, "appointments"),
-          where("veterinarianId", "==", currentUser.uid)
+          where("veterinarianId", "==", currentUser.uid),
+          where("status", "==", "Accepted") // Filter by status "accepted"
         );
         const querySnapshot = await getDocs(appointmentsQuery);
         const currentAppointmentsList = [];

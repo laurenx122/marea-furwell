@@ -447,8 +447,7 @@ const PetOwnerHome = () => {
         // Fetch current appointments (Accepted or Request Cancel)
         const appointmentsQuery = query(
           collection(db, "appointments"),
-          where("owner", "==", doc(db, "users", currentUser.uid)),
-          where("status", "in", ["Accepted", "Request Cancel"])
+          where("owner", "==", doc(db, "users", currentUser.uid))
         );
         const querySnapshot = await getDocs(appointmentsQuery);
         console.log("Appointments fetched with status Accepted/Request Cancel:", querySnapshot.docs.length);
