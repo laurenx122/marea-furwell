@@ -50,7 +50,6 @@ const PetOwnerHome = () => {
   const [activePanel, setActivePanel] = useState("petDetails");
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [pastAppointments, setPastAppointments] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -84,16 +83,14 @@ const PetOwnerHome = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [currentView, setCurrentView] = useState("Month");
-  const [rescheduleDate, setRescheduleDate] = useState("");
-  const [rescheduleTime, setRescheduleTime] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
 
   const [clickedDate, setClickedDate] = useState(null);
-  const [rescheduleDateTime, setRescheduleDateTime] = useState(null); // Combined date-time for rescheduling
+  const [rescheduleDateTime, setRescheduleDateTime] = useState(null);
   const [showReschedule, setShowReschedule] = useState(false);
   const [selectedRescheduleSlot, setSelectedRescheduleSlot] = useState(null);
-  const [availableSlots, setAvailableSlots] = useState([]); // Available time slots for selected date
-  const [takenAppointments, setTakenAppointments] = useState([]); // All taken appointments for the clinic and vet
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [takenAppointments, setTakenAppointments] = useState([]);
   const [vetSchedule, setVetSchedule] = useState(null);
 
   const UPLOAD_PRESET = "furwell";
@@ -224,6 +221,13 @@ const PetOwnerHome = () => {
       setPetImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
+  };
+
+  const handleSeeHistory = (petName) => {
+    setActivePanel("healthRecords");
+    setSearchQuery(petName);
+    setShowModal(false);
+    console.log(`Switched to Health Records with search query: "${petName}"`);
   };
 
   const handleModalImageChange = (e) => {
@@ -436,7 +440,7 @@ const PetOwnerHome = () => {
       const currentUser = auth.currentUser;
       if (currentUser) {
         console.log("Fetching appointments for user:", currentUser.uid);
-  
+
         // Fetch current appointments (Accepted or Request Cancel)
         const appointmentsQuery = query(
           collection(db, "appointments"),
@@ -445,7 +449,7 @@ const PetOwnerHome = () => {
         );
         const querySnapshot = await getDocs(appointmentsQuery);
         console.log("Appointments fetched with status Accepted/Request Cancel:", querySnapshot.docs.length);
-  
+
         // Fetch all appointments to include Cancelled and past appointments
         const allAppointmentsQuery = query(
           collection(db, "appointments"),
@@ -453,19 +457,19 @@ const PetOwnerHome = () => {
         );
         const allSnapshot = await getDocs(allAppointmentsQuery);
         console.log("All appointments fetched:", allSnapshot.docs.length);
-  
+
         const currentAppointmentsList = [];
         const pastAppointmentsList = [];
         const today = new Date();
         console.log("Today’s date and time:", today.toISOString());
-  
+
         // Process current appointments (Accepted only for future/present)
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
           const clinicDoc = await getDoc(data.clinic);
           const startTime = data.dateofAppointment.toDate();
           const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-  
+
           const appointmentDetails = {
             Id: doc.id,
             Subject: `${data.petName || "Unknown Pet"} - ${data.serviceType || "N/A"}`,
@@ -482,13 +486,13 @@ const PetOwnerHome = () => {
             status: data.status || "N/A",
             dateofAppointment: startTime,
           };
-  
+
           console.log(
             "From Accepted/Request Cancel query - ID:", doc.id,
             "Date:", startTime.toISOString(),
             "Firestore Status:", data.status
           );
-  
+
           if (startTime >= today && appointmentDetails.status === "Accepted") {
             currentAppointmentsList.push(appointmentDetails);
             console.log(
@@ -509,19 +513,19 @@ const PetOwnerHome = () => {
               appointmentDetails.Id,
               "Date:", startTime.toISOString(),
               "Firestore Status:", data.status,
-              "→ Table Status:", 
+              "→ Table Status:",
               data.status === "Request Cancel" ? "Cancel Requested" : "Done"
             );
           }
         }
-  
+
         // Process all appointments (to include Cancelled and other past appointments)
         for (const doc of allSnapshot.docs) {
           const data = doc.data();
           const clinicDoc = await getDoc(data.clinic);
           const startTime = data.dateofAppointment.toDate();
           const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-  
+
           const appointmentDetails = {
             Id: doc.id,
             Subject: `${data.petName || "Unknown Pet"} - ${data.serviceType || "N/A"}`,
@@ -538,7 +542,7 @@ const PetOwnerHome = () => {
             status: data.status || "N/A",
             dateofAppointment: startTime,
           };
-  
+
           // Include all Cancelled appointments (past, present, or future)
           if (data.status === "Cancelled") {
             const isDuplicate = pastAppointmentsList.some((appt) => appt.Id === doc.id);
@@ -555,7 +559,7 @@ const PetOwnerHome = () => {
                 "→ Table Status:", "Cancelled"
               );
             }
-          } 
+          }
           // Include only past appointments for other statuses
           else if (startTime < today) {
             const isDuplicate = pastAppointmentsList.some((appt) => appt.Id === doc.id);
@@ -570,16 +574,16 @@ const PetOwnerHome = () => {
                 appointmentDetails.Id,
                 "Date:", startTime.toISOString(),
                 "Firestore Status:", data.status,
-                "→ Table Status:", 
+                "→ Table Status:",
                 data.status === "Request Cancel" ? "Cancel Requested" : "Done"
               );
             }
           }
         }
-  
+
         console.log("Final Current Appointments:", currentAppointmentsList);
         console.log("Final Past Appointments (Health Records):", pastAppointmentsList);
-  
+
         setAppointments(currentAppointmentsList);
         setPastAppointments(pastAppointmentsList);
       } else {
@@ -1185,6 +1189,13 @@ const PetOwnerHome = () => {
               </div>
             </div>
             <div className="modal-actions-p">
+              <button
+                className="modal-close-btn-p"
+                onClick={() => handleSeeHistory(selectedPet.petName)}
+                disabled={isSavingImage}
+              >
+                See History
+              </button>
               <button
                 className="modal-close-btn-p"
                 onClick={handleSavePetImage}
