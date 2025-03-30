@@ -44,7 +44,7 @@ import "@syncfusion/ej2-navigations/styles/material.css";
 import "@syncfusion/ej2-popups/styles/material.css";
 import "@syncfusion/ej2-react-schedule/styles/material.css";
 import { ResponsivePie } from "@nivo/pie";
-import { ResponsiveBar } from "@nivo/bar";
+// import { ResponsiveBar } from "@nivo/bar";
 
 const ClinicHome = () => {
   // Register Syncfusion license (replace with your valid key if different)
