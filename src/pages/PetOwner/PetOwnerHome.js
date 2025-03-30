@@ -435,22 +435,37 @@ const PetOwnerHome = () => {
       setLoading(true);
       const currentUser = auth.currentUser;
       if (currentUser) {
+        console.log("Fetching appointments for user:", currentUser.uid);
+  
+        // Fetch current appointments (Accepted or Request Cancel)
         const appointmentsQuery = query(
           collection(db, "appointments"),
           where("owner", "==", doc(db, "users", currentUser.uid)),
-          where("status", "in", ["Accepted", "Request Cancel"]) // para ma di ma fetch ang request reschedule
+          where("status", "in", ["Accepted", "Request Cancel"])
         );
         const querySnapshot = await getDocs(appointmentsQuery);
+        console.log("Appointments fetched with status Accepted/Request Cancel:", querySnapshot.docs.length);
+  
+        // Fetch all appointments to include Cancelled and past appointments
+        const allAppointmentsQuery = query(
+          collection(db, "appointments"),
+          where("owner", "==", doc(db, "users", currentUser.uid))
+        );
+        const allSnapshot = await getDocs(allAppointmentsQuery);
+        console.log("All appointments fetched:", allSnapshot.docs.length);
+  
         const currentAppointmentsList = [];
         const pastAppointmentsList = [];
-        const today = new Date(); // Current date as per context
-
+        const today = new Date();
+        console.log("Today’s date and time:", today.toISOString());
+  
+        // Process current appointments (Accepted only for future/present)
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
           const clinicDoc = await getDoc(data.clinic);
           const startTime = data.dateofAppointment.toDate();
-          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Assuming 1-hour duration
-
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+  
           const appointmentDetails = {
             Id: doc.id,
             Subject: `${data.petName || "Unknown Pet"} - ${data.serviceType || "N/A"}`,
@@ -467,16 +482,108 @@ const PetOwnerHome = () => {
             status: data.status || "N/A",
             dateofAppointment: startTime,
           };
-
-          if (startTime < today) {
-            pastAppointmentsList.push(appointmentDetails);
-          } else if (appointmentDetails.status === "Accepted") {
+  
+          console.log(
+            "From Accepted/Request Cancel query - ID:", doc.id,
+            "Date:", startTime.toISOString(),
+            "Firestore Status:", data.status
+          );
+  
+          if (startTime >= today && appointmentDetails.status === "Accepted") {
             currentAppointmentsList.push(appointmentDetails);
+            console.log(
+              "Added to currentAppointmentsList:",
+              appointmentDetails.Id,
+              "Date:", startTime.toISOString(),
+              "Status:", appointmentDetails.status
+            );
+          } else if (startTime < today) {
+            // Past appointments from this query (Request Cancel or Accepted)
+            pastAppointmentsList.push({
+              ...appointmentDetails,
+              status:
+                data.status === "Request Cancel" ? "Cancel Requested" : "Done"
+            });
+            console.log(
+              "Moved to pastAppointmentsList (from Accepted/Request Cancel):",
+              appointmentDetails.Id,
+              "Date:", startTime.toISOString(),
+              "Firestore Status:", data.status,
+              "→ Table Status:", 
+              data.status === "Request Cancel" ? "Cancel Requested" : "Done"
+            );
           }
         }
-
+  
+        // Process all appointments (to include Cancelled and other past appointments)
+        for (const doc of allSnapshot.docs) {
+          const data = doc.data();
+          const clinicDoc = await getDoc(data.clinic);
+          const startTime = data.dateofAppointment.toDate();
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+  
+          const appointmentDetails = {
+            Id: doc.id,
+            Subject: `${data.petName || "Unknown Pet"} - ${data.serviceType || "N/A"}`,
+            StartTime: startTime,
+            EndTime: endTime,
+            petName: data.petName || "Unknown Pet",
+            clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+            clinicId: data.clinic.id,
+            serviceType: data.serviceType || "N/A",
+            veterinarian: data.veterinarian || "N/A",
+            veterinarianId: data.veterinarianId,
+            remarks: data.remarks || "No remarks",
+            notes: data.notes || "No notes",
+            status: data.status || "N/A",
+            dateofAppointment: startTime,
+          };
+  
+          // Include all Cancelled appointments (past, present, or future)
+          if (data.status === "Cancelled") {
+            const isDuplicate = pastAppointmentsList.some((appt) => appt.Id === doc.id);
+            if (!isDuplicate) {
+              pastAppointmentsList.push({
+                ...appointmentDetails,
+                status: "Cancelled"
+              });
+              console.log(
+                "Added to pastAppointmentsList (Cancelled, any date):",
+                appointmentDetails.Id,
+                "Date:", startTime.toISOString(),
+                "Firestore Status:", data.status,
+                "→ Table Status:", "Cancelled"
+              );
+            }
+          } 
+          // Include only past appointments for other statuses
+          else if (startTime < today) {
+            const isDuplicate = pastAppointmentsList.some((appt) => appt.Id === doc.id);
+            if (!isDuplicate) {
+              pastAppointmentsList.push({
+                ...appointmentDetails,
+                status:
+                  data.status === "Request Cancel" ? "Cancel Requested" : "Done"
+              });
+              console.log(
+                "Added to pastAppointmentsList (past, other statuses):",
+                appointmentDetails.Id,
+                "Date:", startTime.toISOString(),
+                "Firestore Status:", data.status,
+                "→ Table Status:", 
+                data.status === "Request Cancel" ? "Cancel Requested" : "Done"
+              );
+            }
+          }
+        }
+  
+        console.log("Final Current Appointments:", currentAppointmentsList);
+        console.log("Final Past Appointments (Health Records):", pastAppointmentsList);
+  
         setAppointments(currentAppointmentsList);
         setPastAppointments(pastAppointmentsList);
+      } else {
+        console.log("No current user found, skipping fetch.");
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -745,7 +852,7 @@ const PetOwnerHome = () => {
       setIsRescheduling(false);
     }
   };
-  
+
 
 
   // Fetch data when appointment modal opens
@@ -955,6 +1062,7 @@ const PetOwnerHome = () => {
               )}
             </div>
           )}
+
           {activePanel === "healthRecords" && (
             <div className="panel-p health-records-panel-p">
               <h3>Health Records</h3>
@@ -962,7 +1070,7 @@ const PetOwnerHome = () => {
                 <input
                   type="text"
                   id="searchRecords"
-                  placeholder="Search records (Pet Name, Clinic, Service, Veterinarian, Remarks, Month)..."
+                  placeholder="Search records (Pet Name, Clinic, Service, Veterinarian, Remarks, Status, Month)..."
                   className="search-bar-p"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -971,38 +1079,45 @@ const PetOwnerHome = () => {
               {loading ? (
                 <p>Loading health records...</p>
               ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date of Appointment</th>
-                      <th>Pet Name</th>
-                      <th>Cinic</th>
-                      <th>Service</th>
-                      <th>Veterinarian</th>
-                      <th>Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAppointments.length > 0 ? (
-                      [...filteredAppointments] // Create a shallow copy to avoid mutating the original array
-                        .sort((a, b) => b.dateofAppointment - a.dateofAppointment) // Sort by date descending
-                        .map((record) => (
-                          <tr key={record.Id}>
-                            <td>{formatDate(record.dateofAppointment)}</td>
-                            <td>{record.petName}</td>
-                            <td>{record.clinicName}</td>
-                            <td>{record.serviceType}</td>
-                            <td>{record.veterinarian}</td>
-                            <td>{record.remarks}</td>
-                          </tr>
-                        ))
-                    ) : (
+                <>
+                  {console.log("pastAppointments before filtering:", pastAppointments)}
+                  {console.log("searchQuery:", searchQuery)}
+                  {console.log("filteredAppointments:", filteredAppointments)}
+                  <table>
+                    <thead>
                       <tr>
-                        <td colSpan="5">No matching records found</td>
+                        <th>Date of Appointment</th>
+                        <th>Pet Name</th>
+                        <th>Clinic</th> {/* Fixed typo: "Cinic" to "Clinic" */}
+                        <th>Service</th>
+                        <th>Veterinarian</th>
+                        <th>Remarks</th>
+                        <th>Status</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {filteredAppointments.length > 0 ? (
+                        [...filteredAppointments]
+                          .sort((a, b) => b.dateofAppointment - a.dateofAppointment)
+                          .map((record) => (
+                            <tr key={record.Id}>
+                              <td>{formatDate(record.dateofAppointment)}</td>
+                              <td>{record.petName}</td>
+                              <td>{record.clinicName}</td>
+                              <td>{record.serviceType}</td>
+                              <td>{record.veterinarian}</td>
+                              <td>{record.remarks}</td>
+                              <td>{record.status}</td>
+                            </tr>
+                          ))
+                      ) : (
+                        <tr>
+                          <td colSpan="7">No matching records found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </>
               )}
             </div>
           )}
