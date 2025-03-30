@@ -537,3 +537,47 @@ form {
 }
 
 
+
+
+
+
+/* React Calendar */
+/* Calendar container styling */
+.calendar-container-p {
+  max-width: 300px; /* Adjust as needed */
+  margin: 0 auto;
+}
+
+/* React-Calendar custom tile styles */
+.react-calendar__tile.clicked-date {
+  background-color: lightblue !important;
+  color: black;
+}
+
+.react-calendar__tile.today-date {
+  background-color: #ffffff !important;
+  color: black;
+  border: 1px solid #000;
+}
+
+.react-calendar__tile.disabled-date {
+  background-color: #d3d3d3 !important;
+  color: #666;
+  pointer-events: none;
+}
+
+.react-calendar__tile.fully-taken-date {
+  background-color: #ffcccc !important;
+  color: black;
+  pointer-events: none;
+}
+
+.react-calendar__tile.available-date {
+  background-color: #90ee90 !important;
+  color: black;
+}
+
+/* Ensure clicked date takes precedence */
+.react-calendar__tile.clicked-date:hover {
+  background-color: lightblue !important;
+}
