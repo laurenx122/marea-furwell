@@ -369,7 +369,7 @@ const PetOwnerHome = () => {
       if (currentUser) {
         const appointmentsQuery = query(
           collection(db, "appointments"),
-          where("owner", "==", doc(db, "users", currentUser.uid))
+          where("owner", "==", doc(db, "users", currentUser.uid)),
         );
         const querySnapshot = await getDocs(appointmentsQuery);
         const currentAppointmentsList = [];
