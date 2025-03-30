@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "./PetOwnerHome.css";
 import { db, auth } from "../../firebase";
+import { useNavigate } from "react-router-dom";
+
+import "react-calendar/dist/Calendar.css";
+import Calendar from "react-calendar";
+
+
 import {
   collection,
   query,
@@ -37,14 +43,16 @@ import "@syncfusion/ej2-react-schedule/styles/material.css";
 const PetOwnerHome = () => {
   // Register Syncfusion license (replace with your valid key if different)
   registerLicense(
+
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
 
   );
 
+  const navigate = useNavigate();
+  const handleBookAppointment = () => { navigate("/FindClinic"); };
   const [activePanel, setActivePanel] = useState("petDetails");
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [pastAppointments, setPastAppointments] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -78,19 +86,79 @@ const PetOwnerHome = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [currentView, setCurrentView] = useState("Month");
-  const [rescheduleDate, setRescheduleDate] = useState("");
-  const [rescheduleTime, setRescheduleTime] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
 
-  const [rescheduleDateTime, setRescheduleDateTime] = useState(null); // Combined date-time for rescheduling
+  const [clickedDate, setClickedDate] = useState(null);
+  const [rescheduleDateTime, setRescheduleDateTime] = useState(null);
   const [showReschedule, setShowReschedule] = useState(false);
-  const [availableSlots, setAvailableSlots] = useState([]); // Available time slots for selected date
-  const [takenAppointments, setTakenAppointments] = useState([]); // All taken appointments for the clinic and vet
-  const [vetSchedule, setVetSchedule] = useState(null); // Veterinarian's schedule
+  const [selectedRescheduleSlot, setSelectedRescheduleSlot] = useState(null);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [takenAppointments, setTakenAppointments] = useState([]);
+  const [vetSchedule, setVetSchedule] = useState(null);
 
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const DEFAULT_OWNER_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
+
+
+  // React calendar
+  // Handle calendar date click
+  const handleCalendarDateClick = (date) => {
+    const today = new Date();
+    const oneMonthFromToday = new Date(today);
+    oneMonthFromToday.setMonth(today.getMonth() + 1);
+
+    const clickedDateLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const oneMonthFromTodayLocal = new Date(oneMonthFromToday.getFullYear(), oneMonthFromToday.getMonth(), oneMonthFromToday.getDate());
+
+    if (clickedDateLocal >= todayLocal && clickedDateLocal <= oneMonthFromTodayLocal) {
+      const year = clickedDateLocal.getFullYear();
+      const month = String(clickedDateLocal.getMonth() + 1).padStart(2, "0");
+      const day = String(clickedDateLocal.getDate()).padStart(2, "0");
+      const formattedDate = `${year}-${month}-${day}`;
+      console.log("Clicked date on calendar:", formattedDate);
+      setClickedDate(clickedDateLocal);
+      setRescheduleDateTime(clickedDateLocal); // Update reschedule date
+      const slots = generateTimeSlots(clickedDateLocal, vetSchedule, takenAppointments);
+      setAvailableSlots(slots);
+      setSelectedRescheduleSlot(null);
+    } else {
+      const year = clickedDateLocal.getFullYear();
+      const month = String(clickedDateLocal.getMonth() + 1).padStart(2, "0");
+      const day = String(clickedDateLocal.getDate()).padStart(2, "0");
+      const formattedDate = `${year}-${month}-${day}`;
+      console.log("Clicked date outside one-month span, ignored:", formattedDate);
+    }
+  };
+
+  // Tile content and styling for React-Calendar
+  const tileClassName = ({ date, view }) => {
+    if (view !== "month") return null;
+
+    const today = new Date();
+    const oneMonthFromToday = new Date(today);
+    oneMonthFromToday.setMonth(today.getMonth() + 1);
+
+    const isToday = date.toDateString() === today.toDateString();
+    const dayOfWeek = date.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
+    const hasSchedule = vetSchedule && vetSchedule.some(
+      (sched) => sched.day.toLowerCase() === dayOfWeek
+    );
+    const slots = generateTimeSlots(date, vetSchedule, takenAppointments);
+    const isWithinOneMonth = date >= today && date <= oneMonthFromToday;
+
+    if (clickedDate && date.toDateString() === clickedDate.toDateString()) {
+      return "clicked-date"; // Custom class for clicked date
+    }
+    if (isToday) return "today-date";
+    if (!isWithinOneMonth || !hasSchedule) return "disabled-date";
+    if (slots.length === 0) return "fully-taken-date";
+    return "available-date";
+  };
+
+
+
 
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
@@ -156,6 +224,13 @@ const PetOwnerHome = () => {
       setPetImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
+  };
+
+  const handleSeeHistory = (petName) => {
+    setActivePanel("healthRecords");
+    setSearchQuery(petName);
+    setShowModal(false);
+    console.log(`Switched to Health Records with search query: "${petName}"`);
   };
 
   const handleModalImageChange = (e) => {
@@ -367,20 +442,35 @@ const PetOwnerHome = () => {
       setLoading(true);
       const currentUser = auth.currentUser;
       if (currentUser) {
+        console.log("Fetching appointments for user:", currentUser.uid);
+
+        // Fetch current appointments (Accepted or Request Cancel)
         const appointmentsQuery = query(
           collection(db, "appointments"),
-          where("owner", "==", doc(db, "users", currentUser.uid)),
+          where("owner", "==", doc(db, "users", currentUser.uid))
         );
         const querySnapshot = await getDocs(appointmentsQuery);
+        console.log("Appointments fetched with status Accepted/Request Cancel:", querySnapshot.docs.length);
+
+        // Fetch all appointments to include Cancelled and past appointments
+        const allAppointmentsQuery = query(
+          collection(db, "appointments"),
+          where("owner", "==", doc(db, "users", currentUser.uid))
+        );
+        const allSnapshot = await getDocs(allAppointmentsQuery);
+        console.log("All appointments fetched:", allSnapshot.docs.length);
+
         const currentAppointmentsList = [];
         const pastAppointmentsList = [];
-        const today = new Date(); // Current date as per context
+        const today = new Date();
+        console.log("Today’s date and time:", today.toISOString());
 
+        // Process current appointments (Accepted only for future/present)
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
           const clinicDoc = await getDoc(data.clinic);
           const startTime = data.dateofAppointment.toDate();
-          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Assuming 1-hour duration
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
 
           const appointmentDetails = {
             Id: doc.id,
@@ -399,15 +489,107 @@ const PetOwnerHome = () => {
             dateofAppointment: startTime,
           };
 
-          if (startTime < today) {
-            pastAppointmentsList.push(appointmentDetails);
-          } else if (appointmentDetails.status === "Accepted") {
+          console.log(
+            "From Accepted/Request Cancel query - ID:", doc.id,
+            "Date:", startTime.toISOString(),
+            "Firestore Status:", data.status
+          );
+
+          if (startTime >= today && appointmentDetails.status === "Accepted") {
             currentAppointmentsList.push(appointmentDetails);
+            console.log(
+              "Added to currentAppointmentsList:",
+              appointmentDetails.Id,
+              "Date:", startTime.toISOString(),
+              "Status:", appointmentDetails.status
+            );
+          } else if (startTime < today) {
+            // Past appointments from this query (Request Cancel or Accepted)
+            pastAppointmentsList.push({
+              ...appointmentDetails,
+              status:
+                data.status === "Request Cancel" ? "Cancel Requested" : "Done"
+            });
+            console.log(
+              "Moved to pastAppointmentsList (from Accepted/Request Cancel):",
+              appointmentDetails.Id,
+              "Date:", startTime.toISOString(),
+              "Firestore Status:", data.status,
+              "→ Table Status:",
+              data.status === "Request Cancel" ? "Cancel Requested" : "Done"
+            );
           }
         }
 
+        // Process all appointments (to include Cancelled and other past appointments)
+        for (const doc of allSnapshot.docs) {
+          const data = doc.data();
+          const clinicDoc = await getDoc(data.clinic);
+          const startTime = data.dateofAppointment.toDate();
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+
+          const appointmentDetails = {
+            Id: doc.id,
+            Subject: `${data.petName || "Unknown Pet"} - ${data.serviceType || "N/A"}`,
+            StartTime: startTime,
+            EndTime: endTime,
+            petName: data.petName || "Unknown Pet",
+            clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+            clinicId: data.clinic.id,
+            serviceType: data.serviceType || "N/A",
+            veterinarian: data.veterinarian || "N/A",
+            veterinarianId: data.veterinarianId,
+            remarks: data.remarks || "No remarks",
+            notes: data.notes || "No notes",
+            status: data.status || "N/A",
+            dateofAppointment: startTime,
+          };
+
+          // Include all Cancelled appointments (past, present, or future)
+          if (data.status === "Cancelled") {
+            const isDuplicate = pastAppointmentsList.some((appt) => appt.Id === doc.id);
+            if (!isDuplicate) {
+              pastAppointmentsList.push({
+                ...appointmentDetails,
+                status: "Cancelled"
+              });
+              console.log(
+                "Added to pastAppointmentsList (Cancelled, any date):",
+                appointmentDetails.Id,
+                "Date:", startTime.toISOString(),
+                "Firestore Status:", data.status,
+                "→ Table Status:", "Cancelled"
+              );
+            }
+          }
+          // Include only past appointments for other statuses
+          else if (startTime < today) {
+            const isDuplicate = pastAppointmentsList.some((appt) => appt.Id === doc.id);
+            if (!isDuplicate) {
+              pastAppointmentsList.push({
+                ...appointmentDetails,
+                status:
+                  data.status === "Request Cancel" ? "Cancel Requested" : "Done"
+              });
+              console.log(
+                "Added to pastAppointmentsList (past, other statuses):",
+                appointmentDetails.Id,
+                "Date:", startTime.toISOString(),
+                "Firestore Status:", data.status,
+                "→ Table Status:",
+                data.status === "Request Cancel" ? "Cancel Requested" : "Done"
+              );
+            }
+          }
+        }
+
+        console.log("Final Current Appointments:", currentAppointmentsList);
+        console.log("Final Past Appointments (Health Records):", pastAppointmentsList);
+
         setAppointments(currentAppointmentsList);
         setPastAppointments(pastAppointmentsList);
+      } else {
+        console.log("No current user found, skipping fetch.");
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -446,26 +628,27 @@ const PetOwnerHome = () => {
     fetchAppointments();
   }, []);
 
-  // Appointment Action Handlers
+
+  // Cancel Appointment Action Handlers
   const handleCancelAppointment = async (appointmentId) => {
     try {
       // Reference to the original appointment
       const appointmentRef = doc(db, "appointments", appointmentId);
       const appointmentSnap = await getDoc(appointmentRef);
-  
+
       if (!appointmentSnap.exists()) {
         throw new Error("Appointment not found");
       }
-  
+
       // Get the appointment data
       const appointmentData = appointmentSnap.data();
-  
+
       // Update the appointment with status "Request Cancel" and a cancelledAt timestamp
       await updateDoc(appointmentRef, {
-        status: "Request Cancel", // Add or update status to "Request Cancel"
-        cancelledAt: serverTimestamp(), // Add timestamp of cancellation request
+        status: "Request Cancel",
+        cancelledAt: serverTimestamp(),
       });
-  
+
       // Update local state to reflect the new status
       setAppointments(
         appointments.map((appt) =>
@@ -484,42 +667,7 @@ const PetOwnerHome = () => {
     }
   };
 
-  const handleRescheduleAppointment = async (appointmentId) => {
-    if (!rescheduleDateTime) {
-      alert("Please select a new date and time.");
-      return;
-    }
 
-    setIsRescheduling(true);
-    try {
-      const newDateTime = new Date(`${rescheduleDate}T${rescheduleTime}`);
-      const newEndTime = new Date(newDateTime.getTime() + 60 * 60 * 1000); // Assuming 1-hour duration
-
-      const appointmentRef = doc(db, "appointments", appointmentId);
-      await updateDoc(appointmentRef, {
-        dateofAppointment: newDateTime,
-      });
-
-      setAppointments(
-        appointments.map((appt) =>
-          appt.Id === appointmentId
-            ? { ...appt, StartTime: newDateTime, EndTime: newEndTime, dateofAppointment: newDateTime }
-            : appt
-        )
-      );
-      setShowAppointmentModal(false);
-      setRescheduleDate("");
-      setRescheduleTime("");
-      setAvailableSlots([]);
-      setShowReschedule(false);
-      alert("Appointment rescheduled successfully!");
-    } catch (error) {
-      console.error("Error rescheduling appointment:", error);
-      alert("Failed to reschedule appointment.");
-    } finally {
-      setIsRescheduling(false);
-    }
-  };
 
   const handleEventClick = (args) => {
     args.cancel = true; // Prevent default edit popup
@@ -536,15 +684,14 @@ const PetOwnerHome = () => {
     setCurrentView("Agenda"); // Switch to Agenda view when clicked
   };
 
-  // Reschedulesssss
-  // Fetch all appointments for the clinic and veterinarian
   // Fetch all appointments for the clinic and veterinarian
   const fetchTakenAppointments = async (clinicId, veterinarianId) => {
     try {
       const appointmentsQuery = query(
         collection(db, "appointments"),
         where("clinic", "==", doc(db, "clinics", clinicId)),
-        where("veterinarianId", "==", veterinarianId)
+        where("veterinarianId", "==", veterinarianId),
+        where("status", "in", ["Accepted", "Request Cancel"]) // fetchhhh both Accepted and Request Cancel
       );
       const querySnapshot = await getDocs(appointmentsQuery);
       const taken = querySnapshot.docs.map((doc) => ({
@@ -552,9 +699,15 @@ const PetOwnerHome = () => {
         ...doc.data(),
         dateofAppointment: doc.data().dateofAppointment.toDate(),
       }));
+      console.log("Fetched taken appointments (Accepted only):", taken.map(appt => ({
+        id: appt.id,
+        date: appt.dateofAppointment.toLocaleString("en-US", { hour: "numeric", hour12: true }),
+        status: appt.status
+      })));
       setTakenAppointments(taken);
     } catch (error) {
       console.error("Error fetching taken appointments:", error);
+      setTakenAppointments([]);
     }
   };
 
@@ -564,107 +717,149 @@ const PetOwnerHome = () => {
       const vetRef = doc(db, "users", veterinarianId);
       const vetDoc = await getDoc(vetRef);
       if (vetDoc.exists()) {
-        setVetSchedule(vetDoc.data().schedule || {}); // e.g., { monday: { startTime: "09:00", endTime: "17:00" } }
+        const vetData = vetDoc.data();
+        if (vetData.Type === "Veterinarian") {
+          console.log("Fetched vet schedule:", vetData.schedule);
+          setVetSchedule(vetData.schedule); // Store the array directly
+        } else {
+          console.log("User is not a veterinarian:", veterinarianId);
+          setVetSchedule(null);
+        }
+      } else {
+        console.log("No vet document found for ID:", veterinarianId);
+        setVetSchedule(null);
       }
     } catch (error) {
       console.error("Error fetching vet schedule:", error);
+      setVetSchedule(null);
     }
   };
 
-  // Check if a date is fully taken
-  const isDateFullyTaken = (date, vetSchedule, takenAppointments) => {
-    const dayOfWeek = date.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
-    const vetDaySchedule = vetSchedule?.[dayOfWeek] || { startTime: "09:00", endTime: "17:00" };
-    const startHour = parseInt(vetDaySchedule.startTime.split(":")[0], 10);
-    const endHour = parseInt(vetDaySchedule.endTime.split(":")[0], 10);
-    const today = new Date();
-    const isToday = date.toDateString() === today.toDateString();
 
-    if (isToday) return false; // Don’t mark today as fully taken
 
-    const slots = [];
-    for (let hour = startHour; hour < endHour; hour++) {
-      const slotTime = new Date(date);
-      slotTime.setHours(hour, 0, 0, 0);
-      const slotEndTime = new Date(slotTime.getTime() + 60 * 60 * 1000);
-
-      const isTaken = takenAppointments.some((appt) => {
-        const apptStart = appt.dateofAppointment;
-        const apptEnd = new Date(apptStart.getTime() + 60 * 60 * 1000);
-        return slotTime < apptEnd && slotEndTime > apptStart;
-      });
-
-      slots.push(!isTaken);
-    }
-
-    return slots.every((available) => !available); // True if all slots are taken
+  // Check if a time slot is taken
+  const isSlotTaken = (slotTime, takenAppointments) => {
+    const slotEndTime = new Date(slotTime.getTime() + 60 * 60 * 1000);
+    return takenAppointments.some((appt) => {
+      const apptStart = appt.dateofAppointment;
+      const apptEnd = new Date(apptStart.getTime() + 60 * 60 * 1000);
+      return slotTime < apptEnd && slotEndTime > apptStart;
+    });
   };
 
   // Generate available time slots for a selected date
   const generateTimeSlots = (selectedDate, vetSchedule, takenAppointments) => {
-    const slots = [];
+    if (!vetSchedule) {
+      console.log("No vet schedule available for slots generation");
+      return [];
+    }
+
+    console.log("Generating slots for date:", selectedDate.toISOString().split("T")[0]);
     const dayOfWeek = selectedDate.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
-    const vetDaySchedule = vetSchedule?.[dayOfWeek] || { startTime: "09:00", endTime: "17:00" };
-    const startHour = parseInt(vetDaySchedule.startTime.split(":")[0], 10);
-    const endHour = parseInt(vetDaySchedule.endTime.split(":")[0], 10);
+    const vetDaySchedule = vetSchedule.find(
+      (sched) => sched.day.toLowerCase() === dayOfWeek
+    );
+
+    if (!vetDaySchedule) {
+      console.log("No schedule for day:", dayOfWeek);
+      console.log("Available vet schedule days:", vetSchedule.map(s => s.day.toLowerCase()));
+      return [];
+    }
+
+    const startHour = parseInt(vetDaySchedule.startTime.split(":")[0], 10); // e.g., 10
+    const endHour = parseInt(vetDaySchedule.endTime.split(":")[0], 10);     // e.g., 14
     const today = new Date();
     const isToday = selectedDate.toDateString() === today.toDateString();
 
+    console.log("Vet schedule for", dayOfWeek, ":", vetDaySchedule);
+    console.log("Start Hour:", startHour);
+    console.log("End Hour:", endHour);
+    console.log("Is Today:", isToday);
+    console.log("Current Time:", today.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }));
+
+    const slots = [];
+    // Stop at endHour - 1 to exclude the end time as a start slot (e.g., 13 instead of 14)
     for (let hour = startHour; hour < endHour; hour++) {
       const slotTime = new Date(selectedDate);
       slotTime.setHours(hour, 0, 0, 0);
 
-      if (isToday && slotTime <= today) continue; // Skip past times for today
+      console.log(
+        "Processing slot:",
+        slotTime.toLocaleString("en-US", { hour: "numeric", hour12: true }),
+        "| Timestamp:",
+        slotTime.toISOString()
+      );
 
-      const slotEndTime = new Date(slotTime.getTime() + 60 * 60 * 1000);
-      const isTaken = takenAppointments.some((appt) => {
-        const apptStart = appt.dateofAppointment;
-        const apptEnd = new Date(apptStart.getTime() + 60 * 60 * 1000);
-        return slotTime < apptEnd && slotEndTime > apptStart;
-      });
+      if (isToday && slotTime <= today) {
+        console.log(
+          "Skipping slot (past time):",
+          slotTime.toLocaleString("en-US", { hour: "numeric", hour12: true })
+        );
+        continue;
+      }
 
-      if (!isTaken) {
+      if (!isSlotTaken(slotTime, takenAppointments)) {
+        const displayTime = slotTime.toLocaleString("en-US", { hour: "numeric", hour12: true });
+        console.log("Adding available slot:", displayTime);
         slots.push({
           time: slotTime,
-          display: slotTime.toLocaleString("en-US", { hour: "numeric", hour12: true }),
+          display: displayTime,
         });
+      } else {
+        console.log(
+          "Slot taken:",
+          slotTime.toLocaleString("en-US", { hour: "numeric", hour12: true })
+        );
       }
     }
+    console.log("Final available slots:", slots.map(slot => slot.display));
     return slots;
   };
 
-  // Handle date selection
-  const handleDateChange = (args) => {
-    const selectedDate = args.value || new Date();
-    if (!isDateFullyTaken(selectedDate, vetSchedule, takenAppointments)) {
-      setRescheduleDateTime(selectedDate);
-      const slots = generateTimeSlots(selectedDate, vetSchedule, takenAppointments);
-      setAvailableSlots(slots);
-    }
-  };
 
-  // Custom cell rendering for calendar
-  const onRenderCell = (args) => {
-    if (args.elementType === "dateCells") {
-      const date = args.date;
-      const today = new Date();
-      const isToday = date.toDateString() === today.toDateString();
-      const hasAppointments = takenAppointments.some((appt) => {
-        return appt.dateofAppointment.toDateString() === date.toDateString();
+  // Reschedule appointment
+  const handleRescheduleAppointment = async (appointmentId) => {
+    if (!selectedRescheduleSlot) {
+      alert("Please select a new time slot.");
+      return;
+    }
+
+    setIsRescheduling(true);
+    try {
+      const newDateTime = selectedRescheduleSlot.time; // This is a Date object from the slot
+      console.log("Requesting reschedule to date:", newDateTime.toISOString().split("T")[0]);
+      console.log(
+        "Requesting reschedule to time:",
+        newDateTime.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
+      );
+
+      // Format the newDateTime to match your example: "April 2, 2025 at 8:00:00 AM UTC+8"
+      // Since Firestore stores timestamps, we'll use the Date object directly
+      const appointmentRef = doc(db, "appointments", appointmentId);
+      await updateDoc(appointmentRef, {
+        status: "Request Reschedule", // Update status to Request Reschedule
+        dateofAppointment: newDateTime, // Update dateofAppointment to the new time
       });
 
-      if (isToday) {
-        args.element.style.backgroundColor = "#ffffff"; // White for today
-      } else if (isDateFullyTaken(date, vetSchedule, takenAppointments)) {
-        args.element.style.backgroundColor = "#ffcccc"; // Light red for fully taken
-        args.element.style.pointerEvents = "none"; // Disable clicking
-      } else if (hasAppointments) {
-        args.element.style.backgroundColor = "#ff0000"; // Red for partially taken
-      } else {
-        args.element.style.backgroundColor = "#90ee90"; // Green for available
-      }
+      // Remove the appointment from the current list
+      setAppointments(
+        appointments.filter((appt) => appt.Id !== appointmentId)
+      );
+
+      setShowAppointmentModal(false);
+      setAvailableSlots([]);
+      setSelectedRescheduleSlot(null);
+      setClickedDate(null); // Reset clicked date
+      alert("Reschedule request submitted successfully!");
+    } catch (error) {
+      console.error("Error requesting reschedule:", error);
+      alert("Failed to request reschedule.");
+    } finally {
+      setIsRescheduling(false);
     }
   };
+
+
 
   // Fetch data when appointment modal opens
   useEffect(() => {
@@ -725,9 +920,9 @@ const PetOwnerHome = () => {
     setImageUploadError("");
   };
 
-  const onCellClick = (args) => {
-    args.cancel = true; // Prevent adding new events
-  };
+  // const onCellClick = (args) => {
+  //   args.cancel = true; // Prevent adding new events
+  // };
 
   return (
     <div className="pet-owner-container-p">
@@ -840,7 +1035,12 @@ const PetOwnerHome = () => {
           )}
           {activePanel === "appointments" && (
             <div className="panel-p appointments-panel-p">
-              <h3>Appointments</h3>
+              <div className="appointments-header-p"> 
+                <h3>Appointments</h3>
+                <button className="bookapptbutt-p" onClick={handleBookAppointment}>
+                  Book Appointment
+                </button>
+              </div>
               {loading ? (
                 <p>Loading appointments...</p>
               ) : (
@@ -873,6 +1073,7 @@ const PetOwnerHome = () => {
               )}
             </div>
           )}
+
           {activePanel === "healthRecords" && (
             <div className="panel-p health-records-panel-p">
               <h3>Health Records</h3>
@@ -880,7 +1081,7 @@ const PetOwnerHome = () => {
                 <input
                   type="text"
                   id="searchRecords"
-                  placeholder="Search records (Pet Name, Clinic, Service, Veterinarian, Remarks, Month)..."
+                  placeholder="Search records (Pet Name, Clinic, Service, Veterinarian, Remarks, Status, Month)..."
                   className="search-bar-p"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -889,38 +1090,45 @@ const PetOwnerHome = () => {
               {loading ? (
                 <p>Loading health records...</p>
               ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date of Appointment</th>
-                      <th>Pet Name</th>
-                      <th>Cinic</th>
-                      <th>Service</th>
-                      <th>Veterinarian</th>
-                      <th>Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAppointments.length > 0 ? (
-                      [...filteredAppointments] // Create a shallow copy to avoid mutating the original array
-                        .sort((a, b) => b.dateofAppointment - a.dateofAppointment) // Sort by date descending
-                        .map((record) => (
-                          <tr key={record.Id}>
-                            <td>{formatDate(record.dateofAppointment)}</td>
-                            <td>{record.petName}</td>
-                            <td>{record.clinicName}</td>
-                            <td>{record.serviceType}</td>
-                            <td>{record.veterinarian}</td>
-                            <td>{record.remarks}</td>
-                          </tr>
-                        ))
-                    ) : (
+                <>
+                  {console.log("pastAppointments before filtering:", pastAppointments)}
+                  {console.log("searchQuery:", searchQuery)}
+                  {console.log("filteredAppointments:", filteredAppointments)}
+                  <table>
+                    <thead>
                       <tr>
-                        <td colSpan="5">No matching records found</td>
+                        <th>Date of Appointment</th>
+                        <th>Pet Name</th>
+                        <th>Clinic</th> {/* Fixed typo: "Cinic" to "Clinic" */}
+                        <th>Service</th>
+                        <th>Veterinarian</th>
+                        <th>Remarks</th>
+                        <th>Status</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {filteredAppointments.length > 0 ? (
+                        [...filteredAppointments]
+                          .sort((a, b) => b.dateofAppointment - a.dateofAppointment)
+                          .map((record) => (
+                            <tr key={record.Id}>
+                              <td>{formatDate(record.dateofAppointment)}</td>
+                              <td>{record.petName}</td>
+                              <td>{record.clinicName}</td>
+                              <td>{record.serviceType}</td>
+                              <td>{record.veterinarian}</td>
+                              <td>{record.remarks}</td>
+                              <td>{record.status}</td>
+                            </tr>
+                          ))
+                      ) : (
+                        <tr>
+                          <td colSpan="7">No matching records found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </>
               )}
             </div>
           )}
@@ -988,6 +1196,13 @@ const PetOwnerHome = () => {
               </div>
             </div>
             <div className="modal-actions-p">
+              <button
+                className="modal-close-btn-p"
+                onClick={() => handleSeeHistory(selectedPet.petName)}
+                disabled={isSavingImage}
+              >
+                See History
+              </button>
               <button
                 className="modal-close-btn-p"
                 onClick={handleSavePetImage}
@@ -1240,7 +1455,7 @@ const PetOwnerHome = () => {
                 </button>
                 <button
                   className="submit-btn-p"
-                  onClick={() => setShowReschedule(!showReschedule)}// Toggle reschedule section
+                  onClick={() => setShowReschedule(!showReschedule)}
                   disabled={isRescheduling}
                 >
                   Reschedule
@@ -1258,31 +1473,32 @@ const PetOwnerHome = () => {
                 <h3>Reschedule Appointment</h3>
                 <div className="reschedule-container-p">
                   <div className="calendar-container-p">
-                    <ScheduleComponent
-                      width="100%"
-                      height="300px"
-                      currentView="Month"
-                      selectedDate={rescheduleDateTime || new Date()}
-                      eventSettings={{ dataSource: [] }}
-                      renderCell={onRenderCell}
-                      dateChange={handleDateChange}
-                      cellClick={(args) => (args.cancel = true)}
-                      popupOpen={(args) => (args.cancel = true)}
-                    >
-                      <ViewsDirective>
-                        <ViewDirective option="Month" />
-                      </ViewsDirective>
-                      <Inject services={[Month]} />
-                    </ScheduleComponent>
+                    <Calendar
+                      onClickDay={handleCalendarDateClick}
+                      value={rescheduleDateTime || new Date()}
+                      minDate={new Date()} // Restrict to today onward
+                      maxDate={(() => {
+                        const max = new Date();
+                        max.setMonth(max.getMonth() + 1);
+                        return max;
+                      })()} // One month from today
+                      tileClassName={tileClassName}
+                    />
                   </div>
                   <div className="time-picker-container-p">
                     <label htmlFor="rescheduleTime">Select Time</label>
                     <select
                       id="rescheduleTime"
-                      value={rescheduleDateTime ? rescheduleDateTime.toISOString() : ""}
+                      value={
+                        selectedRescheduleSlot ? selectedRescheduleSlot.time.toISOString() : ""
+                      }
                       onChange={(e) => {
-                        const selectedTime = new Date(e.target.value);
-                        setRescheduleDateTime(selectedTime);
+                        const selectedTime = availableSlots.find(
+                          (slot) => slot.time.toISOString() === e.target.value
+                        );
+                        if (selectedTime) {
+                          setSelectedRescheduleSlot(selectedTime);
+                        }
                       }}
                       disabled={!rescheduleDateTime || isRescheduling || availableSlots.length === 0}
                     >
@@ -1306,16 +1522,16 @@ const PetOwnerHome = () => {
                   <button
                     className="submit-btn-p"
                     onClick={() => handleRescheduleAppointment(selectedAppointment.Id)}
-                    disabled={isRescheduling}
+                    disabled={isRescheduling || !selectedRescheduleSlot}
                   >
                     {isRescheduling ? "Rescheduling..." : "Save Reschedule"}
                   </button>
                   <button
                     className="submit-btn-p"
-                    onClick={() => setShowReschedule(!showReschedule)} // Toggle reschedule section
+                    onClick={() => setShowReschedule(!showReschedule)}
                     disabled={isRescheduling}
                   >
-                    Hide Reschedule
+                    Cancel Reschedule
                   </button>
                   <button
                     className="modal-close-btn-p"
