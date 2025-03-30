@@ -363,12 +363,24 @@ const VeterinaryHome = () => {
 // Add this function to handle declining an appointment
 const handleDeclineAppointment = async (appointmentId) => {
   try {
-    // Delete the document from the pendingAppointments collection
-    const pendingAppointmentRef = doc(db, "pendingAppointments", appointmentId);
-    await deleteDoc(pendingAppointmentRef);
+    console.log("Declining appointment with ID:", appointmentId);
 
-    // Update the state to remove the declined appointment
-    setPendingAppointments((prev) => prev.filter((appt) => appt.id !== appointmentId));
+    // Find the appointment in the pendingAppointments state using the appointment ID
+    const appointment = pendingAppointments.find((appt) => appt.id === appointmentId);
+
+    if (!appointment) {
+      console.error("Appointment not found in pendingAppointments");
+      return;
+    }
+
+    // Update the status of the appointment to "Declined"
+    const appointmentRef = doc(db, "appointments", appointmentId);
+    await updateDoc(appointmentRef, { status: "Declined" });
+
+    // Remove the declined appointment from the pendingAppointments state
+    setPendingAppointments((prev) =>
+      prev.filter((appt) => appt.id !== appointmentId)
+    );
 
     alert("Appointment declined successfully!");
   } catch (error) {
