@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./PetOwnerHome.css";
 import { db, auth } from "../../firebase";
+import { useNavigate } from "react-router-dom";
 
 import "react-calendar/dist/Calendar.css";
 import Calendar from "react-calendar";
@@ -47,6 +48,8 @@ const PetOwnerHome = () => {
 
   );
 
+  const navigate = useNavigate();
+  const handleBookAppointment = () => { navigate("/FindClinic"); };
   const [activePanel, setActivePanel] = useState("petDetails");
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1033,7 +1036,12 @@ const PetOwnerHome = () => {
           )}
           {activePanel === "appointments" && (
             <div className="panel-p appointments-panel-p">
-              <h3>Appointments</h3>
+              <div className="appointments-header-p"> 
+                <h3>Appointments</h3>
+                <button className="bookapptbutt-p" onClick={handleBookAppointment}>
+                  Book Appointment
+                </button>
+              </div>
               {loading ? (
                 <p>Loading appointments...</p>
               ) : (

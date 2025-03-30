@@ -195,6 +195,37 @@ tr:hover {
   background-color: #ff1493;
 }
 
+/* Appointments Header */
+.appointments-header-p {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.appointments-header-p h3 {
+  margin: 0;
+  font-size: 24px;
+  color: #ff4081;
+  padding: 15px;
+}
+
+.bookapptbutt-p {
+  background-color: #ff69b4; 
+  color: white;
+  padding: 12px 20px;
+  margin: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.bookapptbutt-p:hover {
+  background-color: #ff1493; 
+}
+
 /* Form Styling */
 form {
   display: flex;
