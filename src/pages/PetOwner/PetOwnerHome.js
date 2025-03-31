@@ -1483,6 +1483,7 @@ const PetOwnerHome = () => {
                         return max;
                       })()} // One month from today
                       tileClassName={tileClassName}
+                      locale="en-US"
                     />
                   </div>
                   <div className="time-picker-container-p">
