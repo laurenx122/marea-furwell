@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./VeterinaryHome.css";
 import { db, auth } from "../../firebase";
-import { collection, query, setDoc,where, getDocs, doc, getDoc, updateDoc,addDoc,deleteDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
-import { FaCamera, FaEdit } from "react-icons/fa";
+import { FaCamera } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { FaTrash, FaCheck } from "react-icons/fa";
 import {
@@ -29,14 +29,13 @@ import "@syncfusion/ej2-react-schedule/styles/material.css";
 const VeterinaryHome = () => {
   registerLicense(
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
-    // process.env.SYNC_REGISTER_LICENSE
   );
 
   const [activePanel, setActivePanel] = useState("appointments");
   const [vetInfo, setVetInfo] = useState(null);
   const [editedVetInfo, setEditedVetInfo] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  const [pastAppointments, setPastAppointments] = useState([]); // New state for past appointments
+  const [pastAppointments, setPastAppointments] = useState([]);
   const [schedule, setSchedule] = useState([]);
   const [scheduleEvents, setScheduleEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +48,7 @@ const VeterinaryHome = () => {
   const [isSignOutSuccessOpen, setIsSignOutSuccessOpen] = useState(false);
   const [showRemarksModal, setShowRemarksModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [newRemark, setNewRemark] = useState("");
+  const [completionRemark, setCompletionRemark] = useState("");
   const [appointmentDetails, setAppointmentDetails] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [pendingAppointments, setPendingAppointments] = useState([]);
@@ -257,61 +256,51 @@ const VeterinaryHome = () => {
     }
   };
 
-  //pending appointments
- 
   const fetchPendingAppointments = async () => {
     try {
       setLoading(true);
       const currentUser = auth.currentUser;
       if (currentUser) {
-        // Query the appointments collection where status is "pending" and veterinarianId matches the current user
         const pendingAppointmentsQuery = query(
-          collection(db, "appointments"),
-          where("status", "==", "pending"), // Filter by status "pending"
-          where("veterinarianId", "==", currentUser.uid) // Filter by the current veterinarian's ID
+          collection(db, "pendingAppointments"),
+          where("status", "==", "pending"),
+          where("veterinarianId", "==", currentUser.uid)
         );
         const querySnapshot = await getDocs(pendingAppointmentsQuery);
-  
-        // Map over the documents and resolve references
+
         const pendingAppointmentsList = await Promise.all(
           querySnapshot.docs.map(async (doc) => {
             const data = doc.data();
-  
-            // Resolve the owner reference
-            const ownerRef = data.owner;
+
             let ownerData = {};
-            if (ownerRef) {
-              const ownerDoc = await getDoc(ownerRef);
+            if (data.owner) {
+              const ownerDoc = await getDoc(data.owner);
               ownerData = ownerDoc.exists() ? ownerDoc.data() : {};
             }
-  
-            // Resolve the pet reference
-            const petRef = data.petRef;
+
             let petData = {};
-            if (petRef) {
-              const petDoc = await getDoc(petRef);
+            if (data.petRef) {
+              const petDoc = await getDoc(data.petRef);
               petData = petDoc.exists() ? petDoc.data() : {};
             }
-  
-            // Resolve the clinic reference
-            const clinicRef = data.clinic;
+
             let clinicData = {};
-            if (clinicRef) {
-              const clinicDoc = await getDoc(clinicRef);
+            if (data.clinic) {
+              const clinicDoc = await getDoc(data.clinic);
               clinicData = clinicDoc.exists() ? clinicDoc.data() : {};
             }
-  
+
             return {
               id: doc.id,
               ...data,
-              owner: ownerData, // Replace the reference with actual data
-              petRef: petData, // Replace the reference with actual data
-              clinic: clinicData, // Replace the reference with actual data
+              owner: ownerData,
+              petRef: petData,
+              clinic: clinicData,
             };
           })
         );
-  
-        console.log("Fetched pendingAppointments:", pendingAppointmentsList); // Log the fetched data
+
+        console.log("Fetched pendingAppointments:", pendingAppointmentsList);
         setPendingAppointments(pendingAppointmentsList);
       }
     } catch (error) {
@@ -320,95 +309,105 @@ const VeterinaryHome = () => {
       setLoading(false);
     }
   };
- //searchQuery in pending
- const [searchQuery, setSearchQuery] = useState("");
 
- const filteredPendingAppointments = pendingAppointments.filter((appointment) => {
-   const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
-   return (
-     (appointment.petName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-     ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     (appointment.serviceType?.toLowerCase() || "").includes(searchQuery.toLowerCase())
-   );
- });
+  const [searchQuery, setSearchQuery] = useState("");
 
- const handleApproveAppointment = async (appointmentId) => {
-  try {
-    console.log("Approving appointment with ID:", appointmentId);
-
-    // Find the appointment in the pendingAppointments state using the appointment ID
-    const appointment = pendingAppointments.find((appt) => appt.id === appointmentId);
-
-    if (!appointment) {
-      console.error("Appointment not found in pendingAppointments");
-      return;
-    }
-
-    // Update the status of the appointment to "accepted"
-    const appointmentRef = doc(db, "appointments", appointmentId);
-    await updateDoc(appointmentRef, { status: "Accepted" });
-
-    // Update the state to reflect the change
-    setPendingAppointments((prev) =>
-      prev.filter((appt) => appt.id !== appointmentId)
+  const filteredPendingAppointments = pendingAppointments.filter((appointment) => {
+    const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
+    return (
+      (appointment.petName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (appointment.serviceType?.toLowerCase() || "").includes(searchQuery.toLowerCase())
     );
-    
-    await fetchAppointments();
-    alert("Appointment approved successfully!");
-  } catch (error) {
-    console.error("Error approving appointment:", error);
-    alert("Failed to approve the appointment. Please try again.");
-  }
-};
-// Add this function to handle declining an appointment
-const handleDeclineAppointment = async (appointmentId) => {
-  try {
-    console.log("Declining appointment with ID:", appointmentId);
+  });
 
-    // Find the appointment in the pendingAppointments state using the appointment ID
-    const appointment = pendingAppointments.find((appt) => appt.id === appointmentId);
+  const handleApproveAppointment = async (appointmentId) => {
+    try {
+      console.log("Approving appointment with ID:", appointmentId);
 
-    if (!appointment) {
-      console.error("Appointment not found in pendingAppointments");
-      return;
+      const appointment = pendingAppointments.find((appt) => appt.id === appointmentId);
+
+      if (!appointment) {
+        console.error("Appointment not found in pendingAppointments");
+        return;
+      }
+
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        console.error("No current user is logged in.");
+        return;
+      }
+
+      const pendingAppointmentRef = doc(db, "pendingAppointments", appointmentId);
+
+      const pendingDoc = await getDoc(pendingAppointmentRef);
+      if (!pendingDoc.exists()) {
+        console.error("Pending appointment document does not exist.");
+        return;
+      }
+
+      const appointmentData = pendingDoc.data();
+
+      const newAppointmentData = {
+        ...appointmentData,
+        status: "Accepted",
+        timestamp: new Date().toISOString(),
+      };
+
+      const newAppointmentRef = await addDoc(collection(db, "appointments"), newAppointmentData);
+
+      await deleteDoc(pendingAppointmentRef);
+
+      setPendingAppointments((prev) => prev.filter((appt) => appt.id !== appointmentId));
+
+      await fetchAppointments();
+      await fetchPendingAppointments();
+
+      alert("Appointment approved successfully!");
+      console.log("Appointment moved to 'appointments' collection with ID:", newAppointmentRef.id);
+    } catch (error) {
+      console.error("Error approving appointment:", error);
+      alert("Failed to approve the appointment. Please try again.");
     }
+  };
 
-    // Update the status of the appointment to "Declined"
-    const appointmentRef = doc(db, "appointments", appointmentId);
-    await updateDoc(appointmentRef, { status: "Declined" });
+  const handleDeclineAppointment = async (appointmentId) => {
+    try {
+      console.log("Declining appointment with ID:", appointmentId);
 
-    // Remove the declined appointment from the pendingAppointments state
-    setPendingAppointments((prev) =>
-      prev.filter((appt) => appt.id !== appointmentId)
-    );
+      const appointment = pendingAppointments.find((appt) => appt.id === appointmentId);
 
-    alert("Appointment declined successfully!");
-  } catch (error) {
-    console.error("Error declining appointment:", error);
-    alert("Failed to decline the appointment. Please try again.");
-  }
-};
+      if (!appointment) {
+        console.error("Appointment not found in pendingAppointments");
+        return;
+      }
+
+      const appointmentRef = doc(db, "pendingAppointments", appointmentId);
+      await deleteDoc(appointmentRef);
+
+      setPendingAppointments((prev) => prev.filter((appt) => appt.id !== appointmentId));
+
+      await fetchPendingAppointments();
+
+      alert("Appointment declined successfully!");
+    } catch (error) {
+      console.error("Error declining appointment:", error);
+      alert("Failed to decline the appointment. Please try again.");
+    }
+  };
+
   const fetchAppointments = async () => {
     try {
       setLoading(true);
       const currentUser = auth.currentUser;
       if (currentUser) {
-        const vetRef = doc(db, "users", currentUser.uid);
-        const vetDoc = await getDoc(vetRef);
-        if (!vetDoc.exists()) {
-          console.error("Veterinarian document does not exist for UID:", currentUser.uid);
-          return;
-        }
-
         const appointmentsQuery = query(
           collection(db, "appointments"),
           where("veterinarianId", "==", currentUser.uid),
-          where("status", "==", "Accepted") // Filter by status "accepted"
+          where("status", "==", "Accepted")
         );
         const querySnapshot = await getDocs(appointmentsQuery);
         const currentAppointmentsList = [];
-        const pastAppointmentsList = [];
-        const today = new Date(); // Current date as per context
 
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
@@ -419,8 +418,6 @@ const handleDeclineAppointment = async (appointmentId) => {
             const petDoc = await getDoc(data.petRef);
             if (petDoc.exists()) {
               petData = petDoc.data();
-            } else {
-              console.warn("Pet document does not exist for petRef:", data.petRef);
             }
           }
 
@@ -433,7 +430,7 @@ const handleDeclineAppointment = async (appointmentId) => {
           }
 
           const startTime = data.dateofAppointment.toDate();
-          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
           const petAge = calculateAge(petData.dateofBirth);
 
           const appointmentDetails = {
@@ -447,30 +444,80 @@ const handleDeclineAppointment = async (appointmentId) => {
             age: petAge,
             owner: ownerName,
             service: data.serviceType || "N/A",
-            remarks: data.remarks || "No Remarks",
             notes: data.notes || "No Notes",
             dateofAppointment: startTime,
           };
 
-          if (startTime < today) {
-            pastAppointmentsList.push(appointmentDetails);
-          } else {
-            currentAppointmentsList.push(appointmentDetails);
-          }
+          currentAppointmentsList.push(appointmentDetails);
         }
 
         setAppointments(currentAppointmentsList);
-        setPastAppointments(pastAppointmentsList);
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
       setAppointments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPastAppointments = async () => {
+    try {
+      setLoading(true);
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const pastAppointmentsQuery = query(
+          collection(db, "pastAppointments"),
+          where("veterinarianId", "==", currentUser.uid)
+        );
+        const querySnapshot = await getDocs(pastAppointmentsQuery);
+        const pastAppointmentsList = [];
+
+        for (const doc of querySnapshot.docs) {
+          const data = doc.data();
+          let petData = {};
+          let ownerName = "N/A";
+
+          if (data.petRef) {
+            const petDoc = await getDoc(data.petRef);
+            if (petDoc.exists()) {
+              petData = petDoc.data();
+            }
+          }
+
+          if (data.owner) {
+            const ownerDoc = await getDoc(data.owner);
+            if (ownerDoc.exists()) {
+              const ownerData = ownerDoc.data();
+              ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "N/A";
+            }
+          }
+
+          const petAge = calculateAge(petData.dateofBirth);
+
+          const appointmentDetails = {
+            Id: doc.id,
+            petName: data.petName || "N/A",
+            owner: ownerName,
+            service: data.serviceType || "N/A",
+            notes: data.notes || "No Notes",
+            dateofAppointment: data.dateofAppointment.toDate(),
+            completionRemark: data.completionRemark || "No completion remark",
+          };
+
+          pastAppointmentsList.push(appointmentDetails);
+        }
+
+        setPastAppointments(pastAppointmentsList.sort((a, b) => b.dateofAppointment - a.dateofAppointment));
+      }
+    } catch (error) {
+      console.error("Error fetching past appointments:", error);
       setPastAppointments([]);
     } finally {
       setLoading(false);
     }
   };
- 
+
   const handleSignOut = () => {
     setIsSignOutConfirmOpen(true);
   };
@@ -490,42 +537,41 @@ const handleDeclineAppointment = async (appointmentId) => {
     }
   };
 
-  const openRemarksModal = (appointment) => {
-    setSelectedAppointment(appointment);
-    setNewRemark(appointment.remarks || "");
-    setShowRemarksModal(true);
-  };
-
-  const handleRemarkChange = (e) => {
-    setNewRemark(e.target.value);
-  };
-
-  const saveRemark = async () => {
+  const completeAppointment = async () => {
     if (selectedAppointment) {
       try {
-        const appointmentRef = doc(db, "appointments", selectedAppointment.Id || selectedAppointment.id);
-        await updateDoc(appointmentRef, { remarks: newRemark });
+        const appointmentRef = doc(db, "appointments", selectedAppointment.Id);
+        const appointmentDoc = await getDoc(appointmentRef);
+        if (!appointmentDoc.exists()) {
+          console.error("Appointment document does not exist.");
+          return;
+        }
 
-        setAppointments((prev) =>
-          prev.map((appt) =>
-            appt.Id === selectedAppointment.Id ? { ...appt, remarks: newRemark } : appt
-          )
-        );
-        setPastAppointments((prev) =>
-          prev.map((appt) =>
-            appt.Id === selectedAppointment.Id ? { ...appt, remarks: newRemark } : appt
-          )
-        );
+        const appointmentData = appointmentDoc.data();
 
-        setAppointmentDetails((prev) =>
-          prev && prev.Id === selectedAppointment.Id ? { ...prev, remarks: newRemark } : prev
-        );
+        const pastAppointmentData = {
+          ...appointmentData,
+          status: "Completed",
+          completionRemark: completionRemark || "No completion remark",
+          timestampCompleted: new Date().toISOString(),
+        };
+
+        await addDoc(collection(db, "pastAppointments"), pastAppointmentData);
+
+        await deleteDoc(appointmentRef);
+
+        setAppointments((prev) => prev.filter((appt) => appt.Id !== selectedAppointment.Id));
+        await fetchPastAppointments();
 
         setShowRemarksModal(false);
+        setShowDetailsModal(false);
+        setCompletionRemark("");
         setSelectedAppointment(null);
-        setNewRemark("");
+
+        alert("Appointment completed successfully!");
       } catch (error) {
-        console.error("Error updating remark:", error);
+        console.error("Error completing appointment:", error);
+        alert("Failed to complete the appointment. Please try again.");
       }
     }
   };
@@ -533,6 +579,7 @@ const handleDeclineAppointment = async (appointmentId) => {
   const onEventClick = (args) => {
     const appointment = appointments.find((appt) => appt.Id === args.event.Id);
     setAppointmentDetails(appointment);
+    setSelectedAppointment(appointment);
     setShowDetailsModal(true);
   };
 
@@ -543,7 +590,8 @@ const handleDeclineAppointment = async (appointmentId) => {
   useEffect(() => {
     fetchVetInfo();
     fetchAppointments();
-    fetchPendingAppointments(); // Fetch pending appointments
+    fetchPendingAppointments();
+    fetchPastAppointments();
   }, []);
 
   return (
@@ -717,22 +765,20 @@ const handleDeclineAppointment = async (appointmentId) => {
                       <th>Patient Name</th>
                       <th>Owner</th>
                       <th>Service</th>
-                      <th>Remarks</th>
+                      <th>Completion Remark</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pastAppointments.length > 0 ? (
-                      [...pastAppointments] // Create a shallow copy to avoid mutating the original array
-                        .sort((a, b) => b.dateofAppointment - a.dateofAppointment) // Sort by date descending
-                        .map((record) => (
-                          <tr key={record.Id}>
-                            <td>{formatDate(record.dateofAppointment)}</td>
-                            <td>{record.petName}</td>
-                            <td>{record.owner}</td>
-                            <td>{record.service}</td>
-                            <td>{record.remarks || "N/A"}</td>
-                          </tr>
-                        ))
+                      pastAppointments.map((record) => (
+                        <tr key={record.Id}>
+                          <td>{formatDate(record.dateofAppointment)}</td>
+                          <td>{record.petName}</td>
+                          <td>{record.owner}</td>
+                          <td>{record.service}</td>
+                          <td>{record.completionRemark || "N/A"}</td>
+                        </tr>
+                      ))
                     ) : (
                       <tr>
                         <td colSpan="5">No past appointments found</td>
@@ -743,6 +789,7 @@ const handleDeclineAppointment = async (appointmentId) => {
               )}
             </div>
           )}
+
           {activePanel === "pendingAppointments" && (
             <div className="panel-v health-records-panel-v">
               <h3>Pending Appointments</h3>
@@ -771,42 +818,41 @@ const handleDeclineAppointment = async (appointmentId) => {
                     </tr>
                   </thead>
                   <tbody>
-                        {filteredPendingAppointments.map((appointment) => {
-                          const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
-                          const petAge = calculateAge(appointment.petRef?.dateofBirth);
-                          console.log("Rendering appointment with ID:", appointment.id); // Add this log
-                          return (
-                            <tr key={appointment.id}>
-                              <td>{formatDate(appointment.dateofAppointment)}</td>
-                              <td>{appointment.petName || "N/A"}</td>
-                              <td>{ownerName}</td>
-                              <td>{appointment.petRef?.Breed || "N/A"}</td>
-                              <td>{petAge}</td>
-                              <td>{appointment.serviceType || "N/A"}</td>
-                              <td>
-                                <div className="v-actions">
-                                  <button
-                                    className="vicon-buttoncheck"
-                                    onClick={() => handleApproveAppointment(appointment.id)}
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    className="vicon-buttondelete"
-                                    onClick={() => handleDeclineAppointment(appointment.id)}
-                                  >
-                                    Decline
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <p>No pending appointments found.</p>
-                  )}
+                    {filteredPendingAppointments.map((appointment) => {
+                      const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
+                      const petAge = calculateAge(appointment.petRef?.dateofBirth);
+                      return (
+                        <tr key={appointment.id}>
+                          <td>{formatDate(appointment.dateofAppointment)}</td>
+                          <td>{appointment.petName || "N/A"}</td>
+                          <td>{ownerName}</td>
+                          <td>{appointment.petRef?.Breed || "N/A"}</td>
+                          <td>{petAge}</td>
+                          <td>{appointment.serviceType || "N/A"}</td>
+                          <td>
+                            <div className="v-actions">
+                              <button
+                                className="vicon-buttoncheck"
+                                onClick={() => handleApproveAppointment(appointment.id)}
+                              >
+                                Approve
+                              </button>
+                              <button
+                                className="vicon-buttondelete"
+                                onClick={() => handleDeclineAppointment(appointment.id)}
+                              >
+                                Decline
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <p>No pending appointments found.</p>
+              )}
             </div>
           )}
         </div>
@@ -997,9 +1043,6 @@ const handleDeclineAppointment = async (appointmentId) => {
               <div className="info-item-v">
                 <strong>Age:</strong> {appointmentDetails.age}
               </div>
-              <div className="info-item-v">
-                <strong>Remarks:</strong> {appointmentDetails.remarks}
-              </div>
             </div>
             <div className="appointment-notes-v">
               <strong>Notes:</strong>
@@ -1008,9 +1051,9 @@ const handleDeclineAppointment = async (appointmentId) => {
             <div className="modal-actions-v">
               <button
                 className="submit-btn-v"
-                onClick={() => openRemarksModal(appointmentDetails)}
+                onClick={() => setShowRemarksModal(true)}
               >
-                Edit Remark
+                Complete Appointment
               </button>
               <button
                 className="modal-close-btn-v"
@@ -1025,28 +1068,35 @@ const handleDeclineAppointment = async (appointmentId) => {
                 <div className="remarks-content-v">
                   <span
                     className="remarks-close-button-v"
-                    onClick={() => setShowRemarksModal(false)}
+                    onClick={() => {
+                      setShowRemarksModal(false);
+                      setCompletionRemark("");
+                    }}
                   >
                     ×
                   </span>
-                  <h3>Add/Edit Remark for {selectedAppointment.petName}</h3>
+                  <h3>Complete Appointment for {selectedAppointment.petName}</h3>
                   <div className="form-group-v">
-                    <label htmlFor="remark">Remark</label>
+                    <label htmlFor="completionRemark">Completion Remark</label>
                     <textarea
-                      id="remark"
-                      value={newRemark}
-                      onChange={handleRemarkChange}
+                      id="completionRemark"
+                      value={completionRemark}
+                      onChange={(e) => setCompletionRemark(e.target.value)}
                       rows="4"
                       className="remarks-textarea-v"
+                      placeholder="Enter completion remarks..."
                     />
                   </div>
                   <div className="form-actions-v">
-                    <button className="submit-btn-v" onClick={saveRemark}>
-                      Save
+                    <button className="submit-btn-v" onClick={completeAppointment}>
+                      Save and Complete
                     </button>
                     <button
                       className="cancel-btn-v"
-                      onClick={() => setShowRemarksModal(false)}
+                      onClick={() => {
+                        setShowRemarksModal(false);
+                        setCompletionRemark("");
+                      }}
                     >
                       Cancel
                     </button>
