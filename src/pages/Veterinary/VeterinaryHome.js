@@ -3,9 +3,8 @@ import "./VeterinaryHome.css";
 import { db, auth } from "../../firebase";
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
-import { FaCamera } from "react-icons/fa";
+import { FaCamera, FaTrash, FaCheck } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { FaTrash, FaCheck } from "react-icons/fa";
 import {
   ScheduleComponent,
   ViewsDirective,
@@ -16,7 +15,6 @@ import {
 } from "@syncfusion/ej2-react-schedule";
 import { registerLicense } from "@syncfusion/ej2-base";
 
-// Import Syncfusion CSS for proper styling
 import "@syncfusion/ej2-base/styles/material.css";
 import "@syncfusion/ej2-buttons/styles/material.css";
 import "@syncfusion/ej2-calendars/styles/material.css";
@@ -52,22 +50,16 @@ const VeterinaryHome = () => {
   const [appointmentDetails, setAppointmentDetails] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [pendingAppointments, setPendingAppointments] = useState([]);
+  const [showConfirmModal, setShowConfirmModal] = useState({ open: false, action: null, appointmentId: null });
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const UPLOAD_PRESET = "furwell";
-  const DEFAULT_VET_IMAGE =
-    "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
+  const DEFAULT_VET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const scheduleObj = useRef(null);
 
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
-    let date;
-    if (typeof dateValue.toDate === "function") {
-      date = dateValue.toDate();
-    } else if (typeof dateValue === "string" || dateValue instanceof Date) {
-      date = new Date(dateValue);
-    } else {
-      return "N/A";
-    }
+    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
     return date.toLocaleString("en-US", {
       month: "long",
       day: "numeric",
@@ -80,23 +72,12 @@ const VeterinaryHome = () => {
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return "N/A";
-    let dob;
-    if (typeof dateOfBirth.toDate === "function") {
-      dob = dateOfBirth.toDate();
-    } else if (typeof dateOfBirth === "string") {
-      dob = new Date(dateOfBirth);
-    } else {
-      return "N/A";
-    }
-
+    const dob = dateOfBirth.toDate ? dateOfBirth.toDate() : new Date(dateOfBirth);
     if (isNaN(dob.getTime())) return "N/A";
-
-    const today = new Date("2025-03-24"); // Current date as per context
+    const today = new Date("2025-03-24");
     let age = today.getFullYear() - dob.getFullYear();
     const monthDiff = today.getMonth() - dob.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-      age--;
-    }
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
     return age >= 0 ? `${age}` : "N/A";
   };
 
@@ -110,9 +91,7 @@ const VeterinaryHome = () => {
   };
 
   const generateScheduleEvents = (scheduleData) => {
-    if (!scheduleData || scheduleData.length === 0) return [];
-
-    const events = [];
+    if (!scheduleData?.length) return [];
     const dayToNumber = {
       Monday: 1,
       Tuesday: 2,
@@ -122,15 +101,12 @@ const VeterinaryHome = () => {
       Saturday: 6,
       Sunday: 0,
     };
-
     const today = new Date();
     const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
 
-    scheduleData.forEach((sched, index) => {
-      if (!sched.day || !sched.startTime || !sched.endTime) return;
-
+    return scheduleData.map((sched, index) => {
       const dayNumber = dayToNumber[sched.day];
-      if (dayNumber === undefined) return;
+      if (!sched.day || !sched.startTime || !sched.endTime || !dayNumber) return null;
 
       const start = parseTime(sched.startTime);
       const end = parseTime(sched.endTime);
@@ -145,7 +121,7 @@ const VeterinaryHome = () => {
 
       const recurrenceRule = `FREQ=WEEKLY;BYDAY=${sched.day.slice(0, 2).toUpperCase()};INTERVAL=1`;
 
-      events.push({
+      return {
         Id: `schedule-${index}`,
         Subject: `Available: ${sched.startTime} - ${sched.endTime}`,
         StartTime: startDate,
@@ -153,10 +129,8 @@ const VeterinaryHome = () => {
         RecurrenceRule: recurrenceRule,
         IsAllDay: false,
         IsReadonly: true,
-      });
-    });
-
-    return events;
+      };
+    }).filter(Boolean);
   };
 
   const handleVetImageChange = (e) => {
@@ -170,30 +144,23 @@ const VeterinaryHome = () => {
   };
 
   const handleVetInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditedVetInfo({ ...editedVetInfo, [name]: value });
+    setEditedVetInfo({ ...editedVetInfo, [e.target.name]: e.target.value });
   };
 
   const fetchVetInfo = async () => {
     try {
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        const vetRef = doc(db, "users", currentUser.uid);
+      const user = auth.currentUser;
+      if (user) {
+        const vetRef = doc(db, "users", user.uid);
         const vetDoc = await getDoc(vetRef);
         if (vetDoc.exists()) {
           const vetData = vetDoc.data();
-          let clinicName = "N/A";
-          if (vetData.clinic) {
-            const clinicDoc = await getDoc(vetData.clinic);
-            if (clinicDoc.exists()) {
-              clinicName = clinicDoc.data().clinicName || "N/A";
-            }
-          }
+          const clinicName = (await getDoc(vetData.clinic || doc(db, "clinics", "default"))).data()?.clinicName || "N/A";
           const vetInfoData = {
             id: vetDoc.id,
             FirstName: vetData.FirstName || "",
             LastName: vetData.LastName || "",
-            clinicName,
+            clinicName: clinicName,
             contactNumber: vetData.contactNumber || "",
             email: vetData.email || "",
             profileImageURL: vetData.profileImageURL || DEFAULT_VET_IMAGE,
@@ -201,9 +168,8 @@ const VeterinaryHome = () => {
           };
           setVetInfo(vetInfoData);
           setEditedVetInfo(vetInfoData);
-          setSchedule(vetData.schedule || []);
-          const events = generateScheduleEvents(vetData.schedule || []);
-          setScheduleEvents(events);
+          setSchedule(vetInfoData.schedule);
+          setScheduleEvents(generateScheduleEvents(vetInfoData.schedule));
         }
       }
     } catch (error) {
@@ -214,36 +180,30 @@ const VeterinaryHome = () => {
   const handleSaveVetInfo = async () => {
     try {
       setIsUpdatingVet(true);
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        const vetRef = doc(db, "users", currentUser.uid);
+      const user = auth.currentUser;
+      if (user) {
+        const vetRef = doc(db, "users", user.uid);
         let profileImageURL = editedVetInfo.profileImageURL;
 
         if (newVetImage && ["image/jpeg", "image/jpg", "image/png"].includes(newVetImage.type)) {
-          const image = new FormData();
-          image.append("file", newVetImage);
-          image.append("cloud_name", "dfgnexrda");
-          image.append("upload_preset", UPLOAD_PRESET);
+          const formData = new FormData();
+          formData.append("file", newVetImage);
+          formData.append("cloud_name", "dfgnexrda");
+          formData.append("upload_preset", UPLOAD_PRESET);
 
-          const response = await fetch(
-            "https://api.cloudinary.com/v1_1/dfgnexrda/image/upload",
-            { method: "post", body: image }
-          );
-
+          const response = await fetch("https://api.cloudinary.com/v1_1/dfgnexrda/image/upload", { method: "POST", body: formData });
           if (!response.ok) throw new Error("Image upload failed");
-
-          const imgData = await response.json();
-          profileImageURL = imgData.url.toString();
+          profileImageURL = (await response.json()).url;
         }
 
         await updateDoc(vetRef, {
           FirstName: editedVetInfo.FirstName,
           LastName: editedVetInfo.LastName,
           contactNumber: editedVetInfo.contactNumber,
-          profileImageURL,
+          profileImageURL: profileImageURL,
         });
 
-        setVetInfo({ ...editedVetInfo, profileImageURL });
+        setVetInfo({ ...editedVetInfo, profileImageURL: profileImageURL });
         setNewVetImage(null);
         setVetImagePreview(null);
         setIsEditingVet(false);
@@ -259,49 +219,29 @@ const VeterinaryHome = () => {
   const fetchPendingAppointments = async () => {
     try {
       setLoading(true);
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        const pendingAppointmentsQuery = query(
-          collection(db, "pendingAppointments"),
-          where("status", "==", "pending"),
-          where("veterinarianId", "==", currentUser.uid)
-        );
-        const querySnapshot = await getDocs(pendingAppointmentsQuery);
+      const user = auth.currentUser;
+      if (user) {
+        const q = query(collection(db, "appointments"), where("status", "==", "pending"), where("veterinarianId", "==", user.uid));
+        const querySnapshot = await getDocs(q);
 
-        const pendingAppointmentsList = await Promise.all(
-          querySnapshot.docs.map(async (doc) => {
-            const data = doc.data();
+        const appointmentsList = await Promise.all(querySnapshot.docs.map(async (doc) => {
+          const data = doc.data();
+          const [ownerData, petData, clinicData] = await Promise.all([
+            data.owner ? getDoc(data.owner) : Promise.resolve(null),
+            data.petRef ? getDoc(data.petRef) : Promise.resolve(null),
+            data.clinic ? getDoc(data.clinic) : Promise.resolve(null),
+          ]);
 
-            let ownerData = {};
-            if (data.owner) {
-              const ownerDoc = await getDoc(data.owner);
-              ownerData = ownerDoc.exists() ? ownerDoc.data() : {};
-            }
+          return {
+            id: doc.id,
+            ...data,
+            owner: ownerData?.data() || {},
+            petRef: petData?.data() || {},
+            clinic: clinicData?.data() || {},
+          };
+        }));
 
-            let petData = {};
-            if (data.petRef) {
-              const petDoc = await getDoc(data.petRef);
-              petData = petDoc.exists() ? petDoc.data() : {};
-            }
-
-            let clinicData = {};
-            if (data.clinic) {
-              const clinicDoc = await getDoc(data.clinic);
-              clinicData = clinicDoc.exists() ? clinicDoc.data() : {};
-            }
-
-            return {
-              id: doc.id,
-              ...data,
-              owner: ownerData,
-              petRef: petData,
-              clinic: clinicData,
-            };
-          })
-        );
-
-        console.log("Fetched pendingAppointments:", pendingAppointmentsList);
-        setPendingAppointments(pendingAppointmentsList);
+        setPendingAppointments(appointmentsList);
       }
     } catch (error) {
       console.error("Error fetching pending appointments:", error);
@@ -309,8 +249,6 @@ const VeterinaryHome = () => {
       setLoading(false);
     }
   };
-
-  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredPendingAppointments = pendingAppointments.filter((appointment) => {
     const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
@@ -321,137 +259,66 @@ const VeterinaryHome = () => {
     );
   });
 
-  const handleApproveAppointment = async (appointmentId) => {
+  const handleActionConfirm = async (action) => {
+    const { appointmentId } = showConfirmModal;
     try {
-      console.log("Approving appointment with ID:", appointmentId);
+      const appointmentRef = doc(db, "appointments", appointmentId);
+      const appointmentDoc = await getDoc(appointmentRef);
+      if (!appointmentDoc.exists()) throw new Error("Appointment not found");
 
-      const appointment = pendingAppointments.find((appt) => appt.id === appointmentId);
-
-      if (!appointment) {
-        console.error("Appointment not found in pendingAppointments");
-        return;
+      if (action === "accept") {
+        const newData = { ...appointmentDoc.data(), status: "Accepted", timestamp: new Date().toISOString() };
+        await updateDoc(appointmentRef, newData);
+        alert("Appointment accepted successfully!");
+      } else if (action === "decline") {
+        await deleteDoc(appointmentRef);
+        alert("Appointment declined successfully!");
       }
 
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        console.error("No current user is logged in.");
-        return;
-      }
-
-      const pendingAppointmentRef = doc(db, "pendingAppointments", appointmentId);
-
-      const pendingDoc = await getDoc(pendingAppointmentRef);
-      if (!pendingDoc.exists()) {
-        console.error("Pending appointment document does not exist.");
-        return;
-      }
-
-      const appointmentData = pendingDoc.data();
-
-      const newAppointmentData = {
-        ...appointmentData,
-        status: "Accepted",
-        timestamp: new Date().toISOString(),
-      };
-
-      const newAppointmentRef = await addDoc(collection(db, "appointments"), newAppointmentData);
-
-      await deleteDoc(pendingAppointmentRef);
-
-      setPendingAppointments((prev) => prev.filter((appt) => appt.id !== appointmentId));
-
-      await fetchAppointments();
-      await fetchPendingAppointments();
-
-      alert("Appointment approved successfully!");
-      console.log("Appointment moved to 'appointments' collection with ID:", newAppointmentRef.id);
+      setPendingAppointments(pendingAppointments.filter(appt => appt.id !== appointmentId));
+      setShowConfirmModal({ open: false, action: null, appointmentId: null });
     } catch (error) {
-      console.error("Error approving appointment:", error);
-      alert("Failed to approve the appointment. Please try again.");
+      console.error(`Error ${action}ing appointment:`, error);
+      alert(`Failed to ${action} the appointment. Please try again.`);
     }
   };
 
-  const handleDeclineAppointment = async (appointmentId) => {
-    try {
-      console.log("Declining appointment with ID:", appointmentId);
-
-      const appointment = pendingAppointments.find((appt) => appt.id === appointmentId);
-
-      if (!appointment) {
-        console.error("Appointment not found in pendingAppointments");
-        return;
-      }
-
-      const appointmentRef = doc(db, "pendingAppointments", appointmentId);
-      await deleteDoc(appointmentRef);
-
-      setPendingAppointments((prev) => prev.filter((appt) => appt.id !== appointmentId));
-
-      await fetchPendingAppointments();
-
-      alert("Appointment declined successfully!");
-    } catch (error) {
-      console.error("Error declining appointment:", error);
-      alert("Failed to decline the appointment. Please try again.");
-    }
+  const handleAction = (action, appointmentId) => {
+    setShowConfirmModal({ open: true, action: action, appointmentId: appointmentId });
   };
 
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        const appointmentsQuery = query(
-          collection(db, "appointments"),
-          where("veterinarianId", "==", currentUser.uid),
-          where("status", "==", "Accepted")
-        );
-        const querySnapshot = await getDocs(appointmentsQuery);
-        const currentAppointmentsList = [];
-
-        for (const doc of querySnapshot.docs) {
+      const user = auth.currentUser;
+      if (user) {
+        const q = query(collection(db, "appointments"), where("veterinarianId", "==", user.uid), where("status", "==", "Accepted"));
+        const querySnapshot = await getDocs(q);
+        const appointmentsList = await Promise.all(querySnapshot.docs.map(async (doc) => {
           const data = doc.data();
-          let petData = {};
-          let ownerName = "N/A";
-
-          if (data.petRef) {
-            const petDoc = await getDoc(data.petRef);
-            if (petDoc.exists()) {
-              petData = petDoc.data();
-            }
-          }
-
-          if (data.owner) {
-            const ownerDoc = await getDoc(data.owner);
-            if (ownerDoc.exists()) {
-              const ownerData = ownerDoc.data();
-              ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "N/A";
-            }
-          }
+          const [petData, ownerData] = await Promise.all([
+            data.petRef ? getDoc(data.petRef) : Promise.resolve(null),
+            data.owner ? getDoc(data.owner) : Promise.resolve(null),
+          ]);
 
           const startTime = data.dateofAppointment.toDate();
-          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-          const petAge = calculateAge(petData.dateofBirth);
-
-          const appointmentDetails = {
+          return {
             Id: doc.id,
-            Subject: `${data.petName || petData.petName || "N/A"} - ${data.serviceType || "N/A"}`,
+            Subject: `${data.petName || petData?.data()?.petName || "N/A"} - ${data.serviceType || "N/A"}`,
             StartTime: startTime,
-            EndTime: endTime,
-            petName: data.petName || petData.petName || "N/A",
-            species: petData.Species || "N/A",
-            breed: petData.Breed || "N/A",
-            age: petAge,
-            owner: ownerName,
+            EndTime: new Date(startTime.getTime() + 60 * 60 * 1000),
+            petName: data.petName || petData?.data()?.petName || "N/A",
+            species: petData?.data()?.Species || "N/A",
+            breed: petData?.data()?.Breed || "N/A",
+            age: calculateAge(petData?.data()?.dateofBirth),
+            owner: ownerData?.data() ? `${ownerData.data().FirstName || ""} ${ownerData.data().LastName || ""}`.trim() || "N/A" : "N/A",
             service: data.serviceType || "N/A",
             notes: data.notes || "No Notes",
             dateofAppointment: startTime,
           };
+        }));
 
-          currentAppointmentsList.push(appointmentDetails);
-        }
-
-        setAppointments(currentAppointmentsList);
+        setAppointments(appointmentsList);
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -464,51 +331,29 @@ const VeterinaryHome = () => {
   const fetchPastAppointments = async () => {
     try {
       setLoading(true);
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        const pastAppointmentsQuery = query(
-          collection(db, "pastAppointments"),
-          where("veterinarianId", "==", currentUser.uid)
-        );
-        const querySnapshot = await getDocs(pastAppointmentsQuery);
-        const pastAppointmentsList = [];
-
-        for (const doc of querySnapshot.docs) {
+      const user = auth.currentUser;
+      if (user) {
+        const q = query(collection(db, "pastAppointments"), where("veterinarianId", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+        const appointmentsList = await Promise.all(querySnapshot.docs.map(async (doc) => {
           const data = doc.data();
-          let petData = {};
-          let ownerName = "N/A";
+          const [petData, ownerData] = await Promise.all([
+            data.petRef ? getDoc(data.petRef) : Promise.resolve(null),
+            data.owner ? getDoc(data.owner) : Promise.resolve(null),
+          ]);
 
-          if (data.petRef) {
-            const petDoc = await getDoc(data.petRef);
-            if (petDoc.exists()) {
-              petData = petDoc.data();
-            }
-          }
-
-          if (data.owner) {
-            const ownerDoc = await getDoc(data.owner);
-            if (ownerDoc.exists()) {
-              const ownerData = ownerDoc.data();
-              ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "N/A";
-            }
-          }
-
-          const petAge = calculateAge(petData.dateofBirth);
-
-          const appointmentDetails = {
+          return {
             Id: doc.id,
             petName: data.petName || "N/A",
-            owner: ownerName,
+            owner: ownerData?.data() ? `${ownerData.data().FirstName || ""} ${ownerData.data().LastName || ""}`.trim() || "N/A" : "N/A",
             service: data.serviceType || "N/A",
             notes: data.notes || "No Notes",
             dateofAppointment: data.dateofAppointment.toDate(),
             completionRemark: data.completionRemark || "No completion remark",
           };
+        }));
 
-          pastAppointmentsList.push(appointmentDetails);
-        }
-
-        setPastAppointments(pastAppointmentsList.sort((a, b) => b.dateofAppointment - a.dateofAppointment));
+        setPastAppointments(appointmentsList.sort((a, b) => b.dateofAppointment - a.dateofAppointment));
       }
     } catch (error) {
       console.error("Error fetching past appointments:", error);
@@ -518,9 +363,7 @@ const VeterinaryHome = () => {
     }
   };
 
-  const handleSignOut = () => {
-    setIsSignOutConfirmOpen(true);
-  };
+  const handleSignOut = () => setIsSignOutConfirmOpen(true);
 
   const confirmSignOut = async () => {
     try {
@@ -542,32 +385,24 @@ const VeterinaryHome = () => {
       try {
         const appointmentRef = doc(db, "appointments", selectedAppointment.Id);
         const appointmentDoc = await getDoc(appointmentRef);
-        if (!appointmentDoc.exists()) {
-          console.error("Appointment document does not exist.");
-          return;
-        }
+        if (!appointmentDoc.exists()) throw new Error("Appointment not found");
 
-        const appointmentData = appointmentDoc.data();
-
-        const pastAppointmentData = {
-          ...appointmentData,
+        const data = appointmentDoc.data();
+        await addDoc(collection(db, "pastAppointments"), {
+          ...data,
           status: "Completed",
           completionRemark: completionRemark || "No completion remark",
           timestampCompleted: new Date().toISOString(),
-        };
-
-        await addDoc(collection(db, "pastAppointments"), pastAppointmentData);
+        });
 
         await deleteDoc(appointmentRef);
-
-        setAppointments((prev) => prev.filter((appt) => appt.Id !== selectedAppointment.Id));
+        setAppointments(appointments.filter(appt => appt.Id !== selectedAppointment.Id));
         await fetchPastAppointments();
 
         setShowRemarksModal(false);
         setShowDetailsModal(false);
         setCompletionRemark("");
         setSelectedAppointment(null);
-
         alert("Appointment completed successfully!");
       } catch (error) {
         console.error("Error completing appointment:", error);
@@ -577,15 +412,13 @@ const VeterinaryHome = () => {
   };
 
   const onEventClick = (args) => {
-    const appointment = appointments.find((appt) => appt.Id === args.event.Id);
+    const appointment = appointments.find(appt => appt.Id === args.event.Id);
     setAppointmentDetails(appointment);
     setSelectedAppointment(appointment);
     setShowDetailsModal(true);
   };
 
-  const onCellClick = (args) => {
-    args.cancel = true;
-  };
+  const onCellClick = (args) => args.cancel = true;
 
   useEffect(() => {
     fetchVetInfo();
@@ -600,11 +433,7 @@ const VeterinaryHome = () => {
         {vetInfo && (
           <div className="vet-sidebar-panel-v">
             <div className="vet-img-container-v">
-              <img
-                src={vetInfo.profileImageURL}
-                alt="Vet Profile"
-                className="veterinarian-profile-image-v"
-              />
+              <img src={vetInfo.profileImageURL} alt="Vet Profile" className="veterinarian-profile-image-v" />
               <label htmlFor="vet-image-upload-v" className="edit-icon-v">
                 <FaCamera />
               </label>
@@ -661,11 +490,7 @@ const VeterinaryHome = () => {
             <div className="panel-v vet-info-panel-v">
               <h3>Veterinarian Information</h3>
               <div className="vet-details-v">
-                <img
-                  src={vetInfo.profileImageURL}
-                  alt="Veterinarian"
-                  className="vet-info-img-v"
-                />
+                <img src={vetInfo.profileImageURL} alt="Veterinarian" className="vet-info-img-v" />
                 <p><strong>First Name:</strong> {vetInfo.FirstName}</p>
                 <p><strong>Last Name:</strong> {vetInfo.LastName}</p>
                 <p><strong>Clinic:</strong> {vetInfo.clinicName}</p>
@@ -705,7 +530,7 @@ const VeterinaryHome = () => {
                     },
                   }}
                   eventClick={onEventClick}
-                  cellClick={(args) => args.cancel = true}
+                  cellClick={onCellClick}
                   popupOpen={(args) => args.cancel = true}
                   readOnly={true}
                 >
@@ -833,13 +658,13 @@ const VeterinaryHome = () => {
                             <div className="v-actions">
                               <button
                                 className="vicon-buttoncheck"
-                                onClick={() => handleApproveAppointment(appointment.id)}
+                                onClick={() => handleAction("accept", appointment.id)}
                               >
                                 Approve
                               </button>
                               <button
                                 className="vicon-buttondelete"
-                                onClick={() => handleDeclineAppointment(appointment.id)}
+                                onClick={() => handleAction("decline", appointment.id)}
                               >
                                 Decline
                               </button>
@@ -877,11 +702,9 @@ const VeterinaryHome = () => {
                   <label
                     htmlFor="vet-image-upload-modal-v"
                     className="vet-image-upload-v"
-                    style={
-                      vetImagePreview
-                        ? { backgroundImage: `url(${vetImagePreview})` }
-                        : { backgroundImage: `url(${editedVetInfo.profileImageURL})` }
-                    }
+                    style={{
+                      backgroundImage: `url(${vetImagePreview || editedVetInfo.profileImageURL})`,
+                    }}
                   >
                     {!vetImagePreview && !editedVetInfo.profileImageURL && (
                       <>
@@ -1104,6 +927,25 @@ const VeterinaryHome = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showConfirmModal.open && (
+        <div className="modal-overlay-v">
+          <div className="modal-content-v signout-confirm-modal-v">
+            <p>Are you sure you want to {showConfirmModal.action} this appointment?</p>
+            <div className="form-actions-v">
+              <button className="submit-btn-v" onClick={() => handleActionConfirm(showConfirmModal.action)}>
+                Yes
+              </button>
+              <button
+                className="cancel-btn-v"
+                onClick={() => setShowConfirmModal({ open: false, action: null, appointmentId: null })}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
