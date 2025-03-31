@@ -1045,7 +1045,7 @@ const ClinicHome = () => {
                 <div style={{ display: 'flex', width: '100%' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                   <div style={{ height: "450px", width: "100%" }}>
-                  <div><h2 style= {{textAlign: "center"}}>Age Distribution of Pets</h2></div>
+                  <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Age Distribution of Pets</h2></div>
                   {/* change this to another chart bc why did i use another pie in here??? */}
                     <ResponsivePie
                         data={ageData}
@@ -1059,45 +1059,24 @@ const ClinicHome = () => {
                                 ['darker', 0.2]
                             ]
                         }}
-                        arcLinkLabelsSkipAngle={10}
-                        arcLinkLabelsTextColor="#333333"
-                        arcLinkLabelsThickness={2}
-                        arcLinkLabelsColor={{ from: 'color' }}
+                        enableArcLinkLabels={false}
+                        arcLabel="id"
                         arcLabelsSkipAngle={10}
                         arcLabelsTextColor={{
                             from: 'color',
                             modifiers: [['darker', 2]]
                         }}
-                        defs={[
-                            {
-                                id: 'dots',
-                                type: 'patternDots',
-                                background: 'inherit',
-                                color: 'rgba(255, 255, 255, 0.3)',
-                                size: 4,
-                                padding: 1,
-                                stagger: true
-                            },
-                            {
-                                id: 'lines',
-                                type: 'patternLines',
-                                background: 'inherit',
-                                color: 'rgba(255, 255, 255, 0.3)',
-                                rotation: -45,
-                                lineWidth: 6,
-                                spacing: 10
-                            }
-                        ]}
+                        defs={[]}
                         fill={[]}
                         legends={[]}
                     />
                 </div>
                 <div style={{ height: "200px", width: "100%" }}>
-                  <div><h2 style= {{textAlign: "center"}}>Pet Gender Distribution</h2></div>
+                  <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Breed Breakdown Treated</h2></div>
                   <ResponsiveBar
                     data={genderData}
                     indexBy="id"
-                    margin={{ top: 0, right: 50, bottom: 50, left: 60 }}
+                    margin={{ top: 20, right: 50, bottom: 50, left: 60 }}
                     padding={0.5}
                     innerPadding={0}
                     layout="horizontal"
@@ -1125,14 +1104,15 @@ const ClinicHome = () => {
                 ></ResponsiveBar>
                 </div>
                 </div>
-                <div style={{ height: "550px", width: "125%" }}>
-                  <div><h2 style= {{textAlign: "center"}}>Pet Type Distribution</h2></div>
+                <div style={{flexDirection: 'column', width: '100%' }}>
+                <div style={{ height: "550px", width: "100%" }}>
+                  <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Pet Type Distribution</h2></div>
                 <ResponsivePie
                     data={speciesData}
                     margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
                     innerRadius={0.5}
                     padAngle={0.7}
-                    cornerRadius={3}
+                    cornerRadius={10}
                     activeOuterRadiusOffset={8}
                     colors={{ scheme: 'red_purple' }}
                     borderWidth={1}
@@ -1159,8 +1139,8 @@ const ClinicHome = () => {
                             ]
                         ]
                     }}
-                    arcLabel={(d) => d.data.formattedValue} // Use formattedValue here
-                    tooltip={({ datum }) => ( // Custom tooltip
+                    arcLabel={(d) => d.data.formattedValue} 
+                    tooltip={({ datum }) => ( 
                       <div
                           style={{
                               padding: '12px 16px',
@@ -1173,29 +1153,43 @@ const ClinicHome = () => {
                           <strong>{datum.id}</strong>: {datum.data.count}
                       </div>
                   )}
-                    defs={[
-                        {
-                            id: 'dots',
-                            type: 'patternDots',
-                            background: 'inherit',
-                            color: 'rgba(255, 255, 255, 0.3)',
-                            size: 4,
-                            padding: 1,
-                            stagger: true
-                        },
-                        {
-                            id: 'lines',
-                            type: 'patternLines',
-                            background: 'inherit',
-                            color: 'rgba(255, 255, 255, 0.3)',
-                            rotation: -45,
-                            lineWidth: 6,
-                            spacing: 10
-                        }
-                    ]}
+                    defs={[]}
                     fill={[]}
                   legends={[]}
                 ></ResponsivePie>
+              </div>
+              <div style={{ height: "200px", width: "100%" }}>
+                  <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Pet Gender Distribution</h2></div>
+                  <ResponsiveBar
+                    data={genderData}
+                    indexBy="id"
+                    margin={{ top: 20, right: 50, bottom: 50, left: 60 }}
+                    padding={0.5}
+                    innerPadding={0}
+                    layout="horizontal"
+                    valueScale={{ type: 'linear' }}
+                    indexScale={{ type: 'band', round: true }}
+                    colors={{ scheme: 'paired' }}
+                    defs={[]}
+                    fill={[]}
+                    borderColor={{
+                        from: 'color',
+                        modifiers: [
+                            [
+                                'darker',
+                                1.6
+                            ]
+                        ]
+                    }}
+                    axisBottom={null}
+                    axisTop={null}
+                    axisRight={null}
+                    enableTotals={true}
+                    labelSkipWidth={12}
+                    labelSkipHeight={12}
+                    legends={[]}
+                ></ResponsiveBar>
+                </div>
               </div>
             </div>
               )}
