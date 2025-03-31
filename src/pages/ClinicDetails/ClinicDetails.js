@@ -325,8 +325,7 @@ const ClinicDetails = () => {
       const petRef = doc(db, "pets", petId);
       const clinicRef = doc(db, "clinics", clinicId);
   
-      // Save to pendingAppointments collection instead of appointments
-      const pendingAppointmentRef = await addDoc(collection(db, "pendingAppointments"), {
+      const pendingAppointmentRef = await addDoc(collection(db, "appointments"), {
         petId,
         petName: selectedPet.petName,
         petRef,
