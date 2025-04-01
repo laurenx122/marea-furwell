@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   getDoc,
   updateDoc,
+  deleteDoc,
   count,
 } from "firebase/firestore";
 import {
@@ -92,6 +93,9 @@ const ClinicHome = () => {
   const [clinicServices, setClinicServices] = useState([]);
   const [newVetServices, setNewVetServices] = useState([]);
   const [vetSchedules, setVetSchedules] = useState([]);
+  const [pendingAppointments, setPendingAppointments] = useState([]);
+  const [showConfirmModal, setShowConfirmModal] = useState({ open: false, action: null, appointmentId: null });
+  const [searchQuery, setSearchQuery] = useState("");
   const [newSchedule, setNewSchedule] = useState({
     day: "",
     startTime: "",
@@ -300,6 +304,98 @@ const ClinicHome = () => {
     }
   };
 
+  //fetch pending appointments
+  const fetchPendingAppointments = async () => {
+      try {
+        setLoading(true);
+        const user = auth.currentUser;
+        if (user) {
+          
+          const q = query(collection(db, "appointments"), where("status", "==", "pending"), where("clinicId", "==", user.uid));
+          const querySnapshot = await getDocs(q);
+  
+          const appointmentsList = await Promise.all(querySnapshot.docs.map(async (doc) => {
+            const data = doc.data();
+            const [ownerData, petData, clinicData] = await Promise.all([
+              data.owner ? getDoc(data.owner) : Promise.resolve(null),
+              data.petRef ? getDoc(data.petRef) : Promise.resolve(null),
+              data.clinic ? getDoc(data.clinic) : Promise.resolve(null),
+            ]);
+  
+            return {
+              id: doc.id,
+              ...data,
+              owner: ownerData?.data() || {},
+              petRef: petData?.data() || {},
+              clinic: clinicData?.data() || {},
+            };
+          }));
+  
+          setPendingAppointments(appointmentsList);
+        }
+      } catch (error) {
+        console.error("Error fetching pending appointments:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  // Filter pending appointments based on search query
+    const filteredPendingAppointments = pendingAppointments.filter((appointment) => {
+      const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
+      return (
+        (appointment.petName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+        ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (appointment.serviceType?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+      );
+    });
+    const handlePanelChange = (panel) => {
+      setActivePanel(panel);
+    
+  // Scroll the container to the top
+      const container = document.querySelector(".content-c");
+      if (container) {
+        container.scrollTo(0, 0); // Scroll the container to the top
+      }
+    };
+  //Action confirmation modal
+    const handleActionConfirm = async (action) => {
+      const { appointmentId } = showConfirmModal;
+      try {
+        const appointmentRef = doc(db, "appointments", appointmentId);
+        const appointmentDoc = await getDoc(appointmentRef);
+        if (!appointmentDoc.exists()) throw new Error("Appointment not found");
+  
+        if (action === "accept") {
+          const newData = { ...appointmentDoc.data(), status: "Accepted", timestamp: new Date().toISOString() };
+          await updateDoc(appointmentRef, newData);
+          await fetchAppointments();
+          console.log("Appointment accepted successfully!");
+        } else if (action === "decline") {
+          await updateDoc(appointmentRef,{status: "Declined"});
+          await fetchPendingAppointments();
+          console.log("Appointment declined successfully!");
+        }
+  
+        setPendingAppointments(pendingAppointments.filter(appt => appt.id !== appointmentId));
+        setShowConfirmModal({ open: false, action: null, appointmentId: null });
+      } catch (error) {
+        console.error(`Error ${action}ing appointment:`, error);
+        alert(`Failed to ${action} the appointment. Please try again.`);
+      }
+    };
+    const calculateAge = (dateOfBirth) => {
+      if (!dateOfBirth) return "N/A";
+      const dob = dateOfBirth.toDate ? dateOfBirth.toDate() : new Date(dateOfBirth);
+      if (isNaN(dob.getTime())) return "N/A";
+      const today = new Date("2025-03-24");
+      let age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+      return age >= 0 ? `${age}` : "N/A";
+    };
+    const handleAction = (action, appointmentId) => {
+      setShowConfirmModal({ open: true, action: action, appointmentId: appointmentId });
+    };
   const handleAddVet = async (e) => {
     e.preventDefault();
     setAddingVet(true);
@@ -520,6 +616,7 @@ const ClinicHome = () => {
         const clinicRef = doc(db, "clinics", currentUser.uid);
         const appointmentsQuery = query(
           collection(db, "appointments"),
+          where("status", "==", "Accepted"),
           where("clinic", "==", clinicRef)
         );
         const querySnapshot = await getDocs(appointmentsQuery);
@@ -726,11 +823,12 @@ const ClinicHome = () => {
       await fetchClinicInfo();
       fetchPatients();
       fetchAppointments(); // Ensure this is included
- // Ensure this is included      fetchVeterinarians();
+    fetchVeterinarians();
       fetchChartData();
+      fetchPendingAppointments();
     };
     initializeData();
-  }, [userFirstName]);
+  }, [userFirstName]);  
 
   return (
     <div className="clinic-container-c">
@@ -756,7 +854,7 @@ const ClinicHome = () => {
             </div>
             <button
               className={activePanel === "clinic" ? "active" : ""}
-              onClick={() => setActivePanel("clinic")}
+              onClick={() => handlePanelChange("clinic")}
             >
               {clinicInfo.clinicName}
             </button>
@@ -765,40 +863,48 @@ const ClinicHome = () => {
         <div className="sidebar-buttons-c">
           <button
             className={activePanel === "patients" ? "active" : ""}
-            onClick={() => setActivePanel("patients")}
+            onClick={() => handlePanelChange("patients")}
+            
           >
             Patients
           </button>
           <button
             className={activePanel === "appointments" ? "active" : ""}
-            onClick={() => setActivePanel("appointments")}
+            onClick={() => handlePanelChange("appointments")}
           >
             Appointments
           </button>
           <button
+            className={activePanel === "pendingAppointments" ? "active" : ""}
+            onClick={() => handlePanelChange("pendingAppointments")}
+          >
+            Pending Appointments
+          </button>
+          <button
             className={activePanel === "records" ? "active" : ""}
-            onClick={() => setActivePanel("records")}
+            onClick={() => handlePanelChange("records")}
           >
             Records
           </button>
           <button
             className={activePanel === "services" ? "active" : ""}
-            onClick={() => setActivePanel("services")}
+            onClick={() => handlePanelChange("services")}
           >
             Services
           </button>
           <button
             className={activePanel === "veterinarians" ? "active" : ""}
-            onClick={() => setActivePanel("veterinarians")}
+            onClick={() => handlePanelChange("veterinarians")}
           >
             Veterinarians
           </button>
           <button
             className={activePanel === "analytics" ? "active" : ""}
-            onClick={() => setActivePanel("analytics")}
+            onClick={() => handlePanelChange("analytics")}
           >
             Analytics
           </button>
+         
         </div>
         <button className="signout-btn-c" onClick={handleSignOut}>
           Sign Out
@@ -910,6 +1016,71 @@ const ClinicHome = () => {
                   </ViewsDirective>
                   <Inject services={[ Month, Agenda]} />
                 </ScheduleComponent>
+              )}
+            </div>
+          )}
+           {activePanel === "pendingAppointments" && (
+            <div className="panel-v health-records-panel-v">
+              <h3>Pending Appointments</h3>
+              <form className="csearch-bar-container">
+                <input
+                  type="text"
+                  placeholder="Search pending appointments (Pet Name, Owner, Service)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="csearch-bar"
+                />
+              </form>
+              {loading ? (
+                <p>Loading pending appointments...</p>
+              ) : filteredPendingAppointments.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date of Appointment</th>
+                      <th>Patient Name</th>
+                      <th>Owner</th>
+                      <th>Breed</th>
+                      <th>Age</th>
+                      <th>Service</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPendingAppointments.map((appointment) => {
+                      const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
+                      const petAge = calculateAge(appointment.petRef?.dateofBirth);
+                      return (
+                        <tr key={appointment.id}>
+                          <td>{formatDate(appointment.dateofAppointment)}</td>
+                          <td>{appointment.petName || "N/A"}</td>
+                          <td>{ownerName}</td>
+                          <td>{appointment.petRef?.Breed || "N/A"}</td>
+                          <td>{petAge}</td>
+                          <td>{appointment.serviceType || "N/A"}</td>
+                          <td>
+                            <div className="v-actions">
+                              <button
+                                className="vicon-buttoncheck"
+                                onClick={() => handleAction("accept", appointment.id)}
+                              >
+                                Approve
+                              </button>
+                              <button
+                                className="vicon-buttondecline"
+                                onClick={() => handleAction("decline", appointment.id)}
+                              >
+                                Decline
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <p>No pending appointments found.</p>
               )}
             </div>
           )}
@@ -1635,7 +1806,24 @@ const ClinicHome = () => {
           </div>
         </div>
       )}
-
+      {showConfirmModal.open && (
+        <div className="modal-overlay-v">
+          <div className="modal-content-v signout-confirm-modal-v">
+            <p>Are you sure you want to {showConfirmModal.action} this appointment?</p>
+            <div className="form-actions-v">
+              <button className="submit-btn-v" onClick={() => handleActionConfirm(showConfirmModal.action)}>
+                Yes
+              </button>
+              <button
+                className="cancel-btn-v"
+                onClick={() => setShowConfirmModal({ open: false, action: null, appointmentId: null })}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showAppointmentModal && selectedAppointment && (
         <div className="modal-overlay-c">
           <div className="modal-content-c">

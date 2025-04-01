@@ -668,3 +668,44 @@ tr:hover {
   height: 100%;
   overflow: hidden;
 }
+.v-actions {
+  gap: 10px;
+  display: flex;
+  justify-content: center;
+}
+.v-actions .vicon-buttoncheck {
+  
+  background-color: rgb(247, 0, 152);
+  border-color: rgb(247, 0, 152);;
+  color:white;
+  padding-left: 2px;
+  
+}
+
+.v-actions .vicon-buttondecline {
+  background-color: rgb(247, 0, 152);
+  border-color: rgb(247, 0, 152);
+  color:white;
+
+}
+.csearch-bar-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px; 
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: 25px;
+  /* margin-right: auto; */
+  flex-direction: row;
+}
+
+.csearch-bar-container input[type="text"] {
+  width: 70%;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  outline: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
