@@ -353,6 +353,7 @@
   justify-content: center;
   border: 1px solid #eaeaea;
   overflow: hidden;
+  z-index: 1;
 }
 
 .map-placeholder {
@@ -872,7 +873,7 @@
 .react-calendar__tile.fully-taken-date {
   background-color: #fed7d7 !important;
   color: #e53e3e !important;
-  pointer-events: none;
+  pointer-events: none; 
 }
 
 .react-calendar__tile.clicked-date:hover {
