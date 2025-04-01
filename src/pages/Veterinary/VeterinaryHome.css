@@ -466,24 +466,3 @@ th {
   border-radius: 5px;
   font-size: 16px;
 }
-
-.v-actions {
-  gap: 10px;
-  display: flex;
-  justify-content: center;
-}
-.v-actions .vicon-buttoncheck {
-  
-  background-color: rgb(247, 0, 152);
-  border-color: rgb(247, 0, 152);;
-  color:white;
-  padding-left: 2px;
-  
-}
-
-.v-actions .vicon-buttondelete {
-  background-color: rgb(247, 0, 152);
-  border-color: rgb(247, 0, 152);
-  color:white;
-
-}

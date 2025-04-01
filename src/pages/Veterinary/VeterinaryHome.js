@@ -49,9 +49,6 @@ const VeterinaryHome = () => {
   const [completionRemark, setCompletionRemark] = useState("");
   const [appointmentDetails, setAppointmentDetails] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [pendingAppointments, setPendingAppointments] = useState([]);
-  const [showConfirmModal, setShowConfirmModal] = useState({ open: false, action: null, appointmentId: null });
-  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_VET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
@@ -216,77 +213,6 @@ const VeterinaryHome = () => {
     }
   };
 
-  const fetchPendingAppointments = async () => {
-    try {
-      setLoading(true);
-      const user = auth.currentUser;
-      if (user) {
-        const q = query(collection(db, "appointments"), where("status", "==", "pending"), where("veterinarianId", "==", user.uid));
-        const querySnapshot = await getDocs(q);
-
-        const appointmentsList = await Promise.all(querySnapshot.docs.map(async (doc) => {
-          const data = doc.data();
-          const [ownerData, petData, clinicData] = await Promise.all([
-            data.owner ? getDoc(data.owner) : Promise.resolve(null),
-            data.petRef ? getDoc(data.petRef) : Promise.resolve(null),
-            data.clinic ? getDoc(data.clinic) : Promise.resolve(null),
-          ]);
-
-          return {
-            id: doc.id,
-            ...data,
-            owner: ownerData?.data() || {},
-            petRef: petData?.data() || {},
-            clinic: clinicData?.data() || {},
-          };
-        }));
-
-        setPendingAppointments(appointmentsList);
-      }
-    } catch (error) {
-      console.error("Error fetching pending appointments:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredPendingAppointments = pendingAppointments.filter((appointment) => {
-    const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
-    return (
-      (appointment.petName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-      ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (appointment.serviceType?.toLowerCase() || "").includes(searchQuery.toLowerCase())
-    );
-  });
-
-  const handleActionConfirm = async (action) => {
-    const { appointmentId } = showConfirmModal;
-    try {
-      const appointmentRef = doc(db, "appointments", appointmentId);
-      const appointmentDoc = await getDoc(appointmentRef);
-      if (!appointmentDoc.exists()) throw new Error("Appointment not found");
-
-      if (action === "accept") {
-        const newData = { ...appointmentDoc.data(), status: "Accepted", timestamp: new Date().toISOString() };
-        await updateDoc(appointmentRef, newData);
-        alert("Appointment accepted successfully!");
-      } else if (action === "decline") {
-        await deleteDoc(appointmentRef);
-        alert("Appointment declined successfully!");
-      }
-
-      setPendingAppointments(pendingAppointments.filter(appt => appt.id !== appointmentId));
-      setShowConfirmModal({ open: false, action: null, appointmentId: null });
-    } catch (error) {
-      console.error(`Error ${action}ing appointment:`, error);
-      alert(`Failed to ${action} the appointment. Please try again.`);
-    }
-  };
-
-  const handleAction = (action, appointmentId) => {
-    setShowConfirmModal({ open: true, action: action, appointmentId: appointmentId });
-  };
-
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -423,7 +349,6 @@ const VeterinaryHome = () => {
   useEffect(() => {
     fetchVetInfo();
     fetchAppointments();
-    fetchPendingAppointments();
     fetchPastAppointments();
   }, []);
 
@@ -471,12 +396,6 @@ const VeterinaryHome = () => {
             onClick={() => setActivePanel("healthRecords")}
           >
             Health Records
-          </button>
-          <button
-            className={activePanel === "pendingAppointments" ? "active" : ""}
-            onClick={() => setActivePanel("pendingAppointments")}
-          >
-            Pending Appointments
           </button>
         </div>
         <button className="signout-btn-v" onClick={handleSignOut}>
@@ -611,72 +530,6 @@ const VeterinaryHome = () => {
                     )}
                   </tbody>
                 </table>
-              )}
-            </div>
-          )}
-
-          {activePanel === "pendingAppointments" && (
-            <div className="panel-v health-records-panel-v">
-              <h3>Pending Appointments</h3>
-              <form className="search-bar-container-v">
-                <input
-                  type="text"
-                  placeholder="Search pending appointments (Pet Name, Owner, Service)..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="search-bar-v"
-                />
-              </form>
-              {loading ? (
-                <p>Loading pending appointments...</p>
-              ) : filteredPendingAppointments.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date of Appointment</th>
-                      <th>Patient Name</th>
-                      <th>Owner</th>
-                      <th>Breed</th>
-                      <th>Age</th>
-                      <th>Service</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPendingAppointments.map((appointment) => {
-                      const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
-                      const petAge = calculateAge(appointment.petRef?.dateofBirth);
-                      return (
-                        <tr key={appointment.id}>
-                          <td>{formatDate(appointment.dateofAppointment)}</td>
-                          <td>{appointment.petName || "N/A"}</td>
-                          <td>{ownerName}</td>
-                          <td>{appointment.petRef?.Breed || "N/A"}</td>
-                          <td>{petAge}</td>
-                          <td>{appointment.serviceType || "N/A"}</td>
-                          <td>
-                            <div className="v-actions">
-                              <button
-                                className="vicon-buttoncheck"
-                                onClick={() => handleAction("accept", appointment.id)}
-                              >
-                                Approve
-                              </button>
-                              <button
-                                className="vicon-buttondelete"
-                                onClick={() => handleAction("decline", appointment.id)}
-                              >
-                                Decline
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              ) : (
-                <p>No pending appointments found.</p>
               )}
             </div>
           )}
@@ -927,25 +780,6 @@ const VeterinaryHome = () => {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {showConfirmModal.open && (
-        <div className="modal-overlay-v">
-          <div className="modal-content-v signout-confirm-modal-v">
-            <p>Are you sure you want to {showConfirmModal.action} this appointment?</p>
-            <div className="form-actions-v">
-              <button className="submit-btn-v" onClick={() => handleActionConfirm(showConfirmModal.action)}>
-                Yes
-              </button>
-              <button
-                className="cancel-btn-v"
-                onClick={() => setShowConfirmModal({ open: false, action: null, appointmentId: null })}
-              >
-                Cancel
-              </button>
-            </div>
           </div>
         </div>
       )}
