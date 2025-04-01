@@ -7,6 +7,8 @@ import Footer from '../../components/Footer/Footer';
 import './ClinicDetails.css';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 const ClinicDetails = () => {
   const [clinic, setClinic] = useState(null);
@@ -21,7 +23,8 @@ const ClinicDetails = () => {
     petId: "",
     veterinarianId: "",
     serviceType: "",
-    dateofAppointment: "",
+    dateofAppointment: null,
+    timeSlot: "",
   });
   const [bookingStatus, setBookingStatus] = useState({ loading: false, success: false, error: null });
   const { clinicId } = useParams();
@@ -34,8 +37,10 @@ const ClinicDetails = () => {
   const [veterinarians, setVeterinarians] = useState([]);
   const [loadingVeterinarians, setLoadingVeterinarians] = useState(false);
   const [vetServices, setVetServices] = useState({});
-  const [vetSchedules, setVetSchedules] = useState({});
-  const [availableDates, setAvailableDates] = useState([]);
+  const [vetSchedule, setVetSchedule] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [takenAppointments, setTakenAppointments] = useState([]);
 
   const categorizePrice = (price) => {
     if (price < 800) return '₱';
@@ -70,36 +75,91 @@ const ClinicDetails = () => {
     return String(dateValue);
   };
 
-  const getAvailableDates = (schedules) => {
-    const dates = [];
+  const handleCalendarDateClick = (date) => {
     const today = new Date();
-    const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const oneMonthFromToday = new Date(today);
+    oneMonthFromToday.setMonth(today.getMonth() + 1);
 
-    for (let i = 0; i < 30; i++) {
-      const currentDate = new Date(today);
-      currentDate.setDate(today.getDate() + i);
-      const dayName = daysOfWeek[currentDate.getDay()];
+    const clickedDateLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const oneMonthFromTodayLocal = new Date(oneMonthFromToday.getFullYear(), oneMonthFromToday.getMonth(), oneMonthFromToday.getDate());
 
-      schedules.forEach((schedule) => {
-        if (schedule.day === dayName) {
-          const [startHour, startMinute] = schedule.startTime.split(":");
-          const [endHour, endMinute] = schedule.endTime.split(":");
-          const start = new Date(currentDate);
-          start.setHours(parseInt(startHour), parseInt(startMinute), 0);
-          const end = new Date(currentDate);
-          end.setHours(parseInt(endHour), parseInt(endMinute), 0);
-
-          if (start > new Date()) {
-            dates.push({
-              date: start,
-              end,
-              display: `${formatDate(start)} - ${end.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
-            });
-          }
-        }
-      });
+    if (clickedDateLocal >= todayLocal && clickedDateLocal <= oneMonthFromTodayLocal) {
+      setSelectedDate(clickedDateLocal);
+      setAppointmentData((prev) => ({ ...prev, dateofAppointment: clickedDateLocal }));
+      const slots = generateTimeSlots(clickedDateLocal, vetSchedule);
+      setAvailableSlots(slots);
+      setAppointmentData((prev) => ({ ...prev, timeSlot: "" }));
     }
-    return dates;
+  };
+
+  const tileClassName = ({ date, view }) => {
+    if (view !== "month") return null;
+
+    const today = new Date();
+    const oneMonthFromToday = new Date(today);
+    oneMonthFromToday.setMonth(today.getMonth() + 1);
+
+    const isToday = date.toDateString() === today.toDateString();
+    const dayOfWeek = date.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
+    const hasSchedule = vetSchedule && vetSchedule.some(
+      (sched) => sched.day.toLowerCase() === dayOfWeek
+    );
+    const isWithinOneMonth = date >= today && date <= oneMonthFromToday;
+
+    const slots = generateTimeSlots(date, vetSchedule);
+  const isFullyBooked = hasSchedule && slots.length === 0;
+
+    if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
+      return "clicked-date";
+    }
+    if (isToday) return "today-date";
+    if (!isWithinOneMonth || !hasSchedule) return "disabled-date";
+    if (isFullyBooked) return "fully-taken-date";
+    return "available-date";
+  };
+
+  const generateTimeSlots = (selectedDate, vetSchedule) => {
+    if (!vetSchedule) return [];
+
+    const dayOfWeek = selectedDate.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
+    const vetDaySchedule = vetSchedule.find(
+      (sched) => sched.day.toLowerCase() === dayOfWeek
+    );
+
+    if (!vetDaySchedule) return [];
+
+    const startHour = parseInt(vetDaySchedule.startTime.split(":")[0], 10);
+    const endHour = parseInt(vetDaySchedule.endTime.split(":")[0], 10);
+    const today = new Date();
+    const isToday = selectedDate.toDateString() === today.toDateString();
+    const slots = [];
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      const slotTime = new Date(selectedDate);
+      slotTime.setHours(hour, 0, 0, 0);
+
+      if (isToday && slotTime <= today) continue;
+
+      const isTaken = takenAppointments.some((appt) => {
+        const apptStart = new Date(appt.dateofAppointment);
+        return (
+          apptStart.getFullYear() === slotTime.getFullYear() &&
+          apptStart.getMonth() === slotTime.getMonth() &&
+          apptStart.getDate() === slotTime.getDate() &&
+          apptStart.getHours() === slotTime.getHours()
+        );
+      });
+
+      if (!isTaken) {
+        slots.push({
+          time: slotTime,
+          display: slotTime.toLocaleString("en-US", { hour: "numeric", hour12: true }),
+        });
+      }
+    }
+
+    return slots;
   };
 
   useEffect(() => {
@@ -180,7 +240,6 @@ const ClinicDetails = () => {
     fetchClinicData();
     fetchVeterinarians();
 
-    // Check if we should open the appointment modal
     if (location.state?.openAppointmentModal && auth.currentUser) {
       setShowModal(true);
     }
@@ -251,11 +310,46 @@ const ClinicDetails = () => {
       const vetList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setVeterinarians(vetList);
       setVetServices(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.services || [] }), {}));
-      setVetSchedules(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.schedule || [] }), {}));
     } catch (error) {
       console.error("Error fetching veterinarians:", error);
     } finally {
       setLoadingVeterinarians(false);
+    }
+  };
+
+  const fetchVetSchedule = async (veterinarianId) => {
+    try {
+      const vetRef = doc(db, "users", veterinarianId);
+      const vetDoc = await getDoc(vetRef);
+      if (vetDoc.exists() && vetDoc.data().Type === "Veterinarian") {
+        setVetSchedule(vetDoc.data().schedule || []);
+      } else {
+        setVetSchedule(null);
+      }
+    } catch (error) {
+      console.error("Error fetching vet schedule:", error);
+      setVetSchedule(null);
+    }
+  };
+
+  const fetchTakenAppointments = async (veterinarianId) => {
+    try {
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        where("veterinarianId", "==", veterinarianId),
+        where("clinicId", "==", clinicId),
+        where("status", "in", ["Accepted", "pending"]) // Consider only active appointments
+      );
+      const querySnapshot = await getDocs(appointmentsQuery);
+      const taken = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        dateofAppointment: doc.data().dateofAppointment.toDate(),
+      }));
+      setTakenAppointments(taken);
+    } catch (error) {
+      console.error("Error fetching taken appointments:", error);
+      setTakenAppointments([]);
     }
   };
 
@@ -270,40 +364,46 @@ const ClinicDetails = () => {
       petId: userPets.length > 0 ? userPets[0].id : "",
       veterinarianId: "",
       serviceType: "",
-      dateofAppointment: "",
+      dateofAppointment: null,
+      timeSlot: "",
     });
     setShowModal(true);
+    setSelectedDate(null);
+    setAvailableSlots([]);
   };
 
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
     setAppointmentData((prev) => ({ ...prev, [name]: value }));
-
+  
     if (name === "veterinarianId" && value) {
       const vet = veterinarians.find((v) => v.id === value);
       const vetServicesList = vet.services || [];
       setVetServices({ [value]: vetServicesList });
-      setVetSchedules({ [value]: vet.schedule || [] });
-      setAvailableDates(getAvailableDates(vet.schedule || []));
+      await fetchVetSchedule(value);
+      await fetchTakenAppointments(value);
       setAppointmentData((prev) => ({
         ...prev,
         serviceType: vetServicesList.length > 0 ? vetServicesList[0] : "",
-        dateofAppointment: "",
+        dateofAppointment: null,
+        timeSlot: "", // Reset timeSlot when vet changes
       }));
-    } else if (name === "serviceType" && value) {
-      const vetId = appointmentData.veterinarianId;
-      if (vetId) {
-        const vet = veterinarians.find((v) => v.id === vetId);
-        setVetSchedules({ [vetId]: vet.schedule || [] });
-        setAvailableDates(getAvailableDates(vet.schedule || []));
-      }
+      setSelectedDate(null);
+      setAvailableSlots([]);
+    } else if (name === "timeSlot") {
+      // Set timeSlot to the actual ISO string value from the select option
+      setAppointmentData((prev) => ({
+        ...prev,
+        timeSlot: value, // Use the ISO string directly
+      }));
     }
   };
+
   const handleSubmitAppointment = async (e) => {
     e.preventDefault();
-  
-    const { petId, veterinarianId, serviceType, dateofAppointment, notes } = appointmentData;
-    if (!petId || !veterinarianId || !serviceType || !dateofAppointment) {
+
+    const { petId, veterinarianId, serviceType, dateofAppointment, timeSlot } = appointmentData;
+    if (!petId || !veterinarianId || !serviceType || !dateofAppointment || !timeSlot) {
       setBookingStatus({
         loading: false,
         success: false,
@@ -311,20 +411,26 @@ const ClinicDetails = () => {
       });
       return;
     }
-  
+
     setBookingStatus({ loading: true, success: false, error: null });
-  
+
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("You must be logged in to book an appointment");
-  
+
       const selectedPet = userPets.find((pet) => pet.id === petId);
       if (!selectedPet) throw new Error("Selected pet not found");
-  
+
       const ownerRef = doc(db, "users", currentUser.uid);
       const petRef = doc(db, "pets", petId);
       const clinicRef = doc(db, "clinics", clinicId);
-  
+
+      const appointmentDateTime = new Date(dateofAppointment);
+      const slot = availableSlots.find((s) => s.time.toISOString() === timeSlot);
+      if (slot) {
+        appointmentDateTime.setHours(slot.time.getHours(), 0, 0, 0);
+      }
+
       const pendingAppointmentRef = await addDoc(collection(db, "appointments"), {
         petId,
         petName: selectedPet.petName,
@@ -337,14 +443,13 @@ const ClinicDetails = () => {
         veterinarian: veterinarians.find((v) => v.id === veterinarianId).FirstName + " " +
           veterinarians.find((v) => v.id === veterinarianId).LastName,
         serviceType,
-        dateofAppointment: new Date(dateofAppointment),
-        notes: notes || "",
-        status: "pending", // Add a status field to track approval
+        dateofAppointment: appointmentDateTime,
+        status: "pending",
         createdAt: serverTimestamp(),
       });
-  
+
       setBookingStatus({ loading: false, success: true, error: null });
-  
+
       setTimeout(() => {
         setShowModal(false);
         setBookingStatus({ loading: false, success: false, error: null });
@@ -358,7 +463,6 @@ const ClinicDetails = () => {
       });
     }
   };
-  
 
   const handleLoginRedirect = () => {
     setShowLoginModal(false);
@@ -523,7 +627,14 @@ const ClinicDetails = () => {
             </div>
             <div className="modal-body login-modal-body">
               <p>You need to be logged in to book an appointment.</p>
-              
+              <div className="login-actions">
+                <button className="submit-btn" onClick={handleLoginRedirect}>
+                  Log In
+                </button>
+                <Link to="/register" className="submit-btn" style={{ textDecoration: 'none' }}>
+                  Register
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -608,18 +719,36 @@ const ClinicDetails = () => {
                     </select>
                   </div>
                   <div className="form-group">
-                    <label htmlFor="dateofAppointment">Date & Time *</label>
+                    <label>Date *</label>
+                    <div className="calendar-container">
+                      <Calendar
+                        onClickDay={handleCalendarDateClick}
+                        value={selectedDate || new Date()}
+                        minDate={new Date()}
+                        maxDate={(() => {
+                          const max = new Date();
+                          max.setMonth(max.getMonth() + 1);
+                          return max;
+                        })()}
+                        tileClassName={tileClassName}
+                        locale="en-US"
+                        disabled={!appointmentData.serviceType || !vetSchedule}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="timeSlot">Time Slot *</label>
                     <select
-                      id="dateofAppointment"
-                      name="dateofAppointment"
-                      value={appointmentData.dateofAppointment}
+                      id="timeSlot"
+                      name="timeSlot"
+                      value={appointmentData.timeSlot} // Match the value to the ISO string
                       onChange={handleInputChange}
                       required
-                      disabled={!appointmentData.serviceType}
+                      disabled={!selectedDate || availableSlots.length === 0}
                     >
-                      <option value="">Select a date and time</option>
-                      {availableDates.map((slot, index) => (
-                        <option key={index} value={slot.date.toISOString()}>
+                      <option value="">Select a time</option>
+                      {availableSlots.map((slot, index) => (
+                        <option key={index} value={slot.time.toISOString()}>
                           {slot.display}
                         </option>
                       ))}
@@ -681,10 +810,11 @@ const ClinicDetails = () => {
               <div className="vet-schedule">
                 <strong>Schedule:</strong>
                 {selectedVet.schedule && selectedVet.schedule.length > 0 ? (
-                  <ul>
+                  <ul className="schedule-list">
                     {selectedVet.schedule.map((slot, index) => (
-                      <li key={index}>
-                        {slot.day}: {slot.startTime} - {slot.endTime}
+                      <li key={index} className="schedule-item">
+                        <span className="day">{slot.day}</span>
+                        <span className="time-range">{slot.startTime} - {slot.endTime}</span>
                       </li>
                     ))}
                   </ul>

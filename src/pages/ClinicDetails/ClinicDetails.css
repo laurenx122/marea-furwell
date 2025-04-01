@@ -286,7 +286,7 @@
   border-radius: 12px;
   transition: all 0.3s ease;
   border: 1px solid #eaeaea;
-  width: 280px; /* Fixed width to match grid’s minimum */
+  width: 280px;
   box-sizing: border-box;
 }
 
@@ -311,35 +311,33 @@
   max-width: 100%;
 }
 
-/* Default state: show truncated text, hide full text */
 .email-value {
-  cursor: pointer; 
-  display: block; 
+  cursor: pointer;
+  display: block;
   width: 100%;
 }
 
 .email-value .truncated {
-  display: inline; 
-  white-space: nowrap; 
+  display: inline;
+  white-space: nowrap;
   word-break: normal;
 }
 
 .email-value .full-text {
-  display: none; 
+  display: none;
 }
 
-/* On hover: hide truncated text, show full text */
 .email-item:hover .email-value .truncated {
   display: none;
 }
 
 .email-item:hover .email-value .full-text {
-  display: block; 
-  white-space: normal; 
+  display: block;
+  white-space: normal;
   word-break: break-word;
-  color: #444; 
-  font-size: 1rem; 
-  line-height: 1.5; 
+  color: #444;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
 .map-container {
@@ -362,7 +360,6 @@
   font-style: italic;
 }
 
-/* Veterinarians Section Styles */
 .veterinarians-section {
   margin-bottom: 35px;
 }
@@ -419,7 +416,6 @@
   color: #444;
 }
 
-/* Veterinarian Modal Styles */
 .vet-modal {
   background-color: white;
   border-radius: 16px;
@@ -470,21 +466,40 @@
   font-size: 1.1rem;
 }
 
-.vet-schedule ul {
+.schedule-list {
   list-style-type: none;
   padding: 0;
+  margin-top: 10px;
 }
 
-.vet-schedule li {
+.schedule-item {
   background-color: #f8f9fa;
-  padding: 10px;
+  padding: 12px 15px;
   border-radius: 8px;
   margin-bottom: 8px;
-  font-size: 0.95rem;
-  color: #444;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  border-left: 4px solid #4D9DE0;
 }
 
-/* Modal styles */
+.schedule-item:hover {
+  background-color: #e6f7ff;
+  transform: translateX(5px);
+  box-shadow: 0 2px 5px rgba(77, 157, 224, 0.2);
+}
+
+.day {
+  font-weight: 600;
+  color: #113B57;
+}
+
+.time-range {
+  color: #444;
+  font-size: 0.95rem;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -624,12 +639,6 @@
   min-height: 100px;
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -666,6 +675,11 @@
   box-shadow: 0 3px 10px rgba(17, 59, 87, 0.2);
 }
 
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(17, 59, 87, 0.3);
+}
+
 .error-message {
   color: #d32f2f;
   background-color: #ffebee;
@@ -676,35 +690,6 @@
   border-left: 4px solid #d32f2f;
 }
 
-.no-pets-message {
-  color: #444;
-  margin: 15px 0;
-  text-align: center;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border: 1px dashed #cfd8dc;
-}
-
-.add-pet-link {
-  display: inline-block;
-  color: white;
-  background: linear-gradient(135deg, #3E6680 0%, #113B57 100%);
-  text-decoration: none;
-  padding: 10px 20px;
-  border-radius: 30px;
-  margin-top: 15px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 3px 10px rgba(17, 59, 87, 0.2);
-}
-
-.add-pet-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(17, 59, 87, 0.3);
-}
-
-/* Success message styling */
 .success-message {
   display: flex;
   flex-direction: column;
@@ -771,6 +756,139 @@
   }
 }
 
+.calendar-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.react-calendar {
+  background: #ffffff;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 12px;
+  font-family: 'Poppins', sans-serif;
+  overflow: hidden;
+  max-width: 320px; /* Optional: limits width for better centering */
+}
+
+.react-calendar__navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.react-calendar__navigation__label {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #113B57;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.react-calendar__navigation__label:hover {
+  color: #4D9DE0;
+}
+
+.react-calendar__navigation__arrow {
+  font-size: 1.5rem;
+  color: #718096;
+  background: none;
+  border: none;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.react-calendar__navigation__arrow:hover {
+  color: #4D9DE0;
+  transform: scale(1.1);
+}
+
+.react-calendar__month-view__weekdays {
+  margin-bottom: 8px;
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #718096;
+  text-transform: uppercase;
+  padding: 4px 0;
+}
+
+.react-calendar__tile {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 0.95rem;
+  color: #113B57;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.react-calendar__tile:enabled:hover {
+  background: #4D9DE0;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
+}
+
+.react-calendar__tile--active {
+  background: #113B57;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.react-calendar__tile.clicked-date {
+  background-color: #4D9DE0 !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(77, 157, 224, 0.3);
+}
+
+.react-calendar__tile.today-date {
+  background-color: #edf2f7 !important;
+  color: #4D9DE0 !important;
+  border: 1px solid #4D9DE0 !important;
+  font-weight: 500;
+}
+
+.react-calendar__tile.disabled-date {
+  background-color: #edf2f7 !important;
+  color: #a0aec0 !important;
+  pointer-events: none;
+}
+
+.react-calendar__tile.available-date {
+  background-color: #c6f6d5 !important;
+  color: #38a169 !important;
+}
+
+.react-calendar__tile.fully-taken-date {
+  background-color: #fed7d7 !important;
+  color: #e53e3e !important;
+  pointer-events: none;
+}
+
+.react-calendar__tile.clicked-date:hover {
+  background-color: #4D9DE0 !important;
+  color: #ffffff !important;
+}
+
+@keyframes calendarFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.react-calendar {
+  animation: calendarFadeIn 0.3s ease-out;
+}
+
 /* Media Queries for Responsiveness */
 @media (max-width: 768px) {
   .clinic-header h1 {
@@ -813,11 +931,6 @@
   
   .clinic-image-container {
     height: 220px;
-  }
-  
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 15px;
   }
   
   .form-actions {
