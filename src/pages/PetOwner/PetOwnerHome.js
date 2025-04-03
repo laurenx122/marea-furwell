@@ -1213,7 +1213,7 @@ const PetOwnerHome = () => {
             <h2>{selectedPet.petName}</h2>
             <div className="pet-info-grid-p">
               <div className="info-item-p">
-                <strong>Species:</strong> {selectedPet.Species || "N/A"}
+                <strong>Type:</strong> {selectedPet.Type || "N/A"}
               </div>
               <div className="info-item-p">
                 <strong>Breed:</strong> {selectedPet.Breed || "N/A"}
