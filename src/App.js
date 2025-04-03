@@ -26,7 +26,7 @@ import ClinicDetails from './pages/ClinicDetails/ClinicDetails';
 const Layout = ({ children }) => {
   const location = useLocation();
   // Add routes where Navbar should not appear (e.g., specific dashboards)
-  const noNavbarRoutes = ['/ClinicHome', '/VeterinaryHome', '/AdminHome', '/AdminAnalytics', '/AdminSubscription'];
+  const noNavbarRoutes = ['/ClinicHome', '/VeterinaryHome'];
   // Check if the current path starts with any of the noNavbarRoutes
   const hideNavbar = noNavbarRoutes.some(route => location.pathname.startsWith(route));
 

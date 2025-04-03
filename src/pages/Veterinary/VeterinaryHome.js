@@ -234,7 +234,7 @@ const VeterinaryHome = () => {
             StartTime: startTime,
             EndTime: new Date(startTime.getTime() + 60 * 60 * 1000),
             petName: data.petName || petData?.data()?.petName || "N/A",
-            species: petData?.data()?.Species || "N/A",
+            type: petData?.data()?.Type || "N/A",
             breed: petData?.data()?.Breed || "N/A",
             age: calculateAge(petData?.data()?.dateofBirth),
             owner: ownerData?.data() ? `${ownerData.data().FirstName || ""} ${ownerData.data().LastName || ""}`.trim() || "N/A" : "N/A",
@@ -711,7 +711,7 @@ const VeterinaryHome = () => {
                 <strong>Service:</strong> {appointmentDetails.service}
               </div>
               <div className="info-item-v">
-                <strong>Species:</strong> {appointmentDetails.species}
+                <strong>Type:</strong> {appointmentDetails.type}
               </div>
               <div className="info-item-v">
                 <strong>Breed:</strong> {appointmentDetails.breed}

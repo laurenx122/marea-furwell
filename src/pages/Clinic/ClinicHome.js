@@ -1781,7 +1781,7 @@ const ClinicHome = () => {
             <h2>{selectedPatient.petName}</h2>
             <div className="pet-info-grid-c">
               <div className="info-item-c">
-                <strong>Species:</strong> {selectedPatient.Species || "N/A"}
+                <strong>Type:</strong> {selectedPatient.Type || "N/A"}
               </div>
               <div className="info-item-c">
                 <strong>Breed:</strong> {selectedPatient.Breed || "N/A"}
