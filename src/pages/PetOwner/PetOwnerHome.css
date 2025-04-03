@@ -226,24 +226,6 @@ tr:hover {
   background-color: #ff1493; 
 }
 
-/* Form Styling */
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.form-group-p {
-  margin-bottom: 15px;
-  text-align: left;
-}
-
-.form-group-p label {
-  display: block;
-  margin-bottom: 5px;
-  color: #333;
-  font-weight: bold;
-}
 .psearch-bar-container {
   display: flex;
   justify-content: center;
@@ -265,8 +247,7 @@ form {
   outline: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
-.form-group-p input,
-.form-group-p select {
+.form-group-p input{
   width: 95%;
   padding: 10px;
   border: 1px solid #ddd;
@@ -274,6 +255,15 @@ form {
   font-size: 16px;
   transition: border-color 0.3s;
 }
+
+.form-group-p select{
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+} 
 
 .form-group-p input:focus,
 .form-group-p select:focus {
@@ -285,6 +275,87 @@ form {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* Form Styling */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-group-p {
+  margin-bottom: 0px;
+  text-align: left;
+}
+
+.form-group-p label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+  font-weight: bold;
+}
+
+.full-width-select {
+  width: 100%; /* Same as inputs */
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.shrunk-select {
+  width: 45%; /* Shrink when "Others" is selected */
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s, width 0.3s;
+}
+
+.full-width-select:focus, .shrunk-select:focus {
+  border-color: #ff4081;
+  outline: none;
+}
+
+.custom-input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.others-label {
+  font-weight: bold;
+  color: #333;
+  margin-right: 10px;
+  white-space: nowrap;
+}
+
+.custom-input {
+  width: 100%; /* Same width as other inputs when shown */
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  margin-top: 10px; /* Space above custom input */
+  transition: border-color 0.3s;
+}
+
+.custom-input:focus {
+  border-color: #ff4081;
+  outline: none;
+}
+
+.form-group-p .custom-input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-group-p .custom-input-container select {
+  width: auto; /* Shrink select when "Others" is chosen */
 }
 
 .submit-btn-p {
