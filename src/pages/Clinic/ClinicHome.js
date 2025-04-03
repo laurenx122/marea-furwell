@@ -54,9 +54,9 @@ const ClinicHome = () => {
     // process.env.SYNC_REGISTER_LICENSE
     // "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
   );
-  const [genderData, setGenderData] = useState([]);
-  const [speciesData, setSpeciesData] = useState([]);
-  const [ageData, setAgeData] = useState([]);
+  // const [genderData, setGenderData] = useState([]);
+  // const [speciesData, setSpeciesData] = useState([]);
+  // const [ageData, setAgeData] = useState([]);
   const [activePanel, setActivePanel] = useState("patients");
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -742,7 +742,7 @@ const ClinicHome = () => {
   };
 
   const fetchChartData = async () => {
-    try {
+    /*/try {
       setLoading(true);
       const petsQuery = query(collection(db, "pets"));
       const querySnapshot = await getDocs(petsQuery);
@@ -813,7 +813,7 @@ const ClinicHome = () => {
       setAgeData([]);
     } finally {
       setLoading(false);
-    }
+    }/*/
   };
   
 
@@ -1213,156 +1213,157 @@ const ClinicHome = () => {
               {loading ? (
                 <p>Loading analytics...</p>
               ) : (
-                <div style={{ display: 'flex', width: '100%' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                  <div style={{ height: "450px", width: "100%" }}>
-                  <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Age Distribution of Pets</h2></div>
-                  {/* change this to another chart bc why did i use another pie in here??? */}
-                    <ResponsivePie
-                        data={ageData}
-                        margin={{ top: 40, right: 80, bottom: 120, left: 80 }}
-                        activeOuterRadiusOffset={8}
-                        colors={{ scheme: 'pastel1' }}
-                        borderWidth={1}
-                        borderColor={{
-                            from: 'color',
-                            modifiers: [
-                                ['darker', 0.2]
-                            ]
-                        }}
-                        enableArcLinkLabels={false}
-                        arcLabel="id"
-                        arcLabelsSkipAngle={10}
-                        arcLabelsTextColor={{
-                            from: 'color',
-                            modifiers: [['darker', 2]]
-                        }}
-                        defs={[]}
-                        fill={[]}
-                        legends={[]}
-                    />
-                </div>
-                <div style={{ height: "200px", width: "100%" }}>
-                  <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Breed Breakdown Treated</h2></div>
-                  <ResponsiveBar
-                    data={genderData}
-                    indexBy="id"
-                    margin={{ top: 20, right: 50, bottom: 50, left: 60 }}
-                    padding={0.5}
-                    innerPadding={0}
-                    layout="horizontal"
-                    valueScale={{ type: 'linear' }}
-                    indexScale={{ type: 'band', round: true }}
-                    colors={{ scheme: 'paired' }}
-                    defs={[]}
-                    fill={[]}
-                    borderColor={{
-                        from: 'color',
-                        modifiers: [
-                            [
-                                'darker',
-                                1.6
-                            ]
-                        ]
-                    }}
-                    axisBottom={null}
-                    axisTop={null}
-                    axisRight={null}
-                    enableTotals={true}
-                    labelSkipWidth={12}
-                    labelSkipHeight={12}
-                    legends={[]}
-                ></ResponsiveBar>
-                </div>
-                </div>
-                <div style={{flexDirection: 'column', width: '100%' }}>
-                <div style={{ height: "550px", width: "100%" }}>
-                  <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Pet Type Distribution</h2></div>
-                <ResponsivePie
-                    data={speciesData}
-                    margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
-                    innerRadius={0.5}
-                    padAngle={0.7}
-                    cornerRadius={10}
-                    activeOuterRadiusOffset={8}
-                    colors={{ scheme: 'red_purple' }}
-                    borderWidth={1}
-                    borderColor={{
-                        from: 'color',
-                        modifiers: [
-                            [
-                                'darker',
-                                0.2
-                            ]
-                        ]
-                    }}
-                    arcLinkLabelsSkipAngle={10}
-                    arcLinkLabelsTextColor="#333333"
-                    arcLinkLabelsThickness={2}
-                    arcLinkLabelsColor={{ from: 'color' }}
-                    arcLabelsSkipAngle={10}
-                    arcLabelsTextColor={{
-                        from: 'color',
-                        modifiers: [
-                            [
-                                'darker',
-                                2
-                            ]
-                        ]
-                    }}
-                    arcLabel={(d) => d.data.formattedValue} 
-                    tooltip={({ datum }) => ( 
-                      <div
-                          style={{
-                              padding: '12px 16px',
-                              color: '#333',
-                              background: '#fff',
-                              borderRadius: '2px',
-                              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.15)',
-                          }}
-                      >
-                          <strong>{datum.id}</strong>: {datum.data.count}
-                      </div>
-                  )}
-                    defs={[]}
-                    fill={[]}
-                  legends={[]}
-                ></ResponsivePie>
-              </div>
-              <div style={{ height: "200px", width: "100%" }}>
-                  <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Pet Gender Distribution</h2></div>
-                  <ResponsiveBar
-                    data={genderData}
-                    indexBy="id"
-                    margin={{ top: 20, right: 50, bottom: 50, left: 60 }}
-                    padding={0.5}
-                    innerPadding={0}
-                    layout="horizontal"
-                    valueScale={{ type: 'linear' }}
-                    indexScale={{ type: 'band', round: true }}
-                    colors={{ scheme: 'paired' }}
-                    defs={[]}
-                    fill={[]}
-                    borderColor={{
-                        from: 'color',
-                        modifiers: [
-                            [
-                                'darker',
-                                1.6
-                            ]
-                        ]
-                    }}
-                    axisBottom={null}
-                    axisTop={null}
-                    axisRight={null}
-                    enableTotals={true}
-                    labelSkipWidth={12}
-                    labelSkipHeight={12}
-                    legends={[]}
-                ></ResponsiveBar>
-                </div>
-              </div>
-            </div>
+                <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Age Distribution of Pets</h2></div>
+            //     <div style={{ display: 'flex', width: '100%' }}>
+            //       <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            //       <div style={{ height: "450px", width: "100%" }}>
+            //       <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Age Distribution of Pets</h2></div>
+            //       {/* change this to another chart bc why did i use another pie in here??? */}
+            //         <ResponsivePie
+            //             data={ageData}
+            //             margin={{ top: 40, right: 80, bottom: 120, left: 80 }}
+            //             activeOuterRadiusOffset={8}
+            //             colors={{ scheme: 'pastel1' }}
+            //             borderWidth={1}
+            //             borderColor={{
+            //                 from: 'color',
+            //                 modifiers: [
+            //                     ['darker', 0.2]
+            //                 ]
+            //             }}
+            //             enableArcLinkLabels={false}
+            //             arcLabel="id"
+            //             arcLabelsSkipAngle={10}
+            //             arcLabelsTextColor={{
+            //                 from: 'color',
+            //                 modifiers: [['darker', 2]]
+            //             }}
+            //             defs={[]}
+            //             fill={[]}
+            //             legends={[]}
+            //         />
+            //     </div>
+            //     <div style={{ height: "200px", width: "100%" }}>
+            //       <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Breed Breakdown Treated</h2></div>
+            //       <ResponsiveBar
+            //         data={genderData}
+            //         indexBy="id"
+            //         margin={{ top: 20, right: 50, bottom: 50, left: 60 }}
+            //         padding={0.5}
+            //         innerPadding={0}
+            //         layout="horizontal"
+            //         valueScale={{ type: 'linear' }}
+            //         indexScale={{ type: 'band', round: true }}
+            //         colors={{ scheme: 'paired' }}
+            //         defs={[]}
+            //         fill={[]}
+            //         borderColor={{
+            //             from: 'color',
+            //             modifiers: [
+            //                 [
+            //                     'darker',
+            //                     1.6
+            //                 ]
+            //             ]
+            //         }}
+            //         axisBottom={null}
+            //         axisTop={null}
+            //         axisRight={null}
+            //         enableTotals={true}
+            //         labelSkipWidth={12}
+            //         labelSkipHeight={12}
+            //         legends={[]}
+            //     ></ResponsiveBar>
+            //     </div>
+            //     </div>
+            //     <div style={{flexDirection: 'column', width: '100%' }}>
+            //     <div style={{ height: "550px", width: "100%" }}>
+            //       <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Pet Type Distribution</h2></div>
+            //     <ResponsivePie
+            //         data={speciesData}
+            //         margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+            //         innerRadius={0.5}
+            //         padAngle={0.7}
+            //         cornerRadius={10}
+            //         activeOuterRadiusOffset={8}
+            //         colors={{ scheme: 'red_purple' }}
+            //         borderWidth={1}
+            //         borderColor={{
+            //             from: 'color',
+            //             modifiers: [
+            //                 [
+            //                     'darker',
+            //                     0.2
+            //                 ]
+            //             ]
+            //         }}
+            //         arcLinkLabelsSkipAngle={10}
+            //         arcLinkLabelsTextColor="#333333"
+            //         arcLinkLabelsThickness={2}
+            //         arcLinkLabelsColor={{ from: 'color' }}
+            //         arcLabelsSkipAngle={10}
+            //         arcLabelsTextColor={{
+            //             from: 'color',
+            //             modifiers: [
+            //                 [
+            //                     'darker',
+            //                     2
+            //                 ]
+            //             ]
+            //         }}
+            //         arcLabel={(d) => d.data.formattedValue} 
+            //         tooltip={({ datum }) => ( 
+            //           <div
+            //               style={{
+            //                   padding: '12px 16px',
+            //                   color: '#333',
+            //                   background: '#fff',
+            //                   borderRadius: '2px',
+            //                   boxShadow: '0 2px 4px rgba(0, 0, 0, 0.15)',
+            //               }}
+            //           >
+            //               <strong>{datum.id}</strong>: {datum.data.count}
+            //           </div>
+            //       )}
+            //         defs={[]}
+            //         fill={[]}
+            //       legends={[]}
+            //     ></ResponsivePie>
+            //   </div>
+            //   <div style={{ height: "200px", width: "100%" }}>
+            //       <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Pet Gender Distribution</h2></div>
+            //       <ResponsiveBar
+            //         data={genderData}
+            //         indexBy="id"
+            //         margin={{ top: 20, right: 50, bottom: 50, left: 60 }}
+            //         padding={0.5}
+            //         innerPadding={0}
+            //         layout="horizontal"
+            //         valueScale={{ type: 'linear' }}
+            //         indexScale={{ type: 'band', round: true }}
+            //         colors={{ scheme: 'paired' }}
+            //         defs={[]}
+            //         fill={[]}
+            //         borderColor={{
+            //             from: 'color',
+            //             modifiers: [
+            //                 [
+            //                     'darker',
+            //                     1.6
+            //                 ]
+            //             ]
+            //         }}
+            //         axisBottom={null}
+            //         axisTop={null}
+            //         axisRight={null}
+            //         enableTotals={true}
+            //         labelSkipWidth={12}
+            //         labelSkipHeight={12}
+            //         legends={[]}
+            //     ></ResponsiveBar>
+            //     </div>
+            //   </div>
+            // </div>
               )}
               
             </div>
