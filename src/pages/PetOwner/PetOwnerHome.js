@@ -63,7 +63,7 @@ const PetOwnerHome = () => {
     petName: "",
     Breed: "",
     Color: "",
-    Species: "",
+    Type: "",
     Gender: "",
     Weight: "",
     dateofBirth: "",
@@ -99,7 +99,18 @@ const PetOwnerHome = () => {
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const DEFAULT_OWNER_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
-
+  const petTypes = {
+    Dog: ["Labrador", "Golden Retriever", "German Shepherd", "Bulldog", "Poodle", "Beagle", "Boxer", "Dachshund", "Rottweiler", "Siberian Husky", "Others"],
+    Cat: ["Persian", "Siamese", "Maine Coon", "Calico", "Bengal", "Ragdoll", "British Shorthair", "Abyssinian", "Sphynx", "Scottish Fold", "Others"],
+    Bird: ["Parrot", "Canary", "Cockatiel", "Macaw", "Budgerigar", "Lovebird", "African Grey", "Finch", "Conure", "Cockatoo", "Others"],
+    Rabbit: ["Holland Lop", "Mini Rex", "Flemish Giant", "Netherland Dwarf", "Lionhead", "Angora", "Rex", "Satin", "Himalayan", "Harlequin", "Others"],
+    GuineaPig: ["American", "Abyssinian", "Peruvian", "Silkie", "Teddy", "Coronet", "Texel", "Skinny Pig", "Baldwin", "Crested", "Others"],
+    Hamster: ["Syrian", "Dwarf Campbell", "Winter White", "Roborovski", "Chinese", "Fancy Bear", "European", "Golden", "Panda", "Sable", "Others"],
+    Ferret: ["Standard", "Angora", "Sable", "Cinnamon", "Chocolate", "Albino", "Panda", "Blaze", "Mitted", "Point", "Others"],
+    Fish: ["Goldfish", "Betta", "Guppy", "Neon Tetra", "Angelfish", "Mollie", "Platy", "Swordtail", "Discus", "Cichlid", "Others"],
+    Reptile: ["Ball Python", "Corn Snake", "Leopard Gecko", "Bearded Dragon", "Crested Gecko", "Chameleon", "Iguana", "King Snake", "Boa Constrictor", "Monitor Lizard", "Others"],
+    Others: [] 
+  };
 
   // React calendar
   // Handle calendar date click
@@ -296,10 +307,24 @@ const PetOwnerHome = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewPet({
-      ...newPet,
-      [name]: name === "Weight" ? (value === "" ? "" : parseFloat(value)) : value,
-    });
+    if (name === "Type") {
+      setNewPet({
+        ...newPet,
+        [name]: value,
+        customType: value === "Others" ? newPet.customType : "",
+      });
+    } else if (name === "Breed") {
+      setNewPet({
+        ...newPet,
+        [name]: value,
+        customBreed: value === "Others" ? newPet.customBreed : ""
+      });
+    } else {
+      setNewPet({
+        ...newPet,
+        [name]: name === "Weight" ? (value === "" ? "" : parseFloat(value)) : value
+      });
+    }
   };
 
   const handleOwnerInputChange = (e) => {
@@ -314,8 +339,8 @@ const PetOwnerHome = () => {
     setAddPetSuccess(false);
 
     try {
-      if (!newPet.petName || !newPet.Species || !newPet.Gender) {
-        throw new Error("Pet name, species, and gender are required");
+      if (!newPet.petName || !newPet.Type || !newPet.Gender) {
+        throw new Error("Pet name, type, and gender are required");
       }
 
       const currentUser = auth.currentUser;
@@ -339,9 +364,18 @@ const PetOwnerHome = () => {
         petImageURL = imgData.url.toString();
       }
 
+      const finalType = newPet.Type === "Others" ? newPet.customType : newPet.Type;
+      const finalBreed = newPet.Breed === "Others" ? newPet.customBreed : newPet.Breed;
+
       const ownerRef = doc(db, "users", currentUser.uid);
       const petDoc = await addDoc(collection(db, "pets"), {
-        ...newPet,
+        petName: newPet.petName,
+        Type: finalType, // Use final type
+        Breed: finalBreed, // Use final breed
+        Color: newPet.Color,
+        Gender: newPet.Gender,
+        Weight: newPet.Weight,
+        dateofBirth: newPet.dateofBirth,
         petImageURL,
         owner: ownerRef,
         createdAt: serverTimestamp(),
@@ -350,12 +384,14 @@ const PetOwnerHome = () => {
       setAddPetSuccess(true);
       setNewPet({
         petName: "",
+        Type: "",
         Breed: "",
         Color: "",
-        Species: "",
         Gender: "",
         Weight: "",
         dateofBirth: "",
+        customType: "",
+        customBreed: ""
       });
       setPetImage(null);
       setImagePreview(null);
@@ -1330,24 +1366,69 @@ const PetOwnerHome = () => {
                 />
               </div>
               <div className="form-group-p">
-                <label htmlFor="Species">Species *</label>
-                <input
-                  type="text"
-                  id="Species"
-                  name="Species"
-                  value={newPet.Species}
-                  onChange={handleInputChange}
-                />
+                <label>Type*</label>
+                <div className="dropdown-wrapper">
+                  <select
+                    id="Type"
+                    name="Type"
+                    value={newPet.Type}
+                    onChange={handleInputChange}
+                    required
+                    className={newPet.Type === "Others" ? "shrunk-select" : "full-width-select"}
+                  >
+                    <option value="">Select Type</option>
+                    {Object.keys(petTypes).map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                  {newPet.Type === "Others" && (
+                    <div className="custom-input-container">
+                      <label className="others-label">Others</label>
+                      <input
+                        type="text"
+                        placeholder="Enter custom type"
+                        value={newPet.customType}
+                        onChange={(e) => setNewPet({ ...newPet, customType: e.target.value })}
+                        className="custom-input"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="form-group-p">
-                <label htmlFor="Breed">Breed</label>
-                <input
-                  type="text"
-                  id="Breed"
-                  name="Breed"
-                  value={newPet.Breed}
-                  onChange={handleInputChange}
-                />
+                <label>Breed:</label>
+                <div className="dropdown-wrapper">
+                  <select
+                    id="Breed"
+                    name="Breed"
+                    value={newPet.Breed}
+                    onChange={handleInputChange}
+                    className={newPet.Breed === "Others" || newPet.Type === "Others" ? "shrunk-select" : "full-width-select"}
+                  >
+                    <option value="">Select Breed</option>
+                    {newPet.Type && newPet.Type !== "Others" ? (
+                      petTypes[newPet.Type].map((breed) => ( // Keep "Others" in the list
+                        <option key={breed} value={breed}>{breed}</option>
+                      ))
+                    ) : newPet.Type === "Others" ? (
+                      <option value="Others">Others</option>
+                    ) : (
+                      <option value="">Select Type first</option>
+                    )}
+                  </select>
+                  {(newPet.Breed === "Others" || newPet.Type === "Others") && (
+                    <div className="custom-input-container">
+                      <label className="others-label">Others</label>
+                      <input
+                        type="text"
+                        placeholder="Enter custom breed"
+                        value={newPet.customBreed}
+                        onChange={(e) => setNewPet({ ...newPet, customBreed: e.target.value })}
+                        className="custom-input"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="form-group-p">
                 <label htmlFor="Color">Color</label>
