@@ -472,6 +472,100 @@ form {
   background-color: #f50057;
 }
 
+/* Notification Button */
+.notification-btn-p {
+  position: relative;
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  background-color: #fff;
+  border-radius: 5px;
+  text-align: center;
+  transition: background-color 0.3s;
+  margin-top: auto; /* Pushes it to the bottom of the sidebar */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.notification-btn-p:hover {
+  background-color: #ffcdd2;
+}
+
+.notification-btn-p svg {
+  font-size: 20px;
+  color: #ff4081;
+}
+
+.notification-dot-p {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
+  background-color: #ff1744;
+  border-radius: 50%;
+}
+
+/* Notifications Modal */
+.notifications-modal-p {
+  width: 600px;
+  max-width: 90%;
+}
+
+.notifications-list-p {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.notification-item-p {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #ffb6c1;
+}
+
+.notification-clinic-img-p {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 15px;
+  border: 2px solid #ffb6c1;
+}
+
+.notification-item-p p {
+  margin: 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.delete-notification-icon-p {
+  font-size: 16px;
+  color: #ff1744;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: color 0.3s;
+}
+
+.delete-notification-icon-p:hover {
+  color: #d81b60;
+}
+
+/* Delete Confirmation Modal */
+.delete-confirm-modal-p {
+  width: 400px;
+  max-width: 90%;
+  text-align: center;
+}
+
+.delete-confirm-modal-p p {
+  margin: 20px 0;
+  color: #333;
+  font-size: 16px;
+}
+
 /* Pet Image Upload */
 .pet-image-upload-container-p {
   display: flex;
