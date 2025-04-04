@@ -114,7 +114,83 @@ const ClinicHome = () => {
   const DEFAULT_CLINIC_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const scheduleObj = useRef(null);
+// Analytics State
+const [serviceData, setServiceData] = useState([]);
+const [dayData, setDayData] = useState([]);
 
+  //Analytics data
+  const handlePanelChange = (panel) => {
+    setActivePanel(panel);
+    const container = document.querySelector(".content-c");
+    if (container) {
+      container.scrollTo(0, 0);
+    }
+    if (panel === "analytics") {
+      fetchClinicAnalytics(); // Fetch analytics when switching to analytics panel
+    }
+  };
+  const fetchClinicAnalytics = async () => {
+    try {
+      setLoading(true);
+      const clinicId = auth.currentUser?.uid;
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        where("clinicId", "==", clinicId),
+        where("status", "==", "Accepted") // Only count accepted appointments
+      );
+      const appointmentsSnapshot = await getDocs(appointmentsQuery);
+
+      const serviceCount = {};
+      const dayCount = {
+        Monday: 0,
+        Tuesday: 0,
+        Wednesday: 0,
+        Thursday: 0,
+        Friday: 0,
+        Saturday: 0,
+        Sunday: 0,
+      };
+
+      appointmentsSnapshot.forEach((doc) => {
+        const appointmentData = doc.data();
+        const serviceType = appointmentData.serviceType || "Unknown";
+        serviceCount[serviceType] = (serviceCount[serviceType] || 0) + 1;
+
+        const appointmentDate = appointmentData.dateofAppointment
+          ? typeof appointmentData.dateofAppointment.toDate === "function"
+            ? appointmentData.dateofAppointment.toDate()
+            : new Date(appointmentData.dateofAppointment)
+          : null;
+        if (appointmentDate) {
+          const dayName = appointmentDate.toLocaleString("en-US", { weekday: "long" });
+          dayCount[dayName] = (dayCount[dayName] || 0) + 1;
+        }
+      });
+
+      const formattedServiceData = Object.entries(serviceCount).map(([service, count]) => ({
+        id: service,
+        label: service,
+        value: count,
+      }));
+
+      const formattedDayData = Object.entries(dayCount).map(([day, count]) => ({
+        id: day,
+        label: day,
+        value: count,
+      }));
+
+      setServiceData(formattedServiceData);
+      setDayData(formattedDayData);
+    } catch (error) {
+      console.error("Error fetching clinic analytics:", error);
+      setServiceData([]);
+      setDayData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     let date;
@@ -303,64 +379,72 @@ const ClinicHome = () => {
     }
   };
 
-  //fetch pending appointments
+  // Fetch pending appointments
   const fetchPendingAppointments = async () => {
-      try {
-        setLoading(true);
-        const user = auth.currentUser;
-        if (user) {
-          
-          const q = query(collection(db, "appointments"), 
-          where("status", "==", "pending"), 
-          where("clinicId", "==", user.uid),
-          orderBy("createdAt", "desc")
-        );
-          const querySnapshot = await getDocs(q);
-  
-          const appointmentsList = await Promise.all(
-            querySnapshot.docs.map(async (doc) => {
-            const data = doc.data();
-            const [ownerData, petData, clinicData] = await Promise.all([
-              data.owner ? getDoc(data.owner) : Promise.resolve(null),
-              data.petRef ? getDoc(data.petRef) : Promise.resolve(null),
-              data.clinic ? getDoc(data.clinic) : Promise.resolve(null),
-            ]);
-  
-            return {
-              id: doc.id,
-              ...data,
-              owner: ownerData?.data() || {},
-              petRef: petData?.data() || {},
-              clinic: clinicData?.data() || {},
-            };
-          }));
-  
-          setPendingAppointments(appointmentsList);
-        }
-      } catch (error) {
-        console.error("Error fetching pending appointments:", error);
-      } finally {
-        setLoading(false);
+    try {
+      setLoading(true);
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("No authenticated user found.");
+        return;
       }
-    };
-  // Filter pending appointments based on search query
-    const filteredPendingAppointments = pendingAppointments.filter((appointment) => {
-      const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
-      return (
-        (appointment.petName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-        ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (appointment.serviceType?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+
+      const q = query(
+        collection(db, "appointments"),
+        where("status", "==", "pending"),
+        where("clinicId", "==", user.uid),
+        orderBy("createdAt", "desc")
       );
-    });
-    const handlePanelChange = (panel) => {
-      setActivePanel(panel);
-    
-  // Scroll the container to the top
-      const container = document.querySelector(".content-c");
-      if (container) {
-        container.scrollTo(0, 0); // Scroll the container to the top
+      const querySnapshot = await getDocs(q);
+      console.log("Pending Appointments Count:", querySnapshot.size);
+
+      if (querySnapshot.empty) {
+        console.log("No pending appointments found.");
+        setPendingAppointments([]);
+        return;
       }
-    };
+
+      const appointmentsList = await Promise.all(
+        querySnapshot.docs.map(async (doc) => {
+          const data = doc.data();
+          console.log("Appointment Data:", data); // Log each appointment's data
+
+          const [ownerData, petData, clinicData] = await Promise.all([
+            data.owner ? getDoc(data.owner) : Promise.resolve(null),
+            data.petRef ? getDoc(data.petRef) : Promise.resolve(null),
+            data.clinic ? getDoc(data.clinic) : Promise.resolve(null),
+          ]);
+
+          return {
+            id: doc.id,
+            ...data,
+            owner: ownerData?.data() || {},
+            petRef: petData?.data() || {},
+            clinic: clinicData?.data() || {},
+          };
+        })
+      );
+
+      console.log("Processed Appointments List:", appointmentsList); // Log the final processed list
+      setPendingAppointments(appointmentsList);
+    } catch (error) {
+      console.error("Error fetching pending appointments:", error);
+      setPendingAppointments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter pending appointments based on search query
+  const filteredPendingAppointments = pendingAppointments.filter((appointment) => {
+    const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
+    return (
+      (appointment.petName?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (appointment.serviceType?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+    );
+  });
+ 
   //Action confirmation modal
     const handleActionConfirm = async (action) => {
       const { appointmentId } = showConfirmModal;
@@ -714,7 +798,7 @@ const ClinicHome = () => {
     }
   };
 
-  const fetchRecords = async () => { };
+
 
   const fetchVeterinarians = async () => {
     try {
@@ -1114,7 +1198,8 @@ const ClinicHome = () => {
               )}
             </div>
           )}
-          {activePanel === "records" && (
+         
+            {activePanel === "records" && (
             <div className="panel-c records-panel-c">
               <h3>Records</h3>
               {loading ? (
@@ -1237,165 +1322,112 @@ const ClinicHome = () => {
               </button>
             </div>
           )}
-          {activePanel === "analytics" && (
+         {activePanel === "analytics" && (
             <div className="panel-c analytics-panel-c">
               <h3>Clinic Analytics</h3>
               {loading ? (
                 <p>Loading analytics...</p>
               ) : (
-                <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Age Distribution of Pets</h2></div>
-            //     <div style={{ display: 'flex', width: '100%' }}>
-            //       <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-            //       <div style={{ height: "450px", width: "100%" }}>
-            //       <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Age Distribution of Pets</h2></div>
-            //       {/* change this to another chart bc why did i use another pie in here??? */}
-            //         <ResponsivePie
-            //             data={ageData}
-            //             margin={{ top: 40, right: 80, bottom: 120, left: 80 }}
-            //             activeOuterRadiusOffset={8}
-            //             colors={{ scheme: 'pastel1' }}
-            //             borderWidth={1}
-            //             borderColor={{
-            //                 from: 'color',
-            //                 modifiers: [
-            //                     ['darker', 0.2]
-            //                 ]
-            //             }}
-            //             enableArcLinkLabels={false}
-            //             arcLabel="id"
-            //             arcLabelsSkipAngle={10}
-            //             arcLabelsTextColor={{
-            //                 from: 'color',
-            //                 modifiers: [['darker', 2]]
-            //             }}
-            //             defs={[]}
-            //             fill={[]}
-            //             legends={[]}
-            //         />
-            //     </div>
-            //     <div style={{ height: "200px", width: "100%" }}>
-            //       <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Breed Breakdown Treated</h2></div>
-            //       <ResponsiveBar
-            //         data={genderData}
-            //         indexBy="id"
-            //         margin={{ top: 20, right: 50, bottom: 50, left: 60 }}
-            //         padding={0.5}
-            //         innerPadding={0}
-            //         layout="horizontal"
-            //         valueScale={{ type: 'linear' }}
-            //         indexScale={{ type: 'band', round: true }}
-            //         colors={{ scheme: 'paired' }}
-            //         defs={[]}
-            //         fill={[]}
-            //         borderColor={{
-            //             from: 'color',
-            //             modifiers: [
-            //                 [
-            //                     'darker',
-            //                     1.6
-            //                 ]
-            //             ]
-            //         }}
-            //         axisBottom={null}
-            //         axisTop={null}
-            //         axisRight={null}
-            //         enableTotals={true}
-            //         labelSkipWidth={12}
-            //         labelSkipHeight={12}
-            //         legends={[]}
-            //     ></ResponsiveBar>
-            //     </div>
-            //     </div>
-            //     <div style={{flexDirection: 'column', width: '100%' }}>
-            //     <div style={{ height: "550px", width: "100%" }}>
-            //       <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Pet Type Distribution</h2></div>
-            //     <ResponsivePie
-            //         data={speciesData}
-            //         margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
-            //         innerRadius={0.5}
-            //         padAngle={0.7}
-            //         cornerRadius={10}
-            //         activeOuterRadiusOffset={8}
-            //         colors={{ scheme: 'red_purple' }}
-            //         borderWidth={1}
-            //         borderColor={{
-            //             from: 'color',
-            //             modifiers: [
-            //                 [
-            //                     'darker',
-            //                     0.2
-            //                 ]
-            //             ]
-            //         }}
-            //         arcLinkLabelsSkipAngle={10}
-            //         arcLinkLabelsTextColor="#333333"
-            //         arcLinkLabelsThickness={2}
-            //         arcLinkLabelsColor={{ from: 'color' }}
-            //         arcLabelsSkipAngle={10}
-            //         arcLabelsTextColor={{
-            //             from: 'color',
-            //             modifiers: [
-            //                 [
-            //                     'darker',
-            //                     2
-            //                 ]
-            //             ]
-            //         }}
-            //         arcLabel={(d) => d.data.formattedValue} 
-            //         tooltip={({ datum }) => ( 
-            //           <div
-            //               style={{
-            //                   padding: '12px 16px',
-            //                   color: '#333',
-            //                   background: '#fff',
-            //                   borderRadius: '2px',
-            //                   boxShadow: '0 2px 4px rgba(0, 0, 0, 0.15)',
-            //               }}
-            //           >
-            //               <strong>{datum.id}</strong>: {datum.data.count}
-            //           </div>
-            //       )}
-            //         defs={[]}
-            //         fill={[]}
-            //       legends={[]}
-            //     ></ResponsivePie>
-            //   </div>
-            //   <div style={{ height: "200px", width: "100%" }}>
-            //       <div><h2 style= {{textAlign: "center", marginBottom: "0px"}}>Pet Gender Distribution</h2></div>
-            //       <ResponsiveBar
-            //         data={genderData}
-            //         indexBy="id"
-            //         margin={{ top: 20, right: 50, bottom: 50, left: 60 }}
-            //         padding={0.5}
-            //         innerPadding={0}
-            //         layout="horizontal"
-            //         valueScale={{ type: 'linear' }}
-            //         indexScale={{ type: 'band', round: true }}
-            //         colors={{ scheme: 'paired' }}
-            //         defs={[]}
-            //         fill={[]}
-            //         borderColor={{
-            //             from: 'color',
-            //             modifiers: [
-            //                 [
-            //                     'darker',
-            //                     1.6
-            //                 ]
-            //             ]
-            //         }}
-            //         axisBottom={null}
-            //         axisTop={null}
-            //         axisRight={null}
-            //         enableTotals={true}
-            //         labelSkipWidth={12}
-            //         labelSkipHeight={12}
-            //         legends={[]}
-            //     ></ResponsiveBar>
-            //     </div>
-            //   </div>
-            // </div>
+                <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                  {/* Most Availed Service Type Pie Chart */}
+                  <div style={{ width: "48%", height: "450px" }}>
+                    <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+                      Most Availed Service Types
+                    </h2>
+                    {serviceData.length > 0 ? (
+                      <ResponsivePie
+                        data={serviceData}
+                        margin={{ top: 40, right: 40, bottom: 40, left: 40 }} // Adjusted margins since no legend
+                        innerRadius={0.5}
+                        padAngle={0.7}
+                        cornerRadius={3}
+                        activeOuterRadiusOffset={8}
+                        colors={{ scheme: "pastel1" }} // Vibrant color scheme
+                        borderWidth={1}
+                        borderColor={{
+                          from: "color",
+                          modifiers: [["darker", 0.2]],
+                        }}
+                        arcLinkLabelsSkipAngle={10}
+                        arcLinkLabelsTextColor="#333333"
+                        arcLinkLabelsThickness={2}
+                        arcLinkLabelsColor={{ from: "color" }}
+                        arcLabelsSkipAngle={10}
+                        arcLabelsTextColor={{
+                          from: "color",
+                          modifiers: [["darker", 2]],
+                        }}
+                        arcLabel={(d) => d.data.formattedValue}
+                        tooltip={({ datum }) => (
+                          <div
+                            style={{
+                              padding: "12px 16px",
+                              color: "#333",
+                              background: "#fff",
+                              borderRadius: "2px",
+                              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
+                            }}
+                          >
+                            <strong>{datum.id}</strong>: {datum.value}
+                          </div>
+                        )}
+                        // Removed legends prop
+                      />
+                    ) : (
+                      <p style={{ textAlign: "center" }}>No service data available</p>
+                    )}
+                  </div>
+
+                  {/* Days with Most Appointments Pie Chart */}
+                  <div style={{ width: "48%", height: "450px" }}>
+                    <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+                      Days with Most Appointments
+                    </h2>
+                    {dayData.length > 0 ? (
+                      <ResponsivePie
+                        data={dayData}
+                        margin={{ top: 40, right: 40, bottom: 40, left: 40 }} // Adjusted margins since no legend
+                        innerRadius={0.5}
+                        padAngle={0.7}
+                        cornerRadius={3}
+                        activeOuterRadiusOffset={8}
+                        colors={{ scheme: "red_purple" }} 
+                        borderWidth={1}
+                        borderColor={{
+                          from: "color",
+                          modifiers: [["darker", 0.2]],
+                        }}
+                        arcLinkLabelsSkipAngle={10}
+                        arcLinkLabelsTextColor="#333333"
+                        arcLinkLabelsThickness={2}
+                        arcLinkLabelsColor={{ from: "color" }}
+                        arcLabelsSkipAngle={10}
+                        arcLabelsTextColor={{
+                          from: "color",
+                          modifiers: [["darker", 2]],
+                        }}
+                        arcLabel={(d) => d.data.formattedValue}
+                        tooltip={({ datum }) => (
+                          <div
+                            style={{
+                              padding: "12px 16px",
+                              color: "#333",
+                              background: "#fff",
+                              borderRadius: "2px",
+                              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
+                            }}
+                          >
+                            <strong>{datum.id}</strong>: {datum.value}
+                          </div>
+                        )}
+                        // Removed legends prop
+                      />
+                    ) : (
+                      <p style={{ textAlign: "center" }}>No appointment data available</p>
+                    )}
+                  </div>
+                </div>
               )}
-              
             </div>
           )}
         </div>
