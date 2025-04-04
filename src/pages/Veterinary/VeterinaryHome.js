@@ -497,10 +497,14 @@ const fetchNotifications = async () => {
             Health Records
           </button>
         </div>
-        <button className="notification-btn-v" onClick={handleNotificationClick}>
-          <FaBell />
-          {unreadNotifications && <span className="notification-dot-v"></span>}
-        </button>
+          <div className="notification-container-v">
+            <button className="notification-btn-v" onClick={handleNotificationClick}>
+              <div  className="notification-icon-container-v">
+                <FaBell className="bell-notif"/>
+                {unreadNotifications && <span className="notification-dot-v"></span>}
+              </div>
+            </button>
+          </div>
         <button className="signout-btn-v" onClick={handleSignOut}>
           Sign Out
         </button>

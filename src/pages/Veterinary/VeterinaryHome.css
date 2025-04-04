@@ -467,37 +467,49 @@ th {
   font-size: 16px;
 }
 
-.notification-btn-v {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  background-color: #fff;
-  border-radius: 5px;
-  text-align: center;
-  transition: background-color 0.3s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 10px; /* Space before sign-out button */
+
+
+.sidebar-v  .notification-container-v button {
+  background-color: #25091200;
+  margin-top: 100px;
+  margin-bottom:5px;
+  width:50px;
+  border: transparent;
+  box-shadow: none;
+}
+.notification-icon-container-v:hover {
+ background-color: transparent;
 }
 
-.notification-btn-v:hover {
-  background-color: #ffcdd2;
+
+/* Container for the FaBell icon and the red dot */
+.notification-icon-container-v {
+  position: relative;
+  display: inline-block;
 }
 
-.notification-btn-v svg {
-  font-size: 20px;
-  color: #ff4081;
-}
 
+/* Style the red dot */
 .notification-dot-v {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 10px;
-  height: 10px;
-  background-color: #ff1744;
+  top: -2px; /* Adjust as needed */
+  right: -1px; /* Adjust as needed */
+  width: 9px;
+  height: 9px;
+  background-color: red;
   border-radius: 50%;
+  border: 2px solid white; /* Optional: Add a border for better visibility */
+  pointer-events: none; /* Prevent the dot from interfering with clicks */
+}
+.bell-notif{
+  color:#ff4081;
+  width: 25px;
+  height: 25px;
+}
+.bell-notif:hover {
+  color:#ffffff;
+  width: 25px;
+  height: 25px;
 }
 
 /* Notifications Modal */
