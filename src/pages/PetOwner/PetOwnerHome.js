@@ -1080,11 +1080,15 @@ const handleNotificationClick = async () => {
           >
             Health Records
           </button>
+          <div className="notification-container-p">
           <button className="notification-btn-p" onClick={handleNotificationClick}>
-            <FaBell />
-            {unreadNotifications && <span className="notification-dot-p"></span>}
+            <div  className="notification-icon-container-p">
+              <FaBell className="bell-notif-p" />
+              {unreadNotifications && <span className="notification-dot-p"></span>}
+            </div>
           </button>
-        </div>
+          </div>
+          </div>
       </div>
 
       <div className="content-p">

@@ -11,8 +11,7 @@ import {
   serverTimestamp,
   getDoc,
   updateDoc,
-  deleteDoc,
-  count,
+  orderBy,
 } from "firebase/firestore";
 import {
   getAuth,
@@ -311,10 +310,15 @@ const ClinicHome = () => {
         const user = auth.currentUser;
         if (user) {
           
-          const q = query(collection(db, "appointments"), where("status", "==", "pending"), where("clinicId", "==", user.uid));
+          const q = query(collection(db, "appointments"), 
+          where("status", "==", "pending"), 
+          where("clinicId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        );
           const querySnapshot = await getDocs(q);
   
-          const appointmentsList = await Promise.all(querySnapshot.docs.map(async (doc) => {
+          const appointmentsList = await Promise.all(
+            querySnapshot.docs.map(async (doc) => {
             const data = doc.data();
             const [ownerData, petData, clinicData] = await Promise.all([
               data.owner ? getDoc(data.owner) : Promise.resolve(null),

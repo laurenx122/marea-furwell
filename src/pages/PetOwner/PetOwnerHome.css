@@ -472,41 +472,44 @@ form {
   background-color: #f50057;
 }
 
-/* Notification Button */
-.notification-btn-p {
-  position: relative;
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  background-color: #fff;
-  border-radius: 5px;
-  text-align: center;
-  transition: background-color 0.3s;
-  margin-top: auto; /* Pushes it to the bottom of the sidebar */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
 
-.notification-btn-p:hover {
-  background-color: #ffcdd2;
-}
-
-.notification-btn-p svg {
-  font-size: 20px;
-  color: #ff4081;
-}
-
-.notification-dot-p {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 10px;
-  height: 10px;
-  background-color: #ff1744;
-  border-radius: 50%;
-}
-
+.sidebar-buttons-p .notification-container-p button{
+  background-color: #ff408000;
+  margin-top: 100px;
+  margin-bottom:5px;
+  width:50px;
+  border: transparent;
+  box-shadow: none;
+  }
+  
+  /* Container for the FaBell icon and the red dot */
+  .notification-icon-container-p {
+    position: relative;
+    display: inline-block;
+  }
+  
+  /* Style the red dot */
+  .notification-dot-p {
+    position: absolute;
+    top: -2px; /* Adjust as needed */
+    right: -1px; /* Adjust as needed */
+    width: 9px;
+    height: 9px;
+    background-color: red;
+    border-radius: 50%;
+    border: 2px solid white; /* Optional: Add a border for better visibility */
+    pointer-events: none; /* Prevent the dot from interfering with clicks */
+  }
+  .bell-notif-p{
+    color:#ff4081;
+    width: 25px;
+    height: 25px;
+  }
+  .bell-notif-p:hover {
+    color:#ffffff;
+    width: 25px;
+    height: 25px;
+  } 
 /* Notifications Modal */
 .notifications-modal-p {
   width: 600px;
