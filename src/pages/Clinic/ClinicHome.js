@@ -1133,47 +1133,37 @@ const [dayData, setDayData] = useState([]);
               )}
             </div>
           )}
-           {activePanel === "pendingAppointments" && (
-            <div className="panel-v health-records-panel-v">
-              <h3>Pending Appointments</h3>
-              <form className="csearch-bar-container">
-                <input
-                  type="text"
-                  placeholder="Search pending appointments (Pet Name, Owner, Service)..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="csearch-bar"
-                />
-              </form>
-              {loading ? (
-                <p>Loading pending appointments...</p>
-              ) : filteredPendingAppointments.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date of Appointment</th>
-                      <th>Patient Name</th>
-                      <th>Owner</th>
-                      <th>Breed</th>
-                      <th>Age</th>
-                      <th>Service</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPendingAppointments.map((appointment) => {
-                      const ownerName = `${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`.trim() || "N/A";
-                      const petAge = calculateAge(appointment.petRef?.dateofBirth);
-                      return (
-                        <tr key={appointment.id}>
-                          <td>{formatDate(appointment.dateofAppointment)}</td>
-                          <td>{appointment.petName || "N/A"}</td>
-                          <td>{ownerName}</td>
-                          <td>{appointment.petRef?.Breed || "N/A"}</td>
-                          <td>{petAge}</td>
-                          <td>{appointment.serviceType || "N/A"}</td>
-                          <td>
-                            <div className="v-actions">
+            {activePanel === "pendingAppointments" && (
+        <div className="panel-v health-records-panel-v">
+          <h3>Pending Appointments</h3>
+          {loading ? (
+            <p>Loading pending appointments...</p>
+          ) : pendingAppointments.length > 0 ? (
+            <table>
+              <thead>
+                <tr>
+                  <th>Date of Appointment</th>
+                  <th>Veterinarian</th>
+                  <th>Patient Name</th>
+                  <th>Owner</th>
+                  <th>Breed</th>
+                  <th>Age</th>
+                  <th>Service</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+        <tbody>
+          {pendingAppointments.map((appointment) => (
+            <tr key={appointment.id}>
+              <td>{formatDate(appointment.dateofAppointment)}</td>
+              <td>{appointment.veterinarian || "N/A"}</td>
+              <td>{appointment.petName || "N/A"}</td>
+              <td>{`${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`}</td>
+              <td>{appointment.petRef?.Breed || "N/A"}</td>
+              <td>{calculateAge(appointment.petRef?.dateofBirth)}</td>
+              <td>{appointment.serviceType || "N/A"}</td>
+              <td>
+              <div className="v-actions">
                               <button
                                 className="vicon-buttoncheck"
                                 onClick={() => handleAction("accept", appointment.id)}
@@ -1187,18 +1177,16 @@ const [dayData, setDayData] = useState([]);
                                 Decline
                               </button>
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              ) : (
-                <p>No pending appointments found.</p>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p>No pending appointments found.</p>
+                  )}
+                </div>
               )}
-            </div>
-          )}
-         
             {activePanel === "records" && (
             <div className="panel-c records-panel-c">
               <h3>Records</h3>
