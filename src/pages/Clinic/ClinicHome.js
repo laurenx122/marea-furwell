@@ -364,18 +364,43 @@ const ClinicHome = () => {
         const appointmentRef = doc(db, "appointments", appointmentId);
         const appointmentDoc = await getDoc(appointmentRef);
         if (!appointmentDoc.exists()) throw new Error("Appointment not found");
-  
+    
         if (action === "accept") {
-          const newData = { ...appointmentDoc.data(), status: "Accepted", timestamp: new Date().toISOString() };
+          const appointmentData = appointmentDoc.data();
+          const newData = { 
+            ...appointmentData, 
+            status: "Accepted", 
+            timestamp: new Date().toISOString() 
+          };
           await updateDoc(appointmentRef, newData);
+    
+          // Create notification in the "notifications" collection
+          const notificationRef = collection(db, "notifications");
+          const appointmentDate = appointmentData.dateofAppointment.toDate();
+          const formattedDateTime = formatDate(appointmentDate);
+
+          await setDoc(doc(notificationRef), {
+            appointmentId: appointmentId,
+            clinicId: auth.currentUser.uid, 
+            ownerId: appointmentData.owner?.path || null, 
+            petId: appointmentData.petRef?.path || null,
+            messageVet: `You have a new appointment on ${formattedDateTime} for ${appointmentData.petName}`,
+            message: `Your appointment for ${appointmentData.petName} has been accepted by ${clinicInfo?.clinicName}.`,
+            dateCreated: serverTimestamp(),
+            hasVetOpened: false,
+            hasPetOwnerOpened: false, 
+            status: "unread",
+            type: "appointment_accepted",
+          });
+    
           await fetchAppointments();
-          console.log("Appointment accepted successfully!");
+          console.log("Appointment accepted successfully and notification created!");
         } else if (action === "decline") {
-          await updateDoc(appointmentRef,{status: "Declined"});
-          await fetchPendingAppointments();
+          await updateDoc(appointmentRef, { status: "Declined" });
+          await fetchPendingAppointments(); 
           console.log("Appointment declined successfully!");
         }
-  
+    
         setPendingAppointments(pendingAppointments.filter(appt => appt.id !== appointmentId));
         setShowConfirmModal({ open: false, action: null, appointmentId: null });
       } catch (error) {
@@ -383,6 +408,7 @@ const ClinicHome = () => {
         alert(`Failed to ${action} the appointment. Please try again.`);
       }
     };
+
     const calculateAge = (dateOfBirth) => {
       if (!dateOfBirth) return "N/A";
       const dob = dateOfBirth.toDate ? dateOfBirth.toDate() : new Date(dateOfBirth);

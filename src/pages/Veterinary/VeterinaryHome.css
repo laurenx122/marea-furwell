@@ -466,3 +466,98 @@ th {
   border-radius: 5px;
   font-size: 16px;
 }
+
+.notification-btn-v {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  background-color: #fff;
+  border-radius: 5px;
+  text-align: center;
+  transition: background-color 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px; /* Space before sign-out button */
+}
+
+.notification-btn-v:hover {
+  background-color: #ffcdd2;
+}
+
+.notification-btn-v svg {
+  font-size: 20px;
+  color: #ff4081;
+}
+
+.notification-dot-v {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
+  background-color: #ff1744;
+  border-radius: 50%;
+}
+
+/* Notifications Modal */
+.notifications-modal-v {
+  width: 600px;
+  max-width: 90%;
+}
+
+.notifications-list-v {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.notification-item-v {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #ffb6c1;
+  position: relative;
+}
+
+.notification-clinic-img-v {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 15px;
+  border: 2px solid #ffb6c1;
+}
+
+.notification-item-v p {
+  margin: 0;
+  color: #333;
+  font-size: 14px;
+  flex-grow: 1;
+}
+
+/* Delete Notification Icon */
+.delete-notification-icon-v {
+  font-size: 16px;
+  color: #ff1744;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: color 0.3s;
+}
+
+.delete-notification-icon-v:hover {
+  color: #d81b60;
+}
+
+/* Delete Confirmation Modal */
+.delete-confirm-modal-v {
+  width: 400px;
+  max-width: 90%;
+  text-align: center;
+}
+
+.delete-confirm-modal-v p {
+  margin: 20px 0;
+  color: #333;
+  font-size: 16px;
+}

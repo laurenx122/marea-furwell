@@ -19,7 +19,7 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-import { FaCamera } from "react-icons/fa";
+import { FaCamera, FaBell, FaTimes } from "react-icons/fa";
 import {
   ScheduleComponent,
   ViewsDirective,
@@ -96,6 +96,12 @@ const PetOwnerHome = () => {
   const [takenAppointments, setTakenAppointments] = useState([]);
   const [vetSchedule, setVetSchedule] = useState(null);
 
+  const [notifications, setNotifications] = useState([]);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [notificationToDelete, setNotificationToDelete] = useState(null);
+
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const DEFAULT_OWNER_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
@@ -168,7 +174,80 @@ const PetOwnerHome = () => {
     return "available-date";
   };
 
+  const fetchNotifications = async () => {
+    try {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const notificationsQuery = query(
+          collection(db, "notifications"),
+          where("ownerId", "==", `users/${currentUser.uid}`),
+          where("type", "==", "appointment_accepted")
+        );
+        const querySnapshot = await getDocs(notificationsQuery);
+        const notificationsList = await Promise.all(querySnapshot.docs.map(async (docSnap) => {
+          const data = docSnap.data();
+          // Filter out notifications where removeViewPetOwner is true
+          if (data.removeViewPetOwner !== true) {
+            const clinicDoc = await getDoc(doc(db, "clinics", data.clinicId));
+            const appointmentDoc = await getDoc(doc(db, "appointments", data.appointmentId));
+            return {
+              id: docSnap.id,
+              clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+              clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+              dateofAppointment: appointmentDoc.exists() ? appointmentDoc.data().dateofAppointment.toDate() : null,
+              hasPetOwnerOpened: data.hasPetOwnerOpened,
+              message: data.message, // Include message for display if needed
+            };
+          }
+          return null;
+        }));
+        const filteredNotifications = notificationsList.filter(n => n !== null);
+        setNotifications(filteredNotifications);
+        setUnreadNotifications(filteredNotifications.some(n => !n.hasPetOwnerOpened));
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      setNotifications([]);
+      setUnreadNotifications(false);
+    }
+  };
 
+  // Handle notification icon click
+const handleNotificationClick = async () => {
+    setShowNotificationsModal(true);
+    if (unreadNotifications) {
+      try {
+        const unreadNotifications = notifications.filter(n => !n.hasPetOwnerOpened);
+        for (const notification of unreadNotifications) {
+          const notificationRef = doc(db, "notifications", notification.id);
+          await updateDoc(notificationRef, { hasPetOwnerOpened: true });
+        }
+        setNotifications(notifications.map(n => ({ ...n, hasPetOwnerOpened: true })));
+        setUnreadNotifications(false);
+      } catch (error) {
+        console.error("Error updating notifications:", error);
+      }
+    }
+  };
+
+  const handleDeleteNotificationClick = (notificationId) => {
+    setNotificationToDelete(notificationId);
+    setShowDeleteConfirmModal(true);
+  };
+
+  // Confirm delete notification
+  const confirmDeleteNotification = async () => {
+    try {
+      const notificationRef = doc(db, "notifications", notificationToDelete);
+      await updateDoc(notificationRef, { removeViewPetOwner: true });
+      setNotifications(notifications.filter(n => n.id !== notificationToDelete));
+      setShowDeleteConfirmModal(false);
+      setNotificationToDelete(null);
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      alert("Failed to delete notification. Please try again.");
+    }
+  };
 
 
   const formatDate = (dateValue) => {
@@ -662,6 +741,7 @@ const PetOwnerHome = () => {
     fetchOwnerInfo();
     fetchPets();
     fetchAppointments();
+    fetchNotifications();
   }, []);
 
 
@@ -1000,6 +1080,10 @@ const PetOwnerHome = () => {
           >
             Health Records
           </button>
+          <button className="notification-btn-p" onClick={handleNotificationClick}>
+            <FaBell />
+            {unreadNotifications && <span className="notification-dot-p"></span>}
+          </button>
         </div>
       </div>
 
@@ -1245,6 +1329,68 @@ const PetOwnerHome = () => {
                 disabled={isSavingImage}
               >
                 {isSavingImage ? "Saving..." : isEditingImage ? "Save & Close" : "Close"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}  
+
+{showNotificationsModal && (
+        <div className="modal-overlay-p">
+          <div className="modal-content-p notifications-modal-p">
+            <span className="close-button-p" onClick={() => setShowNotificationsModal(false)}>×</span>
+            <h2>Notifications</h2>
+            {notifications.length > 0 ? (
+              <div className="notifications-list-p">
+                {notifications.map((notification) => (
+                  <div key={notification.id} className="notification-item-p">
+                    <img
+                      src={notification.clinicProfileImageURL}
+                      alt="Clinic"
+                      className="notification-clinic-img-p"
+                    />
+                    <p>
+                      Your appointment at {notification.clinicName} on{" "}
+                      {notification.dateofAppointment ? formatDate(notification.dateofAppointment) : "N/A"} has been accepted!
+                    </p>
+                    <FaTimes
+                      className="delete-notification-icon-p"
+                      onClick={() => handleDeleteNotificationClick(notification.id)}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No notifications available.</p>
+            )}
+            <div className="modal-actions-p">
+              <button
+                className="modal-close-btn-p"
+                onClick={() => setShowNotificationsModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirmModal && (
+        <div className="modal-overlay-p">
+          <div className="modal-content-p delete-confirm-modal-p">
+            <p>Are you sure you want to remove this notification?</p>
+            <div className="modal-actions-p">
+              <button
+                className="submit-btn-p"
+                onClick={confirmDeleteNotification}
+              >
+                Yes
+              </button>
+              <button
+                className="cancel-btn-p"
+                onClick={() => setShowDeleteConfirmModal(false)}
+              >
+                Cancel
               </button>
             </div>
           </div>
