@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'; // Make sure useEffect is imported
+import React, { useState, useRef, useEffect } from 'react';
 import './Home.css';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../../components/Footer/Footer';
@@ -23,8 +23,8 @@ const Home = () => {
     };
     const handleServicesClick = () => {
         window.scrollTo(0, 0);
-         navigate('/services');
-        };
+        navigate('/services');
+    };
     const handleClinicSignUpClick = () => {
         window.scrollTo(0, 0);
         navigate('/ClinicSubscribe');
@@ -34,7 +34,7 @@ const Home = () => {
         navigate('/ClinicLocator', { state: { searchQuery: searchInputValue } });
     };
 
-    // Scroll effect for animations
+    // Scroll event listener to trigger animations when elements come into view
     useEffect(() => {
         const handleScroll = () => {
             const homeText = document.getElementById('home-text');
@@ -91,46 +91,55 @@ const Home = () => {
         }
     };
 
-    // Hide locate me icon if search input has value
-     useEffect(() => {
+    useEffect(() => {
         setLocateMeVisible(!searchInputValue);
     }, [searchInputValue]);
 
     // *** Add Chatbase script loading and cleanup here ***
     useEffect(() => {
-        // Check if the script already exists when Home mounts
-        if (!document.getElementById("cx9lMXi2OqAvrfn32yeTs")) {
-          const script = document.createElement("script");
-          script.src = "https://www.chatbase.co/embed.min.js";
-          script.id = "cx9lMXi2OqAvrfn32yeTs"; 
-          script.defer = true;
-          document.body.appendChild(script);
-        } else {
-        }
+        try {
+            if (!document.getElementById("cx9lMXi2OqAvrfn32yeTs")) {
+                const script = document.createElement("script");
+                script.innerHTML = `
+                    (function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="cx9lMXi2OqAvrfn32yeTs";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+                `;
+                script.id = "chatbase-embed"; 
+                document.body.appendChild(script);
 
-        return () => {
-          const existingScript = document.getElementById("cx9lMXi2OqAvrfn32yeTs");
-          if (existingScript) {
-            if (window.chatbase && typeof window.chatbase === 'function') {
+                script.onload = () => {
+                    console.log("Chatbase script loaded successfully.");
+                };
+
+                script.onerror = () => {
+                    console.error("Failed to load Chatbase script.");
+                };
+            } else {
+                console.log("Chatbase script already exists.");
             }
-            existingScript.remove();
 
-            const bubbleButton = document.getElementById('chatbase-bubble-button');
-             if (bubbleButton) {
-                 bubbleButton.remove();
-             }
-             const bubbleWindow = document.getElementById('chatbase-bubble-window');
-             if (bubbleWindow) {
-                 bubbleWindow.remove();
-             }
+            return () => {
+                const existingScript = document.getElementById("chatbase-embed");
+                if (existingScript) {
+                    existingScript.remove();
+                }
 
-          } else {
-          }
+                const bubbleButton = document.getElementById('chatbase-bubble-button');
+                if (bubbleButton) {
+                    bubbleButton.remove();
+                }
+                const bubbleWindow = document.getElementById('chatbase-bubble-window');
+                if (bubbleWindow) {
+                    bubbleWindow.remove();
+                }
 
-          window.chatbase = undefined;
+                window.chatbase = undefined;
+            };
 
-        };
-      }, []);
+        } catch (error) {
+            console.error("Error initializing Chatbase:", error);
+            // Handle the error gracefully (e.g., display a user-friendly message)
+        }
+    }, []);
 
     return (
         <div className="home-container">
