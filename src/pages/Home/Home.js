@@ -34,7 +34,7 @@ const Home = () => {
         navigate('/ClinicLocator', { state: { searchQuery: searchInputValue } });
     };
 
-    // Scroll event listener to trigger animations when elements come into view
+    // Scroll effect for animations
     useEffect(() => {
         const handleScroll = () => {
             const homeText = document.getElementById('home-text');
@@ -61,7 +61,7 @@ const Home = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Locate me functionality
+    // locate me
     const handleLocateMeClick = () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -98,25 +98,29 @@ const Home = () => {
     // *** Add Chatbase script loading and cleanup here ***
     useEffect(() => {
         try {
+            // Check if the script already exists when Home mounts
             if (!document.getElementById("cx9lMXi2OqAvrfn32yeTs")) {
                 const script = document.createElement("script");
-                script.innerHTML = `
-                    (function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="cx9lMXi2OqAvrfn32yeTs";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+               /* script.innerHTML = `
+                   // (function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="cx9lMXi2OqAvrfn32yeTs";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
                 `;
-                script.id = "chatbase-embed"; 
+                script.id = "chatbase-embed"; // Add an ID for easier removal
+                script.defer = true; // Add defer attribute for better performance
                 document.body.appendChild(script);
 
                 script.onload = () => {
                     console.log("Chatbase script loaded successfully.");
-                };
+                }; */
 
                 script.onerror = () => {
                     console.error("Failed to load Chatbase script.");
+                    // Handle script loading failure (e.g., display a message to the user)
                 };
             } else {
                 console.log("Chatbase script already exists.");
-            }
+            } 
 
+            // Cleanup
             return () => {
                 const existingScript = document.getElementById("chatbase-embed");
                 if (existingScript) {
