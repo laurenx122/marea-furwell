@@ -29,6 +29,7 @@ import {
   Inject,
 } from "@syncfusion/ej2-react-schedule";
 import { registerLicense } from "@syncfusion/ej2-base";
+import emailjs from 'emailjs-com';
 
 // Import Syncfusion CSS
 import "@syncfusion/ej2-base/styles/material.css";
@@ -47,6 +48,10 @@ const PetOwnerHome = () => {
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
 
   );
+
+  const EMAILJS_PUBLIC_KEY = "BxPdkZVqFheGetz3t";
+  const EMAILJS_TEMPLATE_ID = "template_2j4yiho";
+  const EMAILJS_SERVICE_ID = "service_FurWell";
 
   const navigate = useNavigate();
   const handleBookAppointment = () => { navigate("/FindClinic"); };
@@ -105,6 +110,10 @@ const PetOwnerHome = () => {
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const DEFAULT_OWNER_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
+  const LOGO_URL = "https://furwell.vercel.app/images/furwell_logo.png";
+  const [emailError, setEmailError] = useState(null);
+  const [sentEmails, setSentEmails] = useState({});
+
   const petTypes = {
     Dog: ["Labrador", "Golden Retriever", "German Shepherd", "Bulldog", "Poodle", "Beagle", "Boxer", "Dachshund", "Rottweiler", "Siberian Husky", "Others"],
     Cat: ["Persian", "Siamese", "Maine Coon", "Calico", "Bengal", "Ragdoll", "British Shorthair", "Abyssinian", "Sphynx", "Scottish Fold", "Others"],
@@ -118,6 +127,7 @@ const PetOwnerHome = () => {
     Others: [] 
   };
 
+  
   // React calendar
   // Handle calendar date click
   const handleCalendarDateClick = (date) => {
@@ -737,14 +747,111 @@ const handleNotificationClick = async () => {
     }
   };
 
+
+  const checkAppointmentsAndSendReminders = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const appointmentsQuery = query(
+      collection(db, "appointments"),
+      where("owner", "==", doc(db, "users", currentUser.uid)),
+      where("status", "==", "Accepted")
+    );
+
+    try {
+      const querySnapshot = await getDocs(appointmentsQuery);
+
+      for (const docSnap of querySnapshot.docs) {
+        const appointment = docSnap.data();
+        const appointmentDate = appointment.dateofAppointment.toDate();
+        const appointmentDay = new Date(appointmentDate);
+        appointmentDay.setHours(0, 0, 0, 0); // Normalize to start of day
+        const time = appointmentDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+
+        const isToday = appointmentDay.toDateString() === today.toDateString();
+        const isTomorrow = appointmentDay.toDateString() === tomorrow.toDateString();
+        const when = isToday ? "today" : isTomorrow ? "tomorrow" : null;
+
+        if (isToday || isTomorrow) {
+          const appointmentKey = `${docSnap.id}-${when}`; // Unique key per appointment and day
+          if (sentEmails[appointmentKey]) {
+            console.log(`Email already sent for appointment ${docSnap.id} for ${when}, skipping...`);
+            continue; // Skip if email was already sent today for this appointment
+          }
+
+          const ownerDoc = await getDoc(appointment.owner);
+          const clinicDoc = await getDoc(doc(db, "clinics", appointment.clinicId));
+          const petDoc = await getDoc(appointment.petRef || doc(db, "pets", appointment.petId));
+
+          if (!ownerDoc.exists() || !clinicDoc.exists() || !petDoc.exists()) {
+            console.error("Missing data for appointment:", appointment);
+            continue;
+          }
+
+          const ownerData = ownerDoc.data();
+          const clinicData = clinicDoc.data();
+          const petData = petDoc.data();
+
+          const emailParams = {
+            owner: `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "Pet Owner",
+            petName: petData.petName || "Unknown Pet",
+            clinicName: clinicData.clinicName || "Unknown Clinic",
+            when: when,
+            day: appointmentDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+            time: time,
+            serviceType: appointment.serviceType || "N/A",
+            streetAddress: clinicData.streetAddress || "N/A",
+            province: clinicData.province || "N/A",
+            city: clinicData.city || "N/A",
+            veterinarian: appointment.veterinarian || "N/A",
+            email: ownerData.email || "default@email.com",
+            logo: LOGO_URL,
+          };
+
+          console.log("Sending email for appointment:", appointmentKey, emailParams);
+
+          try {
+            await emailjs.send(
+              EMAILJS_SERVICE_ID,
+              EMAILJS_TEMPLATE_ID,
+              emailParams,
+              EMAILJS_PUBLIC_KEY
+            );
+            console.log("Reminder email sent successfully for appointment on", appointmentDate);
+            setSentEmails((prev) => ({ ...prev, [appointmentKey]: true })); // Mark as sent
+          } catch (error) {
+            setEmailError(`Failed to send reminder email: ${error.text || JSON.stringify(error) || "Unknown error"}`);
+            console.error("Error sending reminder email:", error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error querying appointments:", error);
+      setEmailError(`Failed to query appointments: ${error.message || "Unknown error"}`);
+    }
+  };
+
+
   useEffect(() => {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
     fetchOwnerInfo();
     fetchPets();
     fetchAppointments();
     fetchNotifications();
+    checkAppointmentsAndSendReminders();
+
+    const reminderInterval = setInterval(checkAppointmentsAndSendReminders, 3600000); // 1 hour
+
+    return () => clearInterval(reminderInterval);
   }, []);
 
-
+  
   // Cancel Appointment Action Handlers
   const handleCancelAppointment = async (appointmentId) => {
     try {
@@ -1640,6 +1747,12 @@ const handleNotificationClick = async () => {
         </div>
       )}
 
+      {emailError && (
+        <div className="error-message-p" style={{ position: "fixed", top: "10px", left: "50%", transform: "translateX(-50%)", zIndex: 1000 }}>
+          <FaTimes className="error-icon" />
+          <p>{emailError}</p>
+        </div>
+      )}
 
       {showAppointmentModal && selectedAppointment && (
         <div className="modal-overlay-p">

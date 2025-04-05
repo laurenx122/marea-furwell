@@ -67,7 +67,7 @@ const Signup = ({ onClose, onSwitchToLogin }) => {
     try {
       const response = await emailjs.send(
         "service_Furwell", // Your EmailJS Service ID
-        "template_otp_verification", // Your EmailJS Template ID
+        "template_2aive7t", // Your EmailJS Template ID
         emailParams,
         "59--iStzN3U4AfD9O" // Your EmailJS Public Key
       );
