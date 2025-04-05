@@ -22,23 +22,45 @@
   max-height: 100vh;
 }
 
+.sidebar-icon-c {
+  font-size: 1.2em;    
+  color: #ff4081;       
+  flex-shrink: 0;      
+  /* margin-right: 10px; */
+}
+
+.sidebar-c button:hover .sidebar-icon-c {
+  color: #f50057; 
+}
+
+.sidebar-c button.active .sidebar-icon-c {
+  color: #fff; 
+}
+
+.signout-btn-c:hover .sidebar-icon-c {
+    color: #fff; 
+}
+
 .sidebar-c button {
   width: 100%;
   padding: 12px;
   font-size: 16px;
   border: none;
   cursor: pointer;
-  background-color: #fff;
+  background-color: #EDBFC6;
   border-radius: 5px;
   text-align: left;
   transition: 0.3s;
   font-family: 'Albert Sans', sans-serif;
   margin-bottom: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+ /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);*/
+  display: flex;        
+  align-items: center;    
+  gap: 12px;   
 }
 
 .sidebar-c button:hover {
-  background-color: #ffcdd2;
+  background-color: #f1a6ae;
   transform: translateY(-2px);
 }
 
@@ -120,6 +142,58 @@ tr:hover {
   width: 100%;
 }
 
+.panel-c.clinic-panel-c {
+
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.clinic-header-row-c {
+  display: flex;
+  align-items: center;
+  gap: 25px; 
+  flex-wrap: wrap; 
+}
+
+.clinic-header-info-c {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 250px;
+  margin-top: 20px;
+}
+
+.clinic-panel-img-container-c {
+  position: relative;
+  flex-shrink: 0;
+  width: 120px; 
+  height: 120px; 
+}
+
+.clinic-panel-img-container-c .edit-icon-c {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  padding: 5px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.clinic-details-c {
+  text-align: left; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 25px; 
+}
+
 .clinic-img-container-c {
   position: relative;
   display: flex;
@@ -136,6 +210,8 @@ tr:hover {
   object-fit: cover;
   border: 3px solid #ffb6c1;
 }
+
+
 
 /* Edit Icon */
 .edit-icon-c {
@@ -154,7 +230,36 @@ tr:hover {
   justify-content: center;
 }
 
-.edit-clinic-btn-c {
+.clinic-title-c {
+  font-size: 2.8rem;
+  font-weight: bold;
+  color: #E91E63;
+  margin: 0; 
+  padding-top: 20px; 
+  line-height: 1.1;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.edit-clinic-btn-inline-c {
+  background: none;
+  border: 1px solid #aaa;
+  color: #6b0045;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+ /* margin-top: 5px;
+  margin-bottom: 15px;*/
+  align-self: flex-start;
+}
+
+.edit-clinic-btn-inline-c:hover {
+  background-color: #ef7db4;
+  color: #333;
+}
+
+/*.edit-clinic-btn-c {
   margin-top: 15px;
   background-color: #ff4081;
   color: white;
@@ -163,10 +268,37 @@ tr:hover {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
-}
+}*/
 
 .edit-clinic-btn-c:hover {
   background-color: #f50057;
+}
+
+.clinic-contact-block-c {
+  margin-left: auto;  
+  text-align: right;
+  font-size: 0.9rem;
+  color: #444;
+  padding-top: 10px;
+}
+.clinic-contact-block-c p {
+  margin: 4px 0; 
+}
+
+.clinic-description-row-c {
+  /*margin-top: 15px; */
+  width: 100%;
+}
+
+.clinic-description-text-c {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #333;
+  text-align: justify; 
+}
+.clinic-description-text-c strong{
+  font-weight: bold;
+  margin-right: 5px;
 }
 
 /* Add Veterinarian Button */
@@ -199,6 +331,7 @@ tr:hover {
   text-align: left;
   transition: background-color 0.3s, transform 0.3s;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  gap: 12px;
 }
 
 .signout-btn-c:hover {
@@ -249,12 +382,12 @@ tr:hover {
 }
 
 .clinic-info-img-c {
-  width: 120px;
-  height: 120px;
+  width: 100%; 
+  height: 100%; 
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 15px;
-  border: 3px solid #ffb6c1;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .vet-info-img-c {
@@ -298,7 +431,7 @@ tr:hover {
   display: flex;
   justify-content: center;
   padding: 20px;
-  background-color: #ffb6c1;
+  background-color: #ffb6c1; 
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
 }
@@ -317,8 +450,39 @@ tr:hover {
   background-position: center;
   border: 3px solid #fff;
   transition: transform 0.3s;
+  position: relative; 
+  overflow: hidden;
 }
 
+.vet-image-upload-c::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 50%; 
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1; 
+  pointer-events: none; 
+}
+.vet-image-upload-c:hover::before {
+  opacity: 1;
+}
+.camera-icon-overlay-c {
+  position: absolute; 
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  font-size: 2.5rem; 
+  color: rgba(255, 255, 255, 0.8); 
+  opacity: 0; 
+  transition: opacity 0.3s ease;
+  z-index: 2; 
+  pointer-events: none; 
+}
 .vet-image-upload-c:hover {
   transform: scale(1.05);
 }
@@ -326,6 +490,9 @@ tr:hover {
 .vet-image-upload-c .camera-icon-c {
   font-size: 24px;
   color: #ff4081;
+}
+.vet-image-upload-c:hover .camera-icon-overlay-c {
+  opacity: 1;
 }
 
 .vet-image-upload-c p {
@@ -655,7 +822,7 @@ tr:hover {
   background-color: #f50057 !important;
 }
 
-.analytics-panel-c {
+.analytics-ll-c {
   height: 600px; /* Adjust based on your needs */
   overflow: hidden; /* Prevent scrolling unless explicitly needed */
 }

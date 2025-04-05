@@ -21,7 +21,20 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
 } from "firebase/auth";
-import { FaCamera } from "react-icons/fa";
+
+import {
+  FaCamera,
+  FaUsers,         
+  FaCalendarAlt,   
+  FaClock,        
+  FaFileMedicalAlt,
+  FaBriefcaseMedical, 
+  FaUserMd,       
+  FaChartBar,      
+  FaSignOutAlt,    
+  FaClinicMedical  
+} from "react-icons/fa";
+
 import { useNavigate } from "react-router-dom";
 import {
   ScheduleComponent,
@@ -966,62 +979,78 @@ const [dayData, setDayData] = useState([]);
                 style={{ display: "none" }}
               />
             </div>
+            {/* Clinic Info Button */}
             <button
               className={activePanel === "clinic" ? "active" : ""}
               onClick={() => handlePanelChange("clinic")}
             >
+              <FaClinicMedical className="sidebar-icon-c" /> {/* Icon Added */}
               {clinicInfo.clinicName}
             </button>
           </div>
         )}
         <div className="sidebar-buttons-c">
+          {/* Patients Button */}
           <button
             className={activePanel === "patients" ? "active" : ""}
             onClick={() => handlePanelChange("patients")}
-            
           >
+            <FaUsers className="sidebar-icon-c" /> {/* Icon Added */}
             Patients
           </button>
+          {/* Appointments Button */}
           <button
             className={activePanel === "appointments" ? "active" : ""}
             onClick={() => handlePanelChange("appointments")}
           >
+            <FaCalendarAlt className="sidebar-icon-c" /> {/* Icon Added */}
             Appointments
           </button>
+          {/* Pending Appointments Button */}
           <button
             className={activePanel === "pendingAppointments" ? "active" : ""}
             onClick={() => handlePanelChange("pendingAppointments")}
           >
+            <FaClock className="sidebar-icon-c" /> {/* Icon Added */}
             Pending Appointments
           </button>
+          {/* Records Button */}
           <button
             className={activePanel === "records" ? "active" : ""}
             onClick={() => handlePanelChange("records")}
           >
+            <FaFileMedicalAlt className="sidebar-icon-c" /> {/* Icon Added */}
             Records
           </button>
+          {/* Services Button */}
           <button
             className={activePanel === "services" ? "active" : ""}
             onClick={() => handlePanelChange("services")}
           >
+            <FaBriefcaseMedical className="sidebar-icon-c" /> {/* Icon Added */}
             Services
           </button>
+          {/* Veterinarians Button */}
           <button
             className={activePanel === "veterinarians" ? "active" : ""}
             onClick={() => handlePanelChange("veterinarians")}
           >
+            <FaUserMd className="sidebar-icon-c" /> {/* Icon Added */}
             Veterinarians
           </button>
-          <button
+          {/* Analytics Button */}
+           <button
             className={activePanel === "analytics" ? "active" : ""}
             onClick={() => handlePanelChange("analytics")}
           >
+            <FaChartBar className="sidebar-icon-c" /> {/* Icon Added */}
             Analytics
           </button>
-         
         </div>
+        {/* Sign Out Button */}
         <button className="signout-btn-c" onClick={handleSignOut}>
-          Sign Out
+           <FaSignOutAlt className="sidebar-icon-c" /> {/* Icon Added */}
+           Sign Out
         </button>
       </div>
 
@@ -1029,34 +1058,66 @@ const [dayData, setDayData] = useState([]);
         <div className="panel-container-c">
           {activePanel === "clinic" && clinicInfo && (
             <div className="panel-c clinic-panel-c">
-              <h3>Clinic Information</h3>
-              <div className="clinic-details-c">
-                <img
-                  src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
-                  alt="Clinic"
-                  className="clinic-info-img-c"
-                />
-                <p><strong>Name:</strong> {clinicInfo.clinicName}</p>
-                <p><strong>Phone:</strong> {clinicInfo.phone || "N/A"}</p>
-                <p>
-                  <strong>Address:</strong> {clinicInfo.streetAddress || "N/A"},{" "}
-                  {clinicInfo.city || "N/A"}
-                </p>
-                <p>
-                  <strong>Description:</strong> {clinicInfo.clinicDescription || "N/A"}
-                </p>
-                <button
-                  className="edit-clinic-btn-c"
-                  onClick={() => {
-                    setShowClinicModal(true);
-                    setIsEditingClinic(true);
-                  }}
-                >
-                  Edit Clinic Info
-                </button>
+            {/* Remove <h3>Clinic Information</h3> if you don't want it above the new layout */}
+            {/* <h3>Clinic Information</h3> */}
+        
+            {/* This div now controls the overall layout inspired by the image */}
+            <div className="clinic-details-c"> {/* Keep this class for potential specific styling */}
+        
+              <div className="clinic-header-row-c"> {/* New: Top row container */}
+        
+                {/* Left side: Image with Edit Icon */}
+                <div className="clinic-panel-img-container-c">
+                  <img
+                    src={clinicImagePreview || editedClinicInfo?.profileImageURL || clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
+                    alt="Clinic"
+                    className="clinic-info-img-c"
+                  />
+                  <label htmlFor="clinic-panel-image-upload" className="edit-icon-c">
+                    <FaCamera />
+                  </label>
+                  <input
+                    type="file"
+                    id="clinic-panel-image-upload"
+                    accept="image/jpeg, image/jpg, image/png"
+                    onChange={handleClinicImageChange}
+                    style={{ display: "none" }}
+                  />
+                </div>
+        
+                {/* Right side: Name, Button, Contact */}
+                <div className="clinic-header-info-c"> {/* New: Container for right-side info */}
+                  <h2 className="clinic-title-c">{clinicInfo.clinicName}</h2> {/* Use h2 or h1 */}
+                  <button
+                     className="edit-clinic-btn-inline-c" // New class for inline button style
+                     onClick={() => {
+                        setEditedClinicInfo({ ...clinicInfo });
+                        setClinicImagePreview(null);
+                        setShowClinicModal(true);
+                        setIsEditingClinic(true);
+                     }}
+                  >
+                    Edit Clinic info
+                  </button>
+        
+                  {/* Container to push contact info to the right */}
+                  <div className="clinic-contact-block-c">
+                     <p>Phone: {clinicInfo.phone || "N/A"}</p>
+                     <p>Address: {clinicInfo.streetAddress || "N/A"}, {clinicInfo.city || "N/A"}</p>
+                  </div>
+                </div>
               </div>
+        
+              {/* Bottom: Description */}
+              <div className="clinic-description-row-c"> {/* New: Description container */}
+                <p className="clinic-description-text-c">
+                    <strong>Description:</strong> {clinicInfo.clinicDescription || "N/A"}
+                </p>
+              </div>
+        
             </div>
-          )}
+          </div>
+        )}
           {activePanel === "patients" && (
             <div className="panel-c patients-panel-c">
               <h3>Patients</h3>
@@ -1437,15 +1498,17 @@ const [dayData, setDayData] = useState([]);
               <>
                 <h2>Edit Clinic Information</h2>
                 <div className="vet-image-upload-container-c">
-                  <label
-                    htmlFor="clinic-image-upload-modal"
-                    className="vet-image-upload-c"
-                    style={
-                      clinicImagePreview
-                        ? { backgroundImage: `url(${clinicImagePreview})` }
-                        : { backgroundImage: `url(${editedClinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE})` }
-                    }
-                  >
+                <label
+                  htmlFor="clinic-image-upload-modal"
+                  className="vet-image-upload-c" 
+                  style={
+                    clinicImagePreview
+                      ? { backgroundImage: `url(${clinicImagePreview})` }
+                      : { backgroundImage: `url(${editedClinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE})` }
+                  }
+                >
+                   <FaCamera className="camera-icon-overlay-c" /> 
+
                     {!clinicImagePreview && !editedClinicInfo.profileImageURL && (
                       <>
                         <FaCamera className="camera-icon-c" />
@@ -1453,14 +1516,15 @@ const [dayData, setDayData] = useState([]);
                       </>
                     )}
                     <input
-                      type="file"
-                      id="clinic-image-upload-modal"
-                      accept="image/jpeg, image/jpg, image/png"
-                      onChange={handleClinicImageChange}
-                      style={{ display: "none" }}
-                    />
-                  </label>
-                </div>
+                    type="file"
+                    id="clinic-image-upload-modal"
+                    accept="image/jpeg, image/jpg, image/png"
+                    onChange={handleClinicImageChange}
+                    style={{ display: "none" }}
+                  />
+                </label>
+              </div>
+                              
                 <div className="form-group-c">
                   <label htmlFor="clinicDescription">Clinic Description</label>
                   <input
