@@ -196,26 +196,183 @@ const PetOwnerHome = () => {
           where("type", "==", "appointment_accepted")
         );
         const querySnapshot = await getDocs(notificationsQuery);
-        const notificationsList = await Promise.all(querySnapshot.docs.map(async (docSnap) => {
-          const data = docSnap.data();
-          // Filter out notifications where removeViewPetOwner is true
-          if (data.removeViewPetOwner !== true) {
-            const clinicDoc = await getDoc(doc(db, "clinics", data.clinicId));
-            const appointmentDoc = await getDoc(doc(db, "appointments", data.appointmentId));
-            return {
-              id: docSnap.id,
-              clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
-              clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
-              dateofAppointment: appointmentDoc.exists() ? appointmentDoc.data().dateofAppointment.toDate() : null,
-              hasPetOwnerOpened: data.hasPetOwnerOpened,
-              message: data.message, // Include message for display if needed
-            };
+        const notificationsList = await Promise.all(
+          querySnapshot.docs.map(async (docSnap) => {
+            const data = docSnap.data();
+            if (data.removeViewPetOwner !== true) {
+              const clinicDoc = await getDoc(doc(db, "clinics", data.clinicId));
+              const appointmentDoc = await getDoc(doc(db, "appointments", data.appointmentId));
+              return {
+                id: docSnap.id,
+                clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+                clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+                dateofAppointment: appointmentDoc.exists() ? appointmentDoc.data().dateofAppointment.toDate() : null,
+                hasPetOwnerOpened: data.hasPetOwnerOpened,
+                message: data.message,
+                dateCreated: data.dateCreated ? data.dateCreated.toDate() : null,
+              };
+            }
+            return null;
+          })
+        );
+        let filteredNotifications = notificationsList.filter((n) => n !== null);
+  
+        // Check for appointments 1 day away
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0); 
+  
+        const appointmentsQuery = query(
+          collection(db, "appointments"),
+          where("owner", "==", doc(db, "users", currentUser.uid)),
+          where("status", "==", "Accepted")
+        );
+        const apptSnapshot = await getDocs(appointmentsQuery);
+  
+        const oneDayBeforeNotifications = await Promise.all(
+          apptSnapshot.docs.map(async (docSnap) => {
+            const apptData = docSnap.data();
+            const apptDate = apptData.dateofAppointment.toDate();
+            const apptDay = new Date(apptDate);
+            apptDay.setHours(0, 0, 0, 0); 
+  
+            // Check if the appointment is tomorrow
+            if (apptDay.toDateString() === tomorrow.toDateString()) {
+              const clinicDoc = await getDoc(apptData.clinic);
+              const existingNotificationQuery = query(
+                collection(db, "notifications"),
+                where("appointmentId", "==", docSnap.id),
+                where("type", "==", "appointment_reminder"),
+                where("ownerId", "==", `users/${currentUser.uid}`)
+              );
+              const existingSnapshot = await getDocs(existingNotificationQuery);
+  
+              // Only add notification if it doesn't already exist
+              if (existingSnapshot.empty) {
+                const notificationRef = await addDoc(collection(db, "notifications"), {
+                  ownerId: `users/${currentUser.uid}`,
+                  appointmentId: docSnap.id,
+                  clinicId: apptData.clinic.id,
+                  type: "appointment_reminder",
+                  message: `Reminder: Your appointment for ${apptData.petName} at ${clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"} is tomorrow!`,
+                  hasPetOwnerOpened: false,
+                  removeViewPetOwner: false,
+                  dateCreated: serverTimestamp(),
+                });
+  
+                return {
+                  id: notificationRef.id,
+                  clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+                  clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+                  dateofAppointment: apptDate,
+                  hasPetOwnerOpened: false,
+                  message: `Reminder: Your appointment for ${apptData.petName} at ${clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"} is tomorrow!`,
+                  dateCreated: new Date(),
+                };
+              } else {
+                const existingNotif = existingSnapshot.docs[0];
+                const existingData = existingNotif.data();
+                if (existingData.removeViewPetOwner !== true) {
+                  return {
+                    id: existingNotif.id,
+                    clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+                    clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+                    dateofAppointment: apptDate,
+                    hasPetOwnerOpened: existingData.hasPetOwnerOpened,
+                    message: existingData.message,
+                    dateCreated: existingData.dateCreated ? existingData.dateCreated.toDate() : null,
+                  };
+                }
+              }
+            }
+            return null;
+          })
+        );
+        
+        // Check for appointments happening today reminder
+      today.setHours(0, 0, 0, 0); 
+
+      const dayOfNotifications = await Promise.all(
+        apptSnapshot.docs.map(async (docSnap) => {
+          const apptData = docSnap.data();
+          const apptDate = apptData.dateofAppointment.toDate();
+          const apptDay = new Date(apptDate);
+          apptDay.setHours(0, 0, 0, 0); 
+
+          // Check if the appointment is today
+          if (apptDay.toDateString() === today.toDateString()) {
+            const clinicDoc = await getDoc(apptData.clinic);
+            const existingNotificationQuery = query(
+              collection(db, "notifications"),
+              where("appointmentId", "==", docSnap.id),
+              where("type", "==", "appointment_day_of"),
+              where("ownerId", "==", `users/${currentUser.uid}`)
+            );
+            const existingSnapshot = await getDocs(existingNotificationQuery);
+
+            // Only add notification if it doesn't already exist
+            if (existingSnapshot.empty) {
+              const notificationRef = await addDoc(collection(db, "notifications"), {
+                ownerId: `users/${currentUser.uid}`,
+                appointmentId: docSnap.id,
+                clinicId: apptData.clinic.id,
+                type: "appointment_day_of",
+                message: `Today is the day! Your appointment for ${apptData.petName} at ${
+                  clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"
+                } is scheduled for ${formatDate(apptDate)}.`,
+                hasPetOwnerOpened: false,
+                removeViewPetOwner: false,
+                dateCreated: serverTimestamp(),
+              });
+
+              return {
+                id: notificationRef.id,
+                clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+                clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+                dateofAppointment: apptDate,
+                hasPetOwnerOpened: false,
+                message: `Today is the day! Your appointment for ${apptData.petName} at ${
+                  clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"
+                } is scheduled for ${formatDate(apptDate)}.`,
+                dateCreated: new Date(),
+              };
+            } else {
+              const existingNotif = existingSnapshot.docs[0];
+              const existingData = existingNotif.data();
+              if (existingData.removeViewPetOwner !== true) {
+                return {
+                  id: existingNotif.id,
+                  clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+                  clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+                  dateofAppointment: apptDate,
+                  hasPetOwnerOpened: existingData.hasPetOwnerOpened,
+                  message: existingData.message,
+                  dateCreated: existingData.dateCreated ? existingData.dateCreated.toDate() : null,
+                };
+              }
+            }
           }
           return null;
-        }));
-        const filteredNotifications = notificationsList.filter(n => n !== null);
+        })
+      );
+
+        // Combine both types of notifications and filter out nulls
+        filteredNotifications = [
+          ...filteredNotifications,
+          ...oneDayBeforeNotifications.filter((n) => n !== null),
+          ...dayOfNotifications.filter((n) => n !== null),
+        ];
+
+        // Sort notifications by createdAt in descending order (newest first)
+        filteredNotifications.sort((a, b) => {
+          const dateA = a.dateCreated || new Date(0); // Fallback to epoch if null
+          const dateB = b.dateCreated || new Date(0);
+          return dateB - dateA; // Newest first
+        });
+  
         setNotifications(filteredNotifications);
-        setUnreadNotifications(filteredNotifications.some(n => !n.hasPetOwnerOpened));
+        setUnreadNotifications(filteredNotifications.some((n) => !n.hasPetOwnerOpened));
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -849,8 +1006,10 @@ const handleNotificationClick = async () => {
     checkAppointmentsAndSendReminders();
 
     const reminderInterval = setInterval(checkAppointmentsAndSendReminders, 3600000); // 1 hour
+    const notificationInterval = setInterval(fetchNotifications, 300000);
 
-    return () => clearInterval(reminderInterval);
+    return () => {clearInterval(reminderInterval);
+    clearInterval(notificationInterval);};
   }, []);
 
   
@@ -1167,7 +1326,7 @@ const handleNotificationClick = async () => {
             className={`owner-button ${activePanel === "profile" ? "active" : ""}`}
             onClick={() => setActivePanel("profile")}
           >
-            <FaUser className="sidebar-icon-p" /> {/* Icon Added */}
+            <FaUser className="sidebar-icon-p" /> 
             {ownerInfo.FirstName} {ownerInfo.LastName}
           </button>
           <button className="notification-btn-p" onClick={handleNotificationClick}>
@@ -1453,7 +1612,7 @@ const handleNotificationClick = async () => {
         </div>
       )}  
 
-{showNotificationsModal && (
+      {showNotificationsModal && (
         <div className="modal-overlay-p">
           <div className="modal-content-p notifications-modal-p">
             <span className="close-button-p" onClick={() => setShowNotificationsModal(false)}>×</span>
@@ -1467,11 +1626,13 @@ const handleNotificationClick = async () => {
                       alt="Clinic"
                       className="notification-clinic-img-p"
                     />
-                    <p>
-                      Your appointment at {notification.clinicName} on{" "}
-                      {notification.dateofAppointment ? formatDate(notification.dateofAppointment) : "N/A"} has been accepted!
-                    </p>
-                    <FaTimes
+                    <div className="notification-details-p">
+                      <p>{notification.message}</p>
+                      <span className="notification-timestamp-p">
+                        Notified on: {notification.dateCreated ? formatDate(notification.dateCreated) : "N/A"}
+                      </span>
+                    </div>
+                      <FaTimes
                       className="delete-notification-icon-p"
                       onClick={() => handleDeleteNotificationClick(notification.id)}
                     />

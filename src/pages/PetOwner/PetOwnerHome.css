@@ -118,6 +118,18 @@
   align-items: center;
 }
 
+.notification-details-p {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.notification-timestamp-p {
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 4px;
+}
+
 /* Bell Notification Icon */
 .bell-notif-p {
   font-size: 1.2rem; 
