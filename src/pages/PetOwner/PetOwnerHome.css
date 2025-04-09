@@ -8,179 +8,8 @@
   font-family: 'Albert Sans', sans-serif;
 }
 
-/* Sidebar Container */
-.sidebar-p {
-  width: 250px;
-  background-color: #EDBFC6; 
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px; 
-  align-items: flex-start;
-  justify-content: flex-start;
-  height: auto;
-  max-height: 100vh; 
-}
-
-/* Sidebar Icons */
-.sidebar-icon-p {
-  font-size: 1.2em; 
-  color: #ff4081; 
-  flex-shrink: 0;
-}
-
-/* Hover effect for icons */
-.sidebar-p button:hover .sidebar-icon-p {
-  color: #f50057;
-}
-
-/* Active state for icons */
-.sidebar-p button.active .sidebar-icon-p {
-  color: #fff; 
-}
-
-/* Sidebar Buttons */
-.sidebar-btn-p {
-  width: 100%;
-  padding: 12px; 
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  background-color: #EDBFC6; 
-  border-radius: 5px;
-  text-align: left;
-  transition: 0.3s; 
-  font-family: 'Albert Sans', sans-serif; 
-  margin-bottom: 3px; 
-  display: flex; 
-  align-items: center;
-  gap: 12px; 
-}
-
-/* Hover effect for buttons */
-.sidebar-btn-p:hover {
-  background-color: #f1a6ae; 
-  transform: translateY(-2px);
-}
-
-/* Active state for buttons */
-.sidebar-btn-p.active {
-  background-color: #ff8c94; 
-  color: #fff; 
-  font-weight: bold; 
-}
-
-/* Owner Sidebar Panel */
-.owner-sidebar-panel-p {
-  width: 100%;
-  margin-top: 90px; 
-}
-
-/* Owner Image Container */
-.owner-img-container-p {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  width: 150px;
-  height: 150px;
-  margin: 0 auto 20px;
-}
-
-/* Owner Profile Image */
-.owner-profile-image-p {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #ffb6c1; 
-}
-
-/* Sidebar Buttons Container */
-.sidebar-buttons-p {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  width: 100%;
-}
-
-/* Notification Button */
-.notification-btn-p {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-
-/* Notification Icon Container */
-.notification-icon-container-p {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-/* Bell Notification Icon */
-.bell-notif-p {
-  font-size: 1.2rem; 
-  color: #ff4081;
-}
-
-/* Bell Hover */
-.bell-notif-p:hover {
-  color: #f50057;
-}
-
-/* Notification Dot */
-.notification-dot-p {
-  position: absolute;
-  top: -2px;
-  right: -1px;
-  width: 9px;
-  height: 9px;
-  background-color: red;
-  border-radius: 50%;
-  border: 2px solid white;
-  pointer-events: none;
-}
-
-/* Owner Button (Profile Name) */
-.owner-button{
-  width: 80%;
-  padding: 12px; 
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  background-color: #EDBFC6;
-  border-radius: 5px;
-  text-align: left;
-  transition: 0.3s; 
-  font-family: 'Albert Sans', sans-serif;
-  display: flex; 
-  align-items: center; 
-  gap: 12px; 
-}
-
-/* Owner Button Hover */
-.owner-button:hover {
-  background-color: #f1a6ae; 
-  transform: translateY(-2px); 
-}
-
-/* Owner Button Active */
-.owner-button.active {
-  background-color: #ff8c94; 
-  color: #fff; 
-  font-weight: bold; 
-}
-
-.owner-notification-wrapper {
-  display: flex;
-  align-items: center; 
-  gap: 10px; 
-  width: 100%; 
-}
-
 /* Sidebar Styling */
-/* .sidebar-p {
+.sidebar-p {
   width: 250px;
   background-color: #EDBFC6;
   padding: 20px;
@@ -203,7 +32,18 @@
 }
 
 .sidebar-p button {
-
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  background-color: #fff;
+  border-radius: 5px;
+  text-align: left;
+  transition: 0.3s;
+  font-family: 'Albert Sans', sans-serif;
+  margin-bottom: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-p button:hover {
@@ -215,10 +55,10 @@
   background-color: #ff8c94;
   color: #fff;
   font-weight: bold;
-} */
+}
 
 /* Owner Sidebar Panel */
-/* .owner-sidebar-panel-p {
+.owner-sidebar-panel-p {
   width: 100%;
   margin-top: 90px;
 }
@@ -238,42 +78,16 @@
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid #ffb6c1;
-} */
+}
 
 /* Sidebar Buttons Container */
-
-/* .sidebar-buttons-p {
+.sidebar-buttons-p {
   display: flex;
   flex-direction: column;
   gap: 2px;
   width: 100%;
   margin-top: 5px;
 }
-
-.sidebar-btn-p {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  background-color: #fff;
-  border-radius: 5px;
-  text-align: left;
-  transition: 0.3s;
-  font-family: 'Albert Sans', sans-serif;
-  margin-bottom: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.sidebar-btn-p:hover {
-  background-color: #f0f0f0;
-}
-
-.sidebar-btn-p.active {
-  background-color: #e0e0e0;
-  font-weight: bold;
-} */
-
 
 /* Content Area */
 .content-p {
@@ -659,7 +473,7 @@ form {
 }
 
 
-/* .sidebar-buttons-p .notification-container-p button{
+.sidebar-buttons-p .notification-container-p button{
   background-color: #ff408000;
   margin-top: 100px;
   margin-bottom:5px;
@@ -669,63 +483,22 @@ form {
   }
   
   /* Container for the FaBell icon and the red dot */
-  /* .notification-icon-container-p {
+  .notification-icon-container-p {
     position: relative;
     display: inline-block;
   }
   
-  .owner-button {
-    background: transparent;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-    font-family: 'Albert Sans', sans-serif;
-    font-size: 16px;
-    color: #333;
-  }
-  
-  .owner-button.active {
-    text-decoration: underline; 
-  }
-  
-  .notification-btn-p {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-  }
-  
-  .notification-icon-container-p {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-  
-  .bell-notif-p {
-    font-size: 1.2rem;
-    color: #333;
-  }
-  
+  /* Style the red dot */
   .notification-dot-p {
     position: absolute;
-    top: -4px;
-    right: -4px;
-    width: 8px;
-    height: 8px;
-    background-color: red;
-    border-radius: 50%;
-  }
-  
-  .notification-dot-p {
-    position: absolute;
-    top: -2px;
-    right: -1px; 
+    top: -2px; /* Adjust as needed */
+    right: -1px; /* Adjust as needed */
     width: 9px;
     height: 9px;
     background-color: red;
     border-radius: 50%;
-    border: 2px solid white; 
-    pointer-events: none; 
+    border: 2px solid white; /* Optional: Add a border for better visibility */
+    pointer-events: none; /* Prevent the dot from interfering with clicks */
   }
   .bell-notif-p{
     color:#ff4081;
@@ -736,12 +509,12 @@ form {
     color:#ffffff;
     width: 25px;
     height: 25px;
-  }  */
+  } 
 /* Notifications Modal */
 .notifications-modal-p {
   width: 600px;
   max-width: 90%;
-} */
+}
 
 .notifications-list-p {
   max-height: 400px;
