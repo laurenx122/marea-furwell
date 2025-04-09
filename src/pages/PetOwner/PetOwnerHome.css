@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
 
-/* General Layout */
 .pet-owner-container-p {
   display: flex;
   height: 100vh;
@@ -8,56 +7,61 @@
   font-family: 'Albert Sans', sans-serif;
 }
 
-/* Sidebar Styling */
 .sidebar-p {
   width: 250px;
   background-color: #EDBFC6;
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 15px;
   align-items: flex-start;
   justify-content: flex-start;
-  min-height: 100vh;
+  height: auto;
+  max-height: 100vh;
 }
 
-
-
-.sidebar-p h2 {
-  font-size: 24px;
+.sidebar-icon-p {
+  font-size: 1.2em;
   color: #ff4081;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #ffb6c1;
-  padding-bottom: 10px;
+  flex-shrink: 0;
 }
 
-.sidebar-p button {
+.sidebar-p button:hover .sidebar-icon-p {
+  color: #f50057;
+}
+
+.sidebar-p button.active .sidebar-icon-p {
+  color: #fff;
+}
+
+.sidebar-btn-p {
   width: 100%;
   padding: 12px;
   font-size: 16px;
   border: none;
   cursor: pointer;
-  background-color: #fff;
+  background-color: #EDBFC6;
   border-radius: 5px;
   text-align: left;
   transition: 0.3s;
   font-family: 'Albert Sans', sans-serif;
-  margin-bottom: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.sidebar-p button:hover {
-  background-color: #ffcdd2;
+.sidebar-btn-p:hover {
+  background-color: #f1a6ae;
   transform: translateY(-2px);
 }
 
-.sidebar-p button.active {
+.sidebar-btn-p.active {
   background-color: #ff8c94;
   color: #fff;
   font-weight: bold;
 }
 
-/* Owner Sidebar Panel */
 .owner-sidebar-panel-p {
   width: 100%;
   margin-top: 90px;
@@ -80,16 +84,81 @@
   border: 3px solid #ffb6c1;
 }
 
-/* Sidebar Buttons Container */
 .sidebar-buttons-p {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 5px;
   width: 100%;
-  margin-top: 5px;
 }
 
-/* Content Area */
+.notification-btn-p {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.notification-icon-container-p {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bell-notif-p {
+  font-size: 1.2rem;
+  color: #ff4081;
+}
+
+.bell-notif-p:hover {
+  color: #f50057;
+}
+
+.notification-dot-p {
+  position: absolute;
+  top: -2px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  background-color: red;
+  border-radius: 50%;
+  border: 2px solid white;
+  pointer-events: none;
+}
+
+.owner-button {
+  width: 80%;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  background-color: #EDBFC6;
+  border-radius: 5px;
+  text-align: left;
+  transition: 0.3s;
+  font-family: 'Albert Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.owner-button:hover {
+  background-color: #f1a6ae;
+  transform: translateY(-2px);
+}
+
+.owner-button.active {
+  background-color: #ff8c94;
+  color: #fff;
+  font-weight: bold;
+}
+
+.owner-notification-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
 .content-p {
   flex: 1;
   padding: 20px;
@@ -97,7 +166,6 @@
   margin-top: 0;
 }
 
-/* Panel Container */
 .panel-container-p {
   background: white;
   padding: 20px;
@@ -109,7 +177,6 @@
   margin-top: 80px;
 }
 
-/* Table Styling */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -137,13 +204,11 @@ tr:hover {
   background-color: #fce4ec;
 }
 
-/* Panel Colors */
 .profile-panel-p { background-color: #e4e8ff; }
 .pet-details-panel-p { background-color: #ffe4e6; }
 .appointments-panel-p { background-color: #fdf6c2; }
 .health-records-panel-p { background-color: #e0f7fa; }
 
-/* Panel Headers */
 .panel-p h3 {
   font-size: 24px;
   margin-bottom: 20px;
@@ -153,7 +218,6 @@ tr:hover {
   margin: 15px;
 }
 
-/* Pet Name Link */
 .pet-name-link-p {
   color: #ff4081;
   text-decoration: underline;
@@ -164,7 +228,6 @@ tr:hover {
   color: #f50057;
 }
 
-/* Pet Details Header */
 .pet-details-header-p {
   display: flex;
   justify-content: space-between;
@@ -195,7 +258,6 @@ tr:hover {
   background-color: #ff1493;
 }
 
-/* Appointments Header */
 .appointments-header-p {
   display: flex;
   justify-content: space-between;
@@ -211,7 +273,7 @@ tr:hover {
 }
 
 .bookapptbutt-p {
-  background-color: #ff69b4; 
+  background-color: #ff69b4;
   color: white;
   padding: 12px 20px;
   margin: 10px;
@@ -223,18 +285,17 @@ tr:hover {
 }
 
 .bookapptbutt-p:hover {
-  background-color: #ff1493; 
+  background-color: #ff1493;
 }
 
 .psearch-bar-container {
   display: flex;
   justify-content: center;
-  margin-top: 10px; 
+  margin-top: 10px;
   margin-bottom: 20px;
   width: 100%;
   max-width: 1200px;
   margin-left: 25px;
-  /* margin-right: auto; */
   flex-direction: row;
 }
 
@@ -247,7 +308,8 @@ tr:hover {
   outline: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
-.form-group-p input{
+
+.form-group-p input {
   width: 95%;
   padding: 10px;
   border: 1px solid #ddd;
@@ -256,14 +318,14 @@ tr:hover {
   transition: border-color 0.3s;
 }
 
-.form-group-p select{
+.form-group-p select {
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 16px;
   transition: border-color 0.3s;
-} 
+}
 
 .form-group-p input:focus,
 .form-group-p select:focus {
@@ -277,7 +339,6 @@ tr:hover {
   gap: 10px;
 }
 
-/* Form Styling */
 form {
   display: flex;
   flex-direction: column;
@@ -285,7 +346,7 @@ form {
 }
 
 .form-group-p {
-  margin-bottom: 0px;
+  margin-bottom: 0;
   text-align: left;
 }
 
@@ -297,7 +358,7 @@ form {
 }
 
 .full-width-select {
-  width: 100%; /* Same as inputs */
+  width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
@@ -306,7 +367,7 @@ form {
 }
 
 .shrunk-select {
-  width: 45%; /* Shrink when "Others" is selected */
+  width: 45%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
@@ -334,28 +395,18 @@ form {
 }
 
 .custom-input {
-  width: 100%; /* Same width as other inputs when shown */
+  width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 16px;
-  margin-top: 10px; /* Space above custom input */
+  margin-top: 10px;
   transition: border-color 0.3s;
 }
 
 .custom-input:focus {
   border-color: #ff4081;
   outline: none;
-}
-
-.form-group-p .custom-input-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.form-group-p .custom-input-container select {
-  width: auto; /* Shrink select when "Others" is chosen */
 }
 
 .submit-btn-p {
@@ -391,7 +442,6 @@ form {
   background-color: #666;
 }
 
-/* Modal Styling */
 .modal-overlay-p {
   position: fixed;
   top: 0;
@@ -472,50 +522,6 @@ form {
   background-color: #f50057;
 }
 
-
-.sidebar-buttons-p .notification-container-p button{
-  background-color: #ff408000;
-  margin-top: 100px;
-  margin-bottom:5px;
-  width:50px;
-  border: transparent;
-  box-shadow: none;
-  }
-  
-  /* Container for the FaBell icon and the red dot */
-  .notification-icon-container-p {
-    position: relative;
-    display: inline-block;
-  }
-  
-  /* Style the red dot */
-  .notification-dot-p {
-    position: absolute;
-    top: -2px; /* Adjust as needed */
-    right: -1px; /* Adjust as needed */
-    width: 9px;
-    height: 9px;
-    background-color: red;
-    border-radius: 50%;
-    border: 2px solid white; /* Optional: Add a border for better visibility */
-    pointer-events: none; /* Prevent the dot from interfering with clicks */
-  }
-  .bell-notif-p{
-    color:#ff4081;
-    width: 25px;
-    height: 25px;
-  }
-  .bell-notif-p:hover {
-    color:#ffffff;
-    width: 25px;
-    height: 25px;
-  } 
-/* Notifications Modal */
-.notifications-modal-p {
-  width: 600px;
-  max-width: 90%;
-}
-
 .notifications-list-p {
   max-height: 400px;
   overflow-y: auto;
@@ -556,7 +562,6 @@ form {
   color: #d81b60;
 }
 
-/* Delete Confirmation Modal */
 .delete-confirm-modal-p {
   width: 400px;
   max-width: 90%;
@@ -569,12 +574,11 @@ form {
   font-size: 16px;
 }
 
-/* Pet Image Upload */
 .pet-image-upload-container-p {
   display: flex;
   justify-content: center;
   padding: 20px;
-  background-image: url("https://us.123rf.com/450wm/pliskova/pliskova1706/pliskova170600317/81354009-pet-seamless-pattern-on-a-blue-background-illustration.jpg");
+  background-image: url("https:\/\/us.123rf.com\/450wm\/pliskova\/pliskova1706\/pliskova170600317\/81354009-pet-seamless-pattern-on-a-blue-background-illustration.jpg");
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
 }
@@ -610,11 +614,10 @@ form {
   color: #333;
 }
 
-/* Pet Image in Modal */
 .pet-image-container-p {
   display: flex;
   justify-content: center;
-  background-image: url("https://us.123rf.com/450wm/pliskova/pliskova1706/pliskova170600317/81354009-pet-seamless-pattern-on-a-blue-background-illustration.jpg");
+  background-image: url("https:\/\/us.123rf.com\/450wm\/pliskova\/pliskova1706\/pliskova170600317\/81354009-pet-seamless-pattern-on-a-blue-background-illustration.jpg");
   margin-bottom: 20px;
 }
 
@@ -647,7 +650,6 @@ form {
   justify-content: center;
 }
 
-/* Success and Error Messages */
 .success-message-p {
   color: #4caf50;
   margin-bottom: 15px;
@@ -664,18 +666,12 @@ form {
   background-color: #ffebee;
 }
 
-/* Add Pet Modal */
 .add-pet-modal-p {
   padding: 0;
 }
 
 .add-pet-modal-p form {
   padding: 20px;
-}
-
-/* Profile Panel */
-.profile-panel-p {
-  background-color: #e4e8ff;
 }
 
 .owner-details-p {
@@ -707,8 +703,6 @@ form {
   background-color: #f50057;
 }
 
-
-/* Cancel and Reschedule Modal*/
 .reschedule-container-p {
   display: flex;
   flex-direction: column;
@@ -735,31 +729,17 @@ form {
   padding: 5px;
 }
 
-
-
-
-
-
-/* React Calendar */
-/* Calendar container styling */
-.calendar-container-p {
-  max-width: 320px; /* Slightly wider for a modern feel */
-  margin: 0 auto;
-  padding: 10px; /* Add padding for breathing room */
-}
-
-/* Base styles for the entire calendar */
 .react-calendar {
   background: #ffffff;
   border: none;
-  border-radius: 12px; /* Rounded corners */
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* Subtle shadow for depth */
-  padding: 12px; /* Inner spacing */
-  font-family: 'Inter', sans-serif; /* Modern font */
-  overflow: hidden; /* Ensure rounded corners work */
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 12px;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  animation: calendarFadeIn 0.3s ease-out;
 }
 
-/* Navigation (month/year and arrows) */
 .react-calendar__navigation {
   display: flex;
   align-items: center;
@@ -770,7 +750,7 @@ form {
 .react-calendar__navigation__label {
   font-size: 1.15rem;
   font-weight: 600;
-  color: #2d3748; /* Dark slate for sophistication */
+  color: #2d3748;
   background: none;
   border: none;
   cursor: pointer;
@@ -778,12 +758,12 @@ form {
 }
 
 .react-calendar__navigation__label:hover {
-  color: #3182ce; /* Modern blue hover */
+  color: #3182ce;
 }
 
 .react-calendar__navigation__arrow {
   font-size: 1.5rem;
-  color: #718096; /* Neutral gray */
+  color: #718096;
   background: none;
   border: none;
   padding: 5px 8px;
@@ -793,10 +773,9 @@ form {
 
 .react-calendar__navigation__arrow:hover {
   color: #3182ce;
-  transform: scale(1.1); 
+  transform: scale(1.1);
 }
 
-/* Weekday headers */
 .react-calendar__month-view__weekdays {
   margin-bottom: 8px;
 }
@@ -809,10 +788,9 @@ form {
   padding: 4px 0;
 }
 
-/* Base tile styles */
 .react-calendar__tile {
   background: #ffffff;
-  border-radius: 6px; 
+  border-radius: 6px;
   padding: 8px;
   font-size: 0.95rem;
   color: #2d3748;
@@ -822,61 +800,55 @@ form {
 .react-calendar__tile:enabled:hover {
   background: #3182ce;
   color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
-  transform: scale(1.05); 
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
 }
 
-/* Active/Selected tile */
 .react-calendar__tile--active {
-  background: #2b6cb0; 
+  background: #2b6cb0;
   color: #ffffff;
   font-weight: 600;
 }
 
-/* Custom tile states */
 .react-calendar__tile.clicked-date {
-  background-color: #3182ce !important; 
-  color: #ffffff !important;
+  background-color: #3182ce;
+  color: #ffffff;
   font-weight: 600;
   box-shadow: 0 2px 6px rgba(49, 130, 206, 0.3);
 }
 
 .react-calendar__tile.today-date {
-  background-color: #edf2f7 !important; 
-  color: #3182ce !important;
-  border: 1px solid #3182ce !important; 
+  background-color: #edf2f7;
+  color: #3182ce;
+  border: 1px solid #3182ce;
   font-weight: 500;
 }
 
 .react-calendar__tile.disabled-date {
-  background-color: #edf2f7 !important; 
-  color: #a0aec0 !important; 
+  background-color: #edf2f7;
+  color: #a0aec0;
   pointer-events: none;
 }
 
 .react-calendar__tile.fully-taken-date {
-  background-color: #fed7d7 !important; 
-  color: #e53e3e !important; 
+  background-color: #fed7d7;
+  color: #e53e3e;
   pointer-events: none;
 }
 
 .react-calendar__tile.available-date {
-  background-color: #c6f6d5 !important; 
-  color: #38a169 !important; 
+  background-color: #c6f6d5;
+  color: #38a169;
 }
 
 .react-calendar__tile.clicked-date:hover {
-  background-color: #3182ce !important;
-  color: #ffffff !important;
+  background-color: #3182ce;
+  color: #ffffff;
 }
 
-/* Animation for calendar appearance */
 @keyframes calendarFadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.react-calendar {
-  animation: calendarFadeIn 0.3s ease-out;
-}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
