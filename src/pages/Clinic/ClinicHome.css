@@ -430,7 +430,7 @@ tbody tr {
 
 
 tbody tr:hover {
-  background-color: #f1a6ae; 
+  background-color: #f1dee0; 
   transform: translateY(-2px); 
   cursor: pointer; 
   color: #333; 
@@ -455,32 +455,7 @@ tbody tr:hover .pet-name-link-c {
       opacity: 1;
   }
 }
-/*
-.modal-content-c {
-  border-radius: 15px;
-  width: 700px;
-  max-width: 90%;
-  max-height: 90vh;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  position: relative;
-  display: flex;
-  padding: 0;
-  background: linear-gradient(135deg, #c4e0f7, #a9d4f3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  animation: modalFadeInScaleUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
 
-.modal-content-c:hover {
-   transform: scale(1.01); /* Slightly enlarge on hover */
-  /*box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25); /* Increase shadow 
-  
-.modal-content-c h2 {
-  font-size: 24px;
-  color: #ff4081;
-  margin-bottom: 20px;
-}*/
 
 /* Modal Overlay Styling */
 .modal-overlay-c {
@@ -513,6 +488,7 @@ tbody tr:hover .pet-name-link-c {
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   padding: 20px;
   position: relative;
@@ -541,23 +517,27 @@ tbody tr:hover .pet-name-link-c {
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  background: #d3f0f7; /* Light blue background as in the image */
+  background: #d3f0f7; 
   border-radius: 10px;
   width: 500px;
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
 }
 
 /* Image container for the clinic modal */
 .modal-content-c.edit-clinic-modal-c .vet-image-upload-container-c {
-  background-color: #ffb6c1; /* Pink background */
+  background-color: #ffb6c1;
   padding: 20px;
   width: 100%;
+  max-width: 100%; 
   display: flex;
   justify-content: center;
   margin-bottom: 20px;
+  box-sizing: border-box; 
 }
 
 /* Form styling for the clinic modal */
@@ -1244,4 +1224,212 @@ tbody tr:hover .pet-name-link-c {
   font-size: 1rem;
   outline: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Add Service Button */
+.add-service-btn-c {
+  margin: 10px 0 20px 0;
+  background-color: #ff69b4;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.add-service-btn-c:hover {
+  background-color: #ff1493;
+  transform: translateY(-2px);
+}
+
+/* Edit and Delete Buttons in Table */
+.edit-service-btn-c {
+  background-color: #9cd9f7;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-right: 5px;
+  transition: background-color 0.3s;
+}
+
+.edit-service-btn-c:hover {
+  background-color: #f9a2d3db;
+}
+
+.delete-service-btn-c {
+  background-color: #ff4444;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.delete-service-btn-c:hover {
+  background-color: #cc0000;
+}
+
+/* Service Modal */
+.service-modal-c {
+  padding: 30px;
+  width: 450px; 
+  max-width: 90%; 
+  background-color: linear-gradient(135deg, #c4e0f7, #a9d4f3);
+  border-radius: 12px; 
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); 
+  animation: modalFadeInScaleUp 0.3s ease forwards; 
+  position: relative;
+  border: 1px solid #ffb6c1;
+}
+
+.service-modal-c h2 {
+  font-size: 26px;
+  color: #ff4081; 
+  margin-bottom: 25px; 
+  font-weight: 600; 
+  text-align: center;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.05); 
+}
+
+.service-modal-c .form-group-c {
+  margin-bottom: 20px; 
+  text-align: left;
+}
+
+.service-modal-c .form-group-c label {
+  display: block;
+  margin-bottom: 8px; 
+  color: #333; 
+  font-weight: 600;
+  font-size: 16px; 
+}
+
+.service-modal-c .form-group-c input[type="text"],
+.service-modal-c .form-group-c input[type="number"] {
+  width: 100%;
+  padding: 12px 15px; 
+  border: 1px solid #ddd; 
+  border-radius: 6px; 
+  font-size: 16px; 
+  font-family: 'Albert Sans', sans-serif;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  background-color: #f9f9f9; 
+  box-sizing: border-box;
+}
+
+.service-modal-c .form-group-c input[type="text"]::placeholder,
+.service-modal-c .form-group-c input[type="number"]::placeholder {
+  color: #aaa; 
+  font-style: italic;
+}
+
+/* Focus State for Inputs */
+.service-modal-c .form-group-c input:focus {
+  border-color: #ff4081; 
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 64, 129, 0.1); 
+}
+
+.service-modal-c .form-group-c input:invalid:not(:placeholder-shown) {
+  border-color: #ff1744;
+  background-color: #fff5f5; 
+}
+
+.service-modal-c .error-message-c {
+  color: #ff1744; 
+  background-color: #ffe6e6;
+  padding: 8px 12px; 
+  border-radius: 4px;
+  margin-bottom: 20px; 
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid #ff1744; 
+}
+
+.service-modal-c .form-actions-c {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px; 
+  margin-top: 25px; 
+}
+
+.service-modal-c .cancel-btn-c {
+  background-color: #b0b0b0; 
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.service-modal-c .cancel-btn-c:hover {
+  background-color: #999; 
+  transform: translateY(-1px);
+}
+
+.service-modal-c .cancel-btn-c:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(176, 176, 176, 0.3);
+}
+
+
+.service-modal-c .submit-btn-c {
+  background-color: #ff4081;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.service-modal-c .submit-btn-c:hover {
+  background-color: #f50057; 
+  transform: translateY(-1px); 
+}
+
+.service-modal-c .submit-btn-c:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 64, 129, 0.3); 
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 500px) {
+  .service-modal-c {
+    padding: 20px;
+    width: 90%; 
+  }
+
+  .service-modal-c h2 {
+    font-size: 22px;
+  }
+
+  .service-modal-c .form-group-c input[type="text"],
+  .service-modal-c .form-group-c input[type="number"] {
+    font-size: 14px;
+    padding: 10px 12px; 
+  }
+
+  .service-modal-c .form-actions-c {
+    flex-direction: column; 
+    gap: 10px;
+  }
+
+  .service-modal-c .cancel-btn-c,
+  .service-modal-c .submit-btn-c {
+    width: 100%;
+    padding: 12px; 
+  }
 }

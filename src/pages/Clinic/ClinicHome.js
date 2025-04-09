@@ -32,7 +32,8 @@ import {
   FaUserMd,       
   FaChartBar,      
   FaSignOutAlt,    
-  FaClinicMedical  
+  FaClinicMedical,
+  FaEdit, FaTrash,  
 } from "react-icons/fa";
 
 import { useNavigate } from "react-router-dom";
@@ -120,6 +121,11 @@ const ClinicHome = () => {
   const [pastAppointments, setPastAppointments] = useState([]);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [newService, setNewService] = useState({ Type: "", Price: "" });
+  const [editingServiceIndex, setEditingServiceIndex] = useState(null);
+  const [serviceError, setServiceError] = useState("");
 
   const navigate = useNavigate();
   const UPLOAD_PRESET = "furwell";
@@ -957,6 +963,87 @@ const [dayData, setDayData] = useState([]);
     initializeData();
   }, [userFirstName]);  
 
+  const handleServiceInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewService({ ...newService, [name]: value });
+  };
+
+  const handleAddOrEditService = async (e) => {
+    e.preventDefault();
+    setServiceError("");
+
+    if (!newService.Type || !newService.Price) {
+      setServiceError("Both service type and price are required.");
+      return;
+    }
+
+    const price = parseFloat(newService.Price);
+    if (isNaN(price) || price < 0) {
+      setServiceError("Price must be a valid positive number.");
+      return;
+    }
+
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("You must be logged in to modify services");
+
+      const clinicRef = doc(db, "clinics", currentUser.uid);
+      let updatedServices = [...services];
+
+      if (editingServiceIndex !== null) {
+        // Edit existing service
+        updatedServices[editingServiceIndex] = { Type: newService.Type, Price: newService.Price };
+      } else {
+        // Add new service
+        updatedServices.push({ Type: newService.Type, Price: newService.Price });
+      }
+
+      const servicePricesMap = updatedServices.reduce((acc, service) => {
+        acc[service.Type] = service.Price;
+        return acc;
+      }, {});
+
+      await updateDoc(clinicRef, { servicePrices: servicePricesMap });
+      setServices(updatedServices);
+      setClinicServices(updatedServices);
+      setNewService({ Type: "", Price: "" });
+      setEditingServiceIndex(null);
+      setShowServiceModal(false);
+    } catch (error) {
+      console.error("Error saving service:", error);
+      setServiceError("Failed to save service. Please try again.");
+    }
+  };
+
+  const handleEditService = (index) => {
+    setNewService(services[index]);
+    setEditingServiceIndex(index);
+    setShowServiceModal(true);
+  };
+
+  const handleDeleteService = async (index) => {
+    if (window.confirm("Are you sure you want to delete this service?")) {
+      try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) throw new Error("You must be logged in to delete services");
+
+        const updatedServices = services.filter((_, i) => i !== index);
+        const servicePricesMap = updatedServices.reduce((acc, service) => {
+          acc[service.Type] = service.Price;
+          return acc;
+        }, {});
+
+        const clinicRef = doc(db, "clinics", currentUser.uid);
+        await updateDoc(clinicRef, { servicePrices: servicePricesMap });
+        setServices(updatedServices);
+        setClinicServices(updatedServices);
+      } catch (error) {
+        console.error("Error deleting service:", error);
+        alert("Failed to delete service. Please try again.");
+      }
+    }
+  };
+
   return (
     <div className="clinic-container-c">
       <div className="sidebar-c">
@@ -1307,33 +1394,62 @@ const [dayData, setDayData] = useState([]);
               )}
             </div>
           )}
-          {activePanel === "services" && (
-            <div className="panel-c services-panel-c">
-              <h3>Services</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Type</th>
-                    <th>Price</th>
+
+        {activePanel === "services" && (
+        <div className="panel-c services-panel-c">
+          <h3>Services</h3>
+          <button
+            className="add-service-btn-c theme-btn-c"
+            onClick={() => {
+              setNewService({ Type: "", Price: "" });
+              setEditingServiceIndex(null);
+              setShowServiceModal(true);
+            }}
+          >
+            Add Service
+          </button>
+          <table className="theme-table-c">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Price</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {services.length > 0 ? (
+                services.map((service, index) => (
+                  <tr key={index}>
+                    <td>{service.Type}</td>
+                    <td>{service.Price}</td>
+                    <td className="action-buttons-c">
+                      <button
+                        className="edit-service-btn-c theme-action-btn-c"
+                        onClick={() => handleEditService(index)}
+                        title="Edit Service" 
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="delete-service-btn-c theme-action-btn-c"
+                        onClick={() => handleDeleteService(index)}
+                        title="Delete Service" 
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {services.length > 0 ? (
-                    services.map((service, index) => (
-                      <tr key={index}>
-                        <td>{service.Type}</td>
-                        <td>{service.Price}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="2">No services found</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3">No services found</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
           {activePanel === "veterinarians" && (
             <div className="panel-c veterinarians-panel-c">
               <h3>Veterinarians</h3>
@@ -1636,6 +1752,59 @@ const [dayData, setDayData] = useState([]);
     </div>
   </div>
 )}
+
+    {showServiceModal && (
+            <div className="modal-overlay-c">
+              <div className="modal-content-c service-modal-c">
+                <span
+                  className="close-button-c"
+                  onClick={() => setShowServiceModal(false)}
+                >
+                  ×
+                </span>
+                <h2>{editingServiceIndex !== null ? "Edit Service" : "Add New Service"}</h2>
+                {serviceError && <div className="error-message-c">{serviceError}</div>}
+                <form onSubmit={handleAddOrEditService}>
+                  <div className="form-group-c">
+                    <label htmlFor="Type">Service Type *</label>
+                    <input
+                      type="text"
+                      id="Type"
+                      name="Type"
+                      value={newService.Type}
+                      onChange={handleServiceInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group-c">
+                    <label htmlFor="Price">Price (in your currency) *</label>
+                    <input
+                      type="number"
+                      id="Price"
+                      name="Price"
+                      value={newService.Price}
+                      onChange={handleServiceInputChange}
+                      step="0.01"
+                      min="0"
+                      required
+                    />
+                  </div>
+                  <div className="form-actions-c">
+                    <button
+                      type="button"
+                      className="cancel-btn-c"
+                      onClick={() => setShowServiceModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="submit-btn-c">
+                      {editingServiceIndex !== null ? "Save Changes" : "Add Service"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
       {showAddVetModal && (
         <div className="modal-overlay-c">
