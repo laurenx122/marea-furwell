@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 
 import "react-calendar/dist/Calendar.css";
 import Calendar from "react-calendar";
+import { FaUser, FaCalendarAlt, FaFileMedical } from "react-icons/fa"; 
+import { MdPets } from "react-icons/md";
 
 
 import {
@@ -1149,54 +1151,59 @@ const handleNotificationClick = async () => {
 
   return (
     <div className="pet-owner-container-p">
-      <div className="sidebar-p">
-        {ownerInfo && (
-          <div className="owner-sidebar-panel-p">
-            <div className="owner-img-container-p">
-              <img
-                src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
-                alt="Owner Profile"
-                className="owner-profile-image-p"
-              />
-            </div>
-            <button
-              className={activePanel === "profile" ? "active" : ""}
-              onClick={() => setActivePanel("profile")}
-            >
-              {ownerInfo.FirstName} {ownerInfo.LastName}
-            </button>
-          </div>
-        )}
-        <div className="sidebar-buttons-p">
+
+  <div className="sidebar-p">
+    {ownerInfo && (
+      <div className="owner-sidebar-panel-p">
+        <div className="owner-img-container-p">
+          <img
+            src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
+            alt="Owner Profile"
+            className="owner-profile-image-p"
+          />
+        </div>
+        <div className="owner-notification-wrapper">
           <button
-            className={activePanel === "petDetails" ? "active" : ""}
-            onClick={() => setActivePanel("petDetails")}
+            className={`owner-button ${activePanel === "profile" ? "active" : ""}`}
+            onClick={() => setActivePanel("profile")}
           >
-            Pet Details
+            <FaUser className="sidebar-icon-p" /> {/* Icon Added */}
+            {ownerInfo.FirstName} {ownerInfo.LastName}
           </button>
-          <button
-            className={activePanel === "appointments" ? "active" : ""}
-            // onClick={() => setActivePanel("appointments")}
-            onClick={handleAppointmentsClick}
-          >
-            Appointments
-          </button>
-          <button
-            className={activePanel === "healthRecords" ? "active" : ""}
-            onClick={() => setActivePanel("healthRecords")}
-          >
-            Health Records
-          </button>
-          <div className="notification-container-p">
           <button className="notification-btn-p" onClick={handleNotificationClick}>
-            <div  className="notification-icon-container-p">
+            <div className="notification-icon-container-p">
               <FaBell className="bell-notif-p" />
               {unreadNotifications && <span className="notification-dot-p"></span>}
             </div>
           </button>
-          </div>
-          </div>
+        </div>
       </div>
+    )}
+    <div className="sidebar-buttons-p">
+      <button
+        className={`sidebar-btn-p ${activePanel === "petDetails" ? "active" : ""}`}
+        onClick={() => setActivePanel("petDetails")}
+      >
+        <MdPets className="sidebar-icon-p" /> 
+        Pet Details
+      </button>
+      <button
+        className={`sidebar-btn-p ${activePanel === "appointments" ? "active" : ""}`}
+        onClick={handleAppointmentsClick}
+      >
+        <FaCalendarAlt className="sidebar-icon-p" /> 
+        Appointments
+      </button>
+      <button
+        className={`sidebar-btn-p ${activePanel === "healthRecords" ? "active" : ""}`}
+        onClick={() => setActivePanel("healthRecords")}
+      >
+        <FaFileMedical className="sidebar-icon-p" /> 
+        Health Records
+      </button>
+    </div>
+  </div>
+
 
       <div className="content-p">
         <div className="panel-container-p">
@@ -1747,12 +1754,22 @@ const handleNotificationClick = async () => {
         </div>
       )}
 
-      {emailError && (
-        <div className="error-message-p" style={{ position: "fixed", top: "10px", left: "50%", transform: "translateX(-50%)", zIndex: 1000 }}>
-          <FaTimes className="error-icon" />
-          <p>{emailError}</p>
-        </div>
-      )}
+{emailError && (
+  <div
+    className="error-message-p"
+    style={{ position: "fixed", top: "10px", left: "50%", transform: "translateX(-50%)", zIndex: 1000 }}
+  >
+    <button
+      className="error-close-btn"
+      style={{ background: "none", border: "none", cursor: "pointer" }}
+      onClick={() => setEmailError(null)}
+      aria-label="Close error message"
+    >
+      <FaTimes className="error-icon" />
+    </button>
+    <p>{emailError}</p>
+  </div>
+)}
 
       {showAppointmentModal && selectedAppointment && (
         <div className="modal-overlay-p">
