@@ -430,7 +430,7 @@ tbody tr {
 
 
 tbody tr:hover {
-  background-color: #f1a6ae; 
+  background-color: #f1dee0; 
   transform: translateY(-2px); 
   cursor: pointer; 
   color: #333; 
@@ -455,32 +455,7 @@ tbody tr:hover .pet-name-link-c {
       opacity: 1;
   }
 }
-/*
-.modal-content-c {
-  border-radius: 15px;
-  width: 700px;
-  max-width: 90%;
-  max-height: 90vh;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  position: relative;
-  display: flex;
-  padding: 0;
-  background: linear-gradient(135deg, #c4e0f7, #a9d4f3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  animation: modalFadeInScaleUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
 
-.modal-content-c:hover {
-   transform: scale(1.01); /* Slightly enlarge on hover */
-  /*box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25); /* Increase shadow 
-  
-.modal-content-c h2 {
-  font-size: 24px;
-  color: #ff4081;
-  margin-bottom: 20px;
-}*/
 
 /* Modal Overlay Styling */
 .modal-overlay-c {
@@ -1244,4 +1219,81 @@ tbody tr:hover .pet-name-link-c {
   font-size: 1rem;
   outline: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Add Service Button */
+.add-service-btn-c {
+  margin: 10px 0 20px 0;
+  background-color: #ff69b4;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.add-service-btn-c:hover {
+  background-color: #ff1493;
+  transform: translateY(-2px);
+}
+
+/* Edit and Delete Buttons in Table */
+.edit-service-btn-c {
+  background-color: #9cd9f7;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-right: 5px;
+  transition: background-color 0.3s;
+}
+
+.edit-service-btn-c:hover {
+  background-color: #f9a2d3db;
+}
+
+.delete-service-btn-c {
+  background-color: #ff4444;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.delete-service-btn-c:hover {
+  background-color: #cc0000;
+}
+
+/* Service Modal */
+.service-modal-c {
+  padding: 20px;
+  width: 400px;
+}
+
+.service-modal-c .form-group-c input[type="text"],
+.service-modal-c .form-group-c input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.service-modal-c .form-group-c input:focus {
+  border-color: #ff4081;
+  outline: none;
+}
+
+.service-modal-c .form-actions-c {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
 }
