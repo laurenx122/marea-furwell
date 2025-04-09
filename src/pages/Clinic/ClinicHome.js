@@ -1118,46 +1118,64 @@ const [dayData, setDayData] = useState([]);
             </div>
           </div>
         )}
-          {activePanel === "patients" && (
-            <div className="panel-c patients-panel-c">
-              <h3>Patients</h3>
-              {loading ? (
-                <p>Loading patients...</p>
-              ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Pet Name</th>
+
+    {activePanel === "patients" && (
+      <div className="panel-c patients-panel-c">
+        <h3>Patients</h3>
+        {/* Search Bar Moved Here */}
+        <div className="csearch-bar-container">
+          <input
+            type="text"
+            placeholder="Search patients by name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+         <button className="search-btn-c" onClick={() => {}}>
+            Search
+         </button>
+        </div>
+        {loading ? (
+          <p>Loading patients...</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Patient Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              {patients.length > 0 ? (
+                [...patients]
+                  .filter((patient) =>
+                    patient.petName.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .sort((a, b) => a.petName.localeCompare(b.petName))
+                  .map((patient) => (
+                    <tr key={patient.id}>
+                      <td>
+                        <a
+                          href="#!"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePatientClick(patient);
+                          }}
+                          className="pet-name-link-c"
+                        >
+                          {patient.petName}
+                        </a>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {patients.length > 0 ? (
-                      patients.map((patient) => (
-                        <tr key={patient.id}>
-                          <td>
-                            <a
-                              href="#!"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handlePatientClick(patient);
-                              }}
-                              className="pet-name-link-c"
-                            >
-                              {patient.petName}
-                            </a>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td>No patients found</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                  ))
+              ) : (
+                <tr>
+                  <td colSpan="1">No patients found</td>
+                </tr>
               )}
-            </div>
-          )}
+            </tbody>
+          </table>
+        )}
+      </div>
+    )}
           {activePanel === "appointments" && (
             <div className="panel-c appointments-panel-c">
               <h3>Appointments</h3>
@@ -1483,143 +1501,141 @@ const [dayData, setDayData] = useState([]);
       </div>
 
       {showClinicModal && clinicInfo && (
-        <div className="modal-overlay-c">
-          <div className="modal-content-c">
-            <span
-              className="close-button-c"
+  <div className="modal-overlay-c">
+    <div className="modal-content-c edit-clinic-modal-c">
+      <span
+        className="close-button-c"
+        onClick={() => {
+          setShowClinicModal(false);
+          setIsEditingClinic(false);
+        }}
+      >
+        ×
+      </span>
+      {isEditingClinic ? (
+        <>
+          <h2>Edit Clinic Information</h2>
+          <div className="vet-image-upload-container-c">
+            <label
+              htmlFor="clinic-image-upload-modal"
+              className="vet-image-upload-c"
+              style={
+                clinicImagePreview
+                  ? { backgroundImage: `url(${clinicImagePreview})` }
+                  : { backgroundImage: `url(${editedClinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE})` }
+              }
+            >
+              <FaCamera className="camera-icon-overlay-c" />
+              {!clinicImagePreview && !editedClinicInfo.profileImageURL && (
+                <>
+                  <FaCamera className="camera-icon-c" />
+                  <p>Upload Clinic Photo</p>
+                </>
+              )}
+              <input
+                type="file"
+                id="clinic-image-upload-modal"
+                accept="image/jpeg, image/jpg, image/png"
+                onChange={handleClinicImageChange}
+                style={{ display: "none" }}
+              />
+            </label>
+          </div>
+          <div className="form-group-c">
+            <label htmlFor="clinicDescription">Clinic Description</label>
+            <textarea
+              id="clinicDescription"
+              name="clinicDescription"
+              value={editedClinicInfo.clinicDescription || ""}
+              onChange={handleClinicInputChange}
+              rows="4"
+            />
+          </div>
+          <div className="form-group-c">
+            <label htmlFor="clinicName">Clinic Name</label>
+            <input
+              type="text"
+              id="clinicName"
+              name="clinicName"
+              value={editedClinicInfo.clinicName || ""}
+              onChange={handleClinicInputChange}
+            />
+          </div>
+          <div className="form-group-c">
+            <label htmlFor="phone">Phone</label>
+            <input
+              type="text"
+              id="phone"
+              name="phone"
+              value={editedClinicInfo.phone || ""}
+              onChange={handleClinicInputChange}
+            />
+          </div>
+          <div className="form-group-c">
+            <label htmlFor="streetAddress">Street Address</label>
+            <input
+              type="text"
+              id="streetAddress"
+              name="streetAddress"
+              value={editedClinicInfo.streetAddress || ""}
+              onChange={handleClinicInputChange}
+            />
+          </div>
+          <div className="form-group-c">
+            <label htmlFor="city">City</label>
+            <input
+              type="text"
+              id="city"
+              name="city"
+              value={editedClinicInfo.city || ""}
+              onChange={handleClinicInputChange}
+            />
+          </div>
+          <div className="form-actions-c">
+            <button
+              className="submit-btn-c"
+              onClick={handleSaveClinicInfo}
+              disabled={isUpdatingClinic}
+            >
+              {isUpdatingClinic ? "Saving..." : "Save"}
+            </button>
+            <button
+              className="cancel-btn-c"
               onClick={() => {
                 setShowClinicModal(false);
                 setIsEditingClinic(false);
               }}
             >
-              ×
-            </span>
-            {isEditingClinic ? (
-              <>
-                <h2>Edit Clinic Information</h2>
-                <div className="vet-image-upload-container-c">
-                <label
-                  htmlFor="clinic-image-upload-modal"
-                  className="vet-image-upload-c" 
-                  style={
-                    clinicImagePreview
-                      ? { backgroundImage: `url(${clinicImagePreview})` }
-                      : { backgroundImage: `url(${editedClinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE})` }
-                  }
-                >
-                   <FaCamera className="camera-icon-overlay-c" /> 
-
-                    {!clinicImagePreview && !editedClinicInfo.profileImageURL && (
-                      <>
-                        <FaCamera className="camera-icon-c" />
-                        <p>Upload Clinic Photo</p>
-                      </>
-                    )}
-                    <input
-                    type="file"
-                    id="clinic-image-upload-modal"
-                    accept="image/jpeg, image/jpg, image/png"
-                    onChange={handleClinicImageChange}
-                    style={{ display: "none" }}
-                  />
-                </label>
-              </div>
-                              
-                <div className="form-group-c">
-                  <label htmlFor="clinicDescription">Clinic Description</label>
-                  <input
-                    type="text"
-                    id="clinicDescription"
-                    name="clinicDescription"
-                    value={editedClinicInfo.clinicDescription || ""}
-                    onChange={handleClinicInputChange}
-                  />
-                </div>
-                <div className="form-group-c">
-                  <label htmlFor="clinicName">Clinic Name</label>
-                  <input
-                    type="text"
-                    id="clinicName"
-                    name="clinicName"
-                    value={editedClinicInfo.clinicName || ""}
-                    onChange={handleClinicInputChange}
-                  />
-                </div>
-                <div className="form-group-c">
-                  <label htmlFor="phone">Phone</label>
-                  <input
-                    type="text"
-                    id="phone"
-                    name="phone"
-                    value={editedClinicInfo.phone || ""}
-                    onChange={handleClinicInputChange}
-                  />
-                </div>
-                <div className="form-group-c">
-                  <label htmlFor="streetAddress">Street Address</label>
-                  <input
-                    type="text"
-                    id="streetAddress"
-                    name="streetAddress"
-                    value={editedClinicInfo.streetAddress || ""}
-                    onChange={handleClinicInputChange}
-                  />
-                </div>
-                <div className="form-group-c">
-                  <label htmlFor="city">City</label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={editedClinicInfo.city || ""}
-                    onChange={handleClinicInputChange}
-                  />
-                </div>
-                <div className="form-actions-c">
-                  <button
-                    className="submit-btn-c"
-                    onClick={handleSaveClinicInfo}
-                    disabled={isUpdatingClinic}
-                  >
-                    {isUpdatingClinic ? "Saving..." : "Save"}
-                  </button>
-                  <button
-                    className="cancel-btn-c"
-                    onClick={() => {
-                      setShowClinicModal(false);
-                      setIsEditingClinic(false);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <img
-                  src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
-                  alt="Clinic"
-                  className="clinic-info-img-c"
-                />
-                <h2>{clinicInfo.clinicName}</h2>
-                <p>
-                  <strong>Phone:</strong> {clinicInfo.phone || "N/A"}
-                </p>
-                <p>
-                  <strong>Address:</strong> {clinicInfo.streetAddress || "N/A"},{" "}
-                  {clinicInfo.city || "N/A"}
-                </p>
-                <button
-                  className="modal-close-btn-c"
-                  onClick={() => setShowClinicModal(false)}
-                >
-                  Close
-                </button>
-              </>
-            )}
+              Cancel
+            </button>
           </div>
-        </div>
+        </>
+      ) : (
+        <>
+          <h2>{clinicInfo.clinicName}</h2>
+          <img
+            src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
+            alt="Clinic"
+            className="clinic-info-img-c"
+          />
+          <p>
+            <strong>Phone:</strong> {clinicInfo.phone || "N/A"}
+          </p>
+          <p>
+            <strong>Address:</strong> {clinicInfo.streetAddress || "N/A"},{" "}
+            {clinicInfo.city || "N/A"}
+          </p>
+          <button
+            className="modal-close-btn-c"
+            onClick={() => setShowClinicModal(false)}
+          >
+            Close
+          </button>
+        </>
       )}
+    </div>
+  </div>
+)}
 
       {showAddVetModal && (
         <div className="modal-overlay-c">
@@ -1879,48 +1895,58 @@ const [dayData, setDayData] = useState([]);
         </div>
       )}
 
-      {showPatientModal && selectedPatient && (
-        <div className="modal-overlay-c">
-          <div className="modal-content-c">
-            <span className="close-button-c" onClick={closePatientModal}>×</span>
-            <div className="pet-image-container-c">
-              <div className="pet-image-wrapper-c">
-                <img
-                  src={selectedPatient.petImageURL || DEFAULT_PET_IMAGE}
-                  alt={`${selectedPatient.petName}`}
-                  className="pet-image-c"
-                />
-              </div>
-            </div>
-            <h2>{selectedPatient.petName}</h2>
-            <div className="pet-info-grid-c">
-              <div className="info-item-c">
-                <strong>Type:</strong> {selectedPatient.Type || "N/A"}
-              </div>
-              <div className="info-item-c">
-                <strong>Breed:</strong> {selectedPatient.Breed || "N/A"}
-              </div>
-              <div className="info-item-c">
-                <strong>Color:</strong> {selectedPatient.Color || "N/A"}
-              </div>
-              <div className="info-item-c">
-                <strong>Gender:</strong> {selectedPatient.Gender || "N/A"}
-              </div>
-              <div className="info-item-c">
-                <strong>Weight:</strong> {selectedPatient.Weight ? `${selectedPatient.Weight} kg` : "N/A"}
-              </div>
-              <div className="info-item-c">
-                <strong>Date of Birth:</strong> {formatDOB(selectedPatient.dateofBirth)}
-              </div>
-            </div>
-            <div className="modal-actions-c">
-              <button className="modal-close-btn-c" onClick={closePatientModal}>
-                Close
-              </button>
-            </div>
-          </div>
+     {/* Pet Details Modal */}
+{showPatientModal && selectedPatient && (
+  <div className="modal-overlay-c">
+    {/* Add a specific class if needed to avoid affecting other modals */}
+    <div className="modal-content-c pet-info-modal-content-c">
+      <span className="close-button-c" onClick={closePatientModal}>×</span>
+
+      {/* Left Column: Image */}
+      <div className="modal-image-column-c">
+        <div className="modal-pet-image-frame-c">
+          <img
+            src={selectedPatient.petImageURL || DEFAULT_PET_IMAGE}
+            alt={`${selectedPatient.petName}`} // Use alt text for accessibility
+            className="modal-pet-image-c" // Use a specific class
+          />
         </div>
-      )}
+      </div>
+
+      {/* Right Column: Details */}
+      <div className="modal-details-column-c">
+        <h2 className="modal-pet-name-c">{selectedPatient.petName}</h2>
+        <div className="modal-pet-details-list-c">
+          {/* Using p tags for key-value pairs */}
+          <p className="modal-pet-detail-item-c">
+            <span className="modal-pet-detail-label-c">Type:</span>
+            <span className="modal-pet-detail-value-c">{selectedPatient.Type || "N/A"}</span>
+          </p>
+          <p className="modal-pet-detail-item-c">
+            <span className="modal-pet-detail-label-c">Breed:</span>
+            <span className="modal-pet-detail-value-c">{selectedPatient.Breed || "N/A"}</span>
+          </p>
+          <p className="modal-pet-detail-item-c">
+            <span className="modal-pet-detail-label-c">Gender:</span>
+            <span className="modal-pet-detail-value-c">{selectedPatient.Gender || "N/A"}</span>
+          </p>
+          <p className="modal-pet-detail-item-c">
+            <span className="modal-pet-detail-label-c">Color:</span>
+            <span className="modal-pet-detail-value-c">{selectedPatient.Color || "N/A"}</span>
+          </p>
+          <p className="modal-pet-detail-item-c">
+            <span className="modal-pet-detail-label-c">Weight:</span>
+            <span className="modal-pet-detail-value-c">{selectedPatient.Weight ? `${selectedPatient.Weight} kg` : "N/A"}</span> {/* Fixed here */}
+          </p>
+          <p className="modal-pet-detail-item-c">
+            <span className="modal-pet-detail-label-c">Date of Birth:</span>
+            <span className="modal-pet-detail-value-c">{formatDOB(selectedPatient.dateofBirth)}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       {showConfirmModal.open && (
         <div className="modal-overlay-v">
           <div className="modal-content-v signout-confirm-modal-v">
