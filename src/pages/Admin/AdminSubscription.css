@@ -36,6 +36,14 @@
   border: 1px solid #ffb6c1;
   text-align: center;
 }
+.A-actions .icon-buttoncheck:hover,
+.A-actions .icon-buttondelete:hover {
+  background-color: rgb(120, 204, 246);
+  border-color: rgb(120, 204, 246);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
 
 .A-actions {
   gap: 10px;
