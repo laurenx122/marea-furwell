@@ -1,7 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
 
-
-
 /* General Layout */
 .clinic-container-c {
   display: flex;
@@ -1433,5 +1431,269 @@ tbody tr:hover .pet-name-link-c {
   .service-modal-c .submit-btn-c {
     width: 100%;
     padding: 12px; 
+  }
+}
+
+
+
+@media (max-width: 768px) {
+  .clinic-container-c {
+    flex-direction: column;
+    height: auto; 
+  }
+
+  .sidebar-c {
+    width: 100%;
+    max-height: none; 
+    padding: 10px;
+    align-items: center; 
+  }
+
+  .content-c {
+    padding: 10px; 
+    width: 100%;
+  }
+
+  .panel-container-c {
+    min-height: auto; 
+    padding: 10px; 
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-c button {
+    width: 90%; 
+    font-size: 14px; 
+    padding: 10px; 
+    margin-bottom: 8px;
+  }
+
+  .sidebar-icon-c {
+    font-size: 1em; 
+  }
+
+  .clinic-sidebar-panel-c {
+    text-align: center; 
+  }
+
+  .clinic-img-container-c {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 10px;
+  }
+
+  .clinic-profile-image-c {
+    width: 100px;
+    height: 100px;
+  }
+
+  .signout-btn-c {
+    width: 90%;
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .panel-c h3 {
+    font-size: 20px; 
+    margin-bottom: 15px;
+  }
+
+  .clinic-header-row-c {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .clinic-header-info-c {
+    text-align: center;
+    min-width: 100%; 
+  }
+
+  .clinic-title-c {
+    font-size: 2rem; 
+  }
+
+  .clinic-contact-block-c {
+    text-align: center;
+    margin-left: 0;
+    font-size: 0.85rem;
+  }
+
+  .clinic-description-text-c {
+    font-size: 0.9rem;
+  }
+  table {
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 8px; 
+  }
+
+  @media (max-width: 500px) {
+    thead th:nth-child(n+3),
+    tbody td:nth-child(n+3) { 
+    }
+
+    table {
+      display: block;
+      overflow-x: auto; 
+      white-space: nowrap;
+    }
+  }
+}
+
+
+@media (max-width: 500px) {
+  .modal-content-c {
+    width: 90%; 
+    padding: 15px;
+  }
+
+  .modal-content-c h2 {
+    font-size: 20px;
+  }
+
+  .modal-content-c.edit-clinic-modal-c {
+    width: 90%;
+    padding: 15px;
+  }
+
+  .form-group-c input,
+  .form-group-c textarea {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .form-actions-c {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .submit-btn-c,
+  .cancel-btn-c {
+    width: 100%; 
+    padding: 10px;
+  }
+
+  .modal-content-c.pet-info-modal-content-c {
+    flex-direction: column;
+    width: 90%;
+    max-height: 80vh;
+  }
+
+  .modal-image-column-c {
+    flex: none;
+    padding: 15px;
+  }
+
+  .modal-pet-image-frame-c {
+    width: 200px;
+    height: 200px;
+  }
+
+  .modal-details-column-c {
+    padding: 15px;
+  }
+
+  .modal-pet-name-c {
+    font-size: 1.5rem;
+  }
+
+  .modal-pet-detail-item-c {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .csearch-bar-container {
+    flex-direction: column; 
+    margin-left: 0;
+    gap: 8px;
+  }
+
+  .csearch-bar-container input[type="text"] {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .search-btn-c {
+    width: 100%;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .e-schedule {
+    height: 500px !important; 
+  }
+}
+
+@media (max-width: 500px) {
+  .e-schedule {
+    height: 400px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-panel-c > div {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .analytics-panel-c > div > div {
+    width: 100%; 
+    height: 300px;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .add-vet-btn-c,
+  .add-service-btn-c {
+    font-size: 14px;
+    padding: 10px 15px;
+  }
+
+  .edit-service-btn-c,
+  .delete-service-btn-c {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+}
+
+.mobile-header-c {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-header-c {
+    display: block;
+    padding: 10px;
+    background-color: #EDBFC6;
+  }
+
+  .mobile-header-c button {
+    font-size: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .sidebar-c {
+    display: none;
+  }
+
+  .sidebar-c.open {
+    display: flex;
+    position: absolute;
+    top: 40px;
+    left: 0;
+    width: 45%;
+    z-index: 1000;
+    background-color: #EDBFC6;
+    border-radius: 2px;;
   }
 }
