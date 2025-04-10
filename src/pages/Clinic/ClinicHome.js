@@ -74,12 +74,10 @@ const ClinicHome = () => {
       }
     };
 
-    // Try to hide it immediately on component mount
     hideLicenseNotification();
 
-    // Optionally, use MutationObserver as a fallback if it appears later
     const observer = new MutationObserver((mutations) => {
-      hideLicenseNotification(); // Call it on every mutation
+      hideLicenseNotification(); 
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
