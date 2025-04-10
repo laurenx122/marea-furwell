@@ -30,6 +30,39 @@
   padding: 0.1rem 1rem;
 }
 
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  left: 20px;
+  cursor: url('../../images/pawCursorPoint.png'), auto;
+  padding: 10px;
+  position: relative;
+  z-index: 101;
+}
+
+.hamburger span {
+  width: 40px;
+  height: 6px;
+  background-color: #3E6680;
+  border-radius: 14px;
+  margin: 4px 0;
+  transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease;
+}
+
+.hamburger.active span:nth-child(1) {
+  transform: rotate(45deg) translate(10px, 10px);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(10px, -10px);
+}
+
 /* Logo */
 .logoContainer {
   display: flex;
@@ -159,7 +192,7 @@
   height: 10px;
   background-color: #3E6680;
   transition: width 0.2s ease-in-out;
-  z-index: 100;
+  z-index: 105;
 }
 
 /* Modal Styles */
@@ -310,4 +343,179 @@
 
 .cancelBtn:hover {
   background-color: #666; 
+}
+
+.mobileMenu {
+  position: fixed;
+  top: 80px;
+  left: -250px; 
+  width: 25%; 
+  height: calc(100vh - 80px);
+  background-color: #CDEDF6;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  transition: left 0.3s ease;
+  z-index: 100;
+}
+
+.mobileMenu.active {
+  top: 80px;
+  left: 0; 
+  z-index: 101;
+}
+
+.mobileMenuOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+}
+
+.mobileMenuOverlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobileMenuList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mobileMenuItem {
+  margin: 15px 0;
+}
+
+.mobileMenuLink, .mobileLoginButton, .mobileSignupButton {
+  display: block;
+  padding: 10px;
+  text-decoration: none;
+  color: #3E6680;
+  font-size: 1.1rem;
+  background: none;
+  border: none;
+  cursor: url('../../images/pawCursorPoint.png'), auto;
+  transition: color 0.3s;
+}
+
+.mobileMenuLink:hover, .mobileLoginButton:hover, .mobileSignupButton:hover {
+  color: #3E6680;
+}
+
+.mobileSignupButton {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 2px solid #3E6680;
+  border-radius: 20px;
+  margin-top: 10px;
+}
+
+.mobileLoginButton {
+  width: 100%;
+  text-align: left;
+  color: #AEF0FF;
+  background-color: #3E6680;
+  border: 2px solid #3E6680;
+  border-radius: 20px;
+  margin-top: 10px;
+}
+
+.mobileSignupButton {
+  color: #3E6680;
+  border-color: #3E6680;
+}
+
+.mobileLoginButton:hover {
+  background-color: #AEF0FF;
+  color: #3E6680;
+}
+
+.mobileSignupButton:hover {
+  background-color: #3E6680;
+  color: #AEF0FF;
+}
+
+@media screen and (max-width: 1024px) { 
+  .navbarList {
+    display: none;
+  }
+
+  .navbar{
+    padding: 0;
+    margin-left: 0;
+    justify-content: left;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .logoContainer {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .rightSection {
+    display: none;
+  }
+
+  .hamburger {
+    z-index: 101;
+  }
+}
+
+@media screen and (max-width: 768px) { /* Mobile Phones (360x800) */
+  .navbar {
+    height: 60px;
+  }
+
+  .logo {
+    height: 80px;
+  }
+
+  .rightSection {
+    display: none;
+  }
+
+  .loginButton, .logoutButton, .signupButton {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .userMenu {
+    gap: 5px;
+  }
+
+  .profileImage {
+    width: 25px;
+    height: 25px;
+  }
+
+  .username {
+    font-size: 1rem;
+  }
+
+  .mobileMenu.active {
+    top: 60px;
+    height: calc(100vh - 40px);
+  }
+
+  .scrollProgressBar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 0;
+    height: 10px;
+    background-color: #3E6680;
+    transition: width 0.2s ease-in-out;
+    z-index: 100;
+  }
 }

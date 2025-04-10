@@ -37,6 +37,7 @@ const Navbar = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [contactNumberError, setContactNumberError] = useState('');
     const [isUploading, setIsUploading] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const UPLOAD_PRESET = "furwell";
 
@@ -95,6 +96,10 @@ const Navbar = () => {
 
         return () => unsubscribe();
     }, []);
+
+    const toggleMenu = () => {
+        setIsMenuOpen(!isMenuOpen);
+    }
 
     const handleLoginClick = () => {
         setIsLoginModalOpen(true);
@@ -250,6 +255,11 @@ const Navbar = () => {
         <>
             <nav className={styles.navbar}>
                 <div className={styles.navbarContent}>
+                <div className={`${styles.hamburger} ${isMenuOpen ? styles.active : ''}`} onClick={toggleMenu}>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
                     <div className={styles.logoContainer}>
                         <a href="#" onClick={(e) => {
                             e.preventDefault();
@@ -259,7 +269,7 @@ const Navbar = () => {
                         </a>
                     </div>
 
-                    <ul className={styles.navbarList}>
+                    <ul className={`${styles.navbarList} ${isMenuOpen ? styles.active : ''}`}>
                         {isAdmin ? (
                             <>
                                 <li className={styles.navbarItem}>
@@ -287,6 +297,7 @@ const Navbar = () => {
                                                 top: document.documentElement.scrollHeight,
                                                 behavior: "smooth",
                                             });
+                                            setIsMenuOpen(false);
                                         }}
                                     >
                                         Contact Us
@@ -303,7 +314,7 @@ const Navbar = () => {
                         {isLoggedIn ? (
                             <div className={styles.userMenu}>
                                 {userDetails.profileImageURL && (
-                                    <Link to="/PetOwnerHome">
+                                    <Link to="/PetOwnerHome" onClick={() => setIsMenuOpen(false)}>
                                         <img
                                             src={userDetails.profileImageURL}
                                             alt="Profile"
@@ -312,7 +323,7 @@ const Navbar = () => {
                                         />
                                     </Link>
                                 )}
-                                <Link to="/PetOwnerHome">
+                                <Link to="/PetOwnerHome" onClick={() => setIsMenuOpen(false)}>
                                     <span
                                         className={styles.username}
                                         style={{ cursor: 'pointer', textDecoration: 'underline' }}
@@ -334,6 +345,26 @@ const Navbar = () => {
 
             {scrollProgress > 0 && <div className={styles.scrollProgressBar} style={{ width: `${scrollProgress}%` }}></div>}
 
+            {isMenuOpen && !isLoggedIn && (
+                <>
+                    <div className={`${styles.mobileMenuOverlay} ${isMenuOpen ? styles.active : ''}`} onClick={toggleMenu}></div>
+                    <div className={`${styles.mobileMenu} ${isMenuOpen ? styles.active : ''}`}>
+                        <ul className={styles.mobileMenuList}>
+                            <li className={styles.mobileMenuItem}>
+                                <Link to="/Home" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>Home</Link>
+                            </li>
+                            <li className={styles.mobileMenuItem}>
+                                <button onClick={() => { handleLoginClick(); setIsMenuOpen(false); }} className={styles.mobileLoginButton}>Login</button>
+                            </li>
+                            <li className={styles.mobileMenuItem}>
+                                <button onClick={() => { handleSignUpClick(); setIsMenuOpen(false); }} className={styles.mobileSignupButton}>Sign Up</button>
+                            </li>
+                        </ul>
+                    </div>
+                </>
+            )}
+
+                        
             {isModalOpen && (
                 <div className={styles.modalOverlay}>
                     <div className={styles.modalContent}>
