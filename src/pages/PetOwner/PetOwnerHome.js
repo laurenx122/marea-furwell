@@ -178,7 +178,7 @@ const PetOwnerHome = () => {
         } else {
           // No user is logged in, redirect to login
           setLoading(false); // Done loading, no user
-          navigate("/login");
+          navigate("/Home");
         }
       });
     };

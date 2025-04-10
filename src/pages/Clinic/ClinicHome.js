@@ -180,7 +180,7 @@ const ClinicHome = () => {
             setLoading(false);
           }
         } else {
-          navigate("/login");
+          navigate("/Home");
         }
       });
       return () => unsubscribe();
