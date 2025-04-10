@@ -24,16 +24,16 @@ import {
 
 import {
   FaCamera,
-  FaUsers,         
-  FaCalendarAlt,   
-  FaClock,        
+  FaUsers,
+  FaCalendarAlt,
+  FaClock,
   FaFileMedicalAlt,
-  FaBriefcaseMedical, 
-  FaUserMd,       
-  FaChartBar,      
-  FaSignOutAlt,    
+  FaBriefcaseMedical,
+  FaUserMd,
+  FaChartBar,
+  FaSignOutAlt,
   FaClinicMedical,
-  FaEdit, FaTrash,  
+  FaEdit, FaTrash,
 } from "react-icons/fa";
 
 import { useNavigate } from "react-router-dom";
@@ -64,9 +64,30 @@ const ClinicHome = () => {
   // Register Syncfusion license (replace with your valid key if different)
   registerLicense(
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
-    // process.env.SYNC_REGISTER_LICENSE
-    // "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
   );
+
+  useEffect(() => {
+    const hideLicenseNotification = () => {
+      const notificationDiv = document.querySelector('div[style*="position: fixed"][style*="z-index: 999999999"]');
+      if (notificationDiv) {
+        notificationDiv.style.display = 'none';
+      }
+    };
+
+    hideLicenseNotification();
+
+    const observer = new MutationObserver((mutations) => {
+      hideLicenseNotification(); 
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+  
+
   // const [genderData, setGenderData] = useState([]);
   // const [speciesData, setSpeciesData] = useState([]);
   // const [ageData, setAgeData] = useState([]);
@@ -133,9 +154,42 @@ const ClinicHome = () => {
   const DEFAULT_CLINIC_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const scheduleObj = useRef(null);
-// Analytics State
-const [serviceData, setServiceData] = useState([]);
-const [dayData, setDayData] = useState([]);
+  // Analytics State
+  const [serviceData, setServiceData] = useState([]);
+  const [dayData, setDayData] = useState([]);
+
+  // Combined useEffect for authentication and data initialization
+  useEffect(() => {
+    const initializeComponent = async () => {
+      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          setLoading(true);
+          try {
+            await Promise.all([
+              fetchUserFirstName(),
+              fetchClinicInfo(),
+              fetchPatients(),
+              fetchAppointments(),
+              fetchVeterinarians(),
+              fetchChartData(),
+              fetchPendingAppointments(),
+            ]);
+          } catch (error) {
+            console.error("Error initializing data:", error);
+          } finally {
+            setLoading(false);
+          }
+        } else {
+          navigate("/Home");
+        }
+      });
+      return () => unsubscribe();
+    };
+
+    initializeComponent();
+  }, [navigate]);
+
+
 
   //Analytics data
   const handlePanelChange = (panel) => {
@@ -209,7 +263,7 @@ const [dayData, setDayData] = useState([]);
     }
   };
 
-  
+
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     let date;
@@ -463,72 +517,72 @@ const [dayData, setDayData] = useState([]);
       (appointment.serviceType?.toLowerCase() || "").includes(searchQuery.toLowerCase())
     );
   });
- 
+
   //Action confirmation modal
-    const handleActionConfirm = async (action) => {
-      const { appointmentId } = showConfirmModal;
-      try {
-        const appointmentRef = doc(db, "appointments", appointmentId);
-        const appointmentDoc = await getDoc(appointmentRef);
-        if (!appointmentDoc.exists()) throw new Error("Appointment not found");
-    
-        if (action === "accept") {
-          const appointmentData = appointmentDoc.data();
-          const newData = { 
-            ...appointmentData, 
-            status: "Accepted", 
-            timestamp: new Date().toISOString() 
-          };
-          await updateDoc(appointmentRef, newData);
-    
-          // Create notification in the "notifications" collection
-          const notificationRef = collection(db, "notifications");
-          const appointmentDate = appointmentData.dateofAppointment.toDate();
-          const formattedDateTime = formatDate(appointmentDate);
+  const handleActionConfirm = async (action) => {
+    const { appointmentId } = showConfirmModal;
+    try {
+      const appointmentRef = doc(db, "appointments", appointmentId);
+      const appointmentDoc = await getDoc(appointmentRef);
+      if (!appointmentDoc.exists()) throw new Error("Appointment not found");
 
-          await setDoc(doc(notificationRef), {
-            appointmentId: appointmentId,
-            clinicId: auth.currentUser.uid, 
-            ownerId: appointmentData.owner?.path || null, 
-            petId: appointmentData.petRef?.path || null,
-            messageVet: `You have a new appointment on ${formattedDateTime} for ${appointmentData.petName}`,
-            message: `Your appointment for ${appointmentData.petName} has been accepted by ${clinicInfo?.clinicName}.`,
-            dateCreated: serverTimestamp(),
-            hasVetOpened: false,
-            hasPetOwnerOpened: false, 
-            status: "unread",
-            type: "appointment_accepted",
-          });
-    
-          await fetchAppointments();
-          console.log("Appointment accepted successfully and notification created!");
-        } else if (action === "decline") {
-          await updateDoc(appointmentRef, { status: "Declined" });
-          await fetchPendingAppointments(); 
-          console.log("Appointment declined successfully!");
-        }
-    
-        setPendingAppointments(pendingAppointments.filter(appt => appt.id !== appointmentId));
-        setShowConfirmModal({ open: false, action: null, appointmentId: null });
-      } catch (error) {
-        console.error(`Error ${action}ing appointment:`, error);
-        alert(`Failed to ${action} the appointment. Please try again.`);
+      if (action === "accept") {
+        const appointmentData = appointmentDoc.data();
+        const newData = {
+          ...appointmentData,
+          status: "Accepted",
+          timestamp: new Date().toISOString()
+        };
+        await updateDoc(appointmentRef, newData);
+
+        // Create notification in the "notifications" collection
+        const notificationRef = collection(db, "notifications");
+        const appointmentDate = appointmentData.dateofAppointment.toDate();
+        const formattedDateTime = formatDate(appointmentDate);
+
+        await setDoc(doc(notificationRef), {
+          appointmentId: appointmentId,
+          clinicId: auth.currentUser.uid,
+          ownerId: appointmentData.owner?.path || null,
+          petId: appointmentData.petRef?.path || null,
+          messageVet: `You have a new appointment on ${formattedDateTime} for ${appointmentData.petName}`,
+          message: `Your appointment for ${appointmentData.petName} has been accepted by ${clinicInfo?.clinicName}.`,
+          dateCreated: serverTimestamp(),
+          hasVetOpened: false,
+          hasPetOwnerOpened: false,
+          status: "unread",
+          type: "appointment_accepted",
+        });
+
+        await fetchAppointments();
+        console.log("Appointment accepted successfully and notification created!");
+      } else if (action === "decline") {
+        await updateDoc(appointmentRef, { status: "Declined" });
+        await fetchPendingAppointments();
+        console.log("Appointment declined successfully!");
       }
-    };
 
-    const calculateAge = (dateOfBirth) => {
-      if (!dateOfBirth) return "N/A";
-      const dob = dateOfBirth.toDate ? dateOfBirth.toDate() : new Date(dateOfBirth);
-      if (isNaN(dob.getTime())) return "N/A";
-      const today = new Date("2025-03-24");
-      let age = today.getFullYear() - dob.getFullYear();
-      const monthDiff = today.getMonth() - dob.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
-      return age >= 0 ? `${age}` : "N/A";
-    };
-    const handleAction = (action, appointmentId) => {
-      setShowConfirmModal({ open: true, action: action, appointmentId: appointmentId });
-    };
+      setPendingAppointments(pendingAppointments.filter(appt => appt.id !== appointmentId));
+      setShowConfirmModal({ open: false, action: null, appointmentId: null });
+    } catch (error) {
+      console.error(`Error ${action}ing appointment:`, error);
+      alert(`Failed to ${action} the appointment. Please try again.`);
+    }
+  };
+
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return "N/A";
+    const dob = dateOfBirth.toDate ? dateOfBirth.toDate() : new Date(dateOfBirth);
+    if (isNaN(dob.getTime())) return "N/A";
+    const today = new Date("2025-03-24");
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+    return age >= 0 ? `${age}` : "N/A";
+  };
+  const handleAction = (action, appointmentId) => {
+    setShowConfirmModal({ open: true, action: action, appointmentId: appointmentId });
+  };
   const handleAddVet = async (e) => {
     e.preventDefault();
     setAddingVet(true);
@@ -948,7 +1002,7 @@ const [dayData, setDayData] = useState([]);
       setLoading(false);
     }/*/
   };
-  
+
 
   useEffect(() => {
     const initializeData = async () => {
@@ -956,12 +1010,12 @@ const [dayData, setDayData] = useState([]);
       await fetchClinicInfo();
       fetchPatients();
       fetchAppointments(); // Ensure this is included
-    fetchVeterinarians();
+      fetchVeterinarians();
       fetchChartData();
       fetchPendingAppointments();
     };
     initializeData();
-  }, [userFirstName]);  
+  }, [userFirstName]);
 
   const handleServiceInputChange = (e) => {
     const { name, value } = e.target;
@@ -1043,6 +1097,10 @@ const [dayData, setDayData] = useState([]);
       }
     }
   };
+
+  if (loading) {
+    return;
+  }
 
   return (
     <div className="clinic-container-c">
@@ -1126,7 +1184,7 @@ const [dayData, setDayData] = useState([]);
             Veterinarians
           </button>
           {/* Analytics Button */}
-           <button
+          <button
             className={activePanel === "analytics" ? "active" : ""}
             onClick={() => handlePanelChange("analytics")}
           >
@@ -1136,8 +1194,8 @@ const [dayData, setDayData] = useState([]);
         </div>
         {/* Sign Out Button */}
         <button className="signout-btn-c" onClick={handleSignOut}>
-           <FaSignOutAlt className="sidebar-icon-c" /> {/* Icon Added */}
-           Sign Out
+          <FaSignOutAlt className="sidebar-icon-c" /> {/* Icon Added */}
+          Sign Out
         </button>
       </div>
 
@@ -1145,124 +1203,124 @@ const [dayData, setDayData] = useState([]);
         <div className="panel-container-c">
           {activePanel === "clinic" && clinicInfo && (
             <div className="panel-c clinic-panel-c">
-            {/* Remove <h3>Clinic Information</h3> if you don't want it above the new layout */}
-            {/* <h3>Clinic Information</h3> */}
-        
-            {/* This div now controls the overall layout inspired by the image */}
-            <div className="clinic-details-c"> {/* Keep this class for potential specific styling */}
-        
-              <div className="clinic-header-row-c"> {/* New: Top row container */}
-        
-                {/* Left side: Image with Edit Icon */}
-                <div className="clinic-panel-img-container-c">
-                  <img
-                    src={clinicImagePreview || editedClinicInfo?.profileImageURL || clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
-                    alt="Clinic"
-                    className="clinic-info-img-c"
-                  />
-                  <label htmlFor="clinic-panel-image-upload" className="edit-icon-c">
-                    <FaCamera />
-                  </label>
-                  <input
-                    type="file"
-                    id="clinic-panel-image-upload"
-                    accept="image/jpeg, image/jpg, image/png"
-                    onChange={handleClinicImageChange}
-                    style={{ display: "none" }}
-                  />
-                </div>
-        
-                {/* Right side: Name, Button, Contact */}
-                <div className="clinic-header-info-c"> {/* New: Container for right-side info */}
-                  <h2 className="clinic-title-c">{clinicInfo.clinicName}</h2> {/* Use h2 or h1 */}
-                  <button
-                     className="edit-clinic-btn-inline-c" // New class for inline button style
-                     onClick={() => {
+              {/* Remove <h3>Clinic Information</h3> if you don't want it above the new layout */}
+              {/* <h3>Clinic Information</h3> */}
+
+              {/* This div now controls the overall layout inspired by the image */}
+              <div className="clinic-details-c"> {/* Keep this class for potential specific styling */}
+
+                <div className="clinic-header-row-c"> {/* New: Top row container */}
+
+                  {/* Left side: Image with Edit Icon */}
+                  <div className="clinic-panel-img-container-c">
+                    <img
+                      src={clinicImagePreview || editedClinicInfo?.profileImageURL || clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
+                      alt="Clinic"
+                      className="clinic-info-img-c"
+                    />
+                    <label htmlFor="clinic-panel-image-upload" className="edit-icon-c">
+                      <FaCamera />
+                    </label>
+                    <input
+                      type="file"
+                      id="clinic-panel-image-upload"
+                      accept="image/jpeg, image/jpg, image/png"
+                      onChange={handleClinicImageChange}
+                      style={{ display: "none" }}
+                    />
+                  </div>
+
+                  {/* Right side: Name, Button, Contact */}
+                  <div className="clinic-header-info-c"> {/* New: Container for right-side info */}
+                    <h2 className="clinic-title-c">{clinicInfo.clinicName}</h2> {/* Use h2 or h1 */}
+                    <button
+                      className="edit-clinic-btn-inline-c" // New class for inline button style
+                      onClick={() => {
                         setEditedClinicInfo({ ...clinicInfo });
                         setClinicImagePreview(null);
                         setShowClinicModal(true);
                         setIsEditingClinic(true);
-                     }}
-                  >
-                    Edit Clinic info
-                  </button>
-        
-                  {/* Container to push contact info to the right */}
-                  <div className="clinic-contact-block-c">
-                     <p>Phone: {clinicInfo.phone || "N/A"}</p>
-                     <p>Address: {clinicInfo.streetAddress || "N/A"}, {clinicInfo.city || "N/A"}</p>
+                      }}
+                    >
+                      Edit Clinic info
+                    </button>
+
+                    {/* Container to push contact info to the right */}
+                    <div className="clinic-contact-block-c">
+                      <p>Phone: {clinicInfo.phone || "N/A"}</p>
+                      <p>Address: {clinicInfo.streetAddress || "N/A"}, {clinicInfo.city || "N/A"}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-        
-              {/* Bottom: Description */}
-              <div className="clinic-description-row-c"> {/* New: Description container */}
-                <p className="clinic-description-text-c">
-                    <strong>Description:</strong> {clinicInfo.clinicDescription || "N/A"}
-                </p>
-              </div>
-        
-            </div>
-          </div>
-        )}
 
-    {activePanel === "patients" && (
-      <div className="panel-c patients-panel-c">
-        <h3>Patients</h3>
-        {/* Search Bar Moved Here */}
-        <div className="csearch-bar-container">
-          <input
-            type="text"
-            placeholder="Search patients by name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-         <button className="search-btn-c" onClick={() => {}}>
-            Search
-         </button>
-        </div>
-        {loading ? (
-          <p>Loading patients...</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Patient Name</th>
-              </tr>
-            </thead>
-            <tbody>
-              {patients.length > 0 ? (
-                [...patients]
-                  .filter((patient) =>
-                    patient.petName.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
-                  .sort((a, b) => a.petName.localeCompare(b.petName))
-                  .map((patient) => (
-                    <tr key={patient.id}>
-                      <td>
-                        <a
-                          href="#!"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handlePatientClick(patient);
-                          }}
-                          className="pet-name-link-c"
-                        >
-                          {patient.petName}
-                        </a>
-                      </td>
-                    </tr>
-                  ))
+                {/* Bottom: Description */}
+                <div className="clinic-description-row-c"> {/* New: Description container */}
+                  <p className="clinic-description-text-c">
+                    <strong>Description:</strong> {clinicInfo.clinicDescription || "N/A"}
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {activePanel === "patients" && (
+            <div className="panel-c patients-panel-c">
+              <h3>Patients</h3>
+              {/* Search Bar Moved Here */}
+              <div className="csearch-bar-container">
+                <input
+                  type="text"
+                  placeholder="Search patients by name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button className="search-btn-c" onClick={() => { }}>
+                  Search
+                </button>
+              </div>
+              {loading ? (
+                <p>Loading patients...</p>
               ) : (
-                <tr>
-                  <td colSpan="1">No patients found</td>
-                </tr>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Patient Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patients.length > 0 ? (
+                      [...patients]
+                        .filter((patient) =>
+                          patient.petName.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        .sort((a, b) => a.petName.localeCompare(b.petName))
+                        .map((patient) => (
+                          <tr key={patient.id}>
+                            <td>
+                              <a
+                                href="#!"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handlePatientClick(patient);
+                                }}
+                                className="pet-name-link-c"
+                              >
+                                {patient.petName}
+                              </a>
+                            </td>
+                          </tr>
+                        ))
+                    ) : (
+                      <tr>
+                        <td colSpan="1">No patients found</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               )}
-            </tbody>
-          </table>
-        )}
-      </div>
-    )}
+            </div>
+          )}
           {activePanel === "appointments" && (
             <div className="panel-c appointments-panel-c">
               <h3>Appointments</h3>
@@ -1284,7 +1342,7 @@ const [dayData, setDayData] = useState([]);
                       endTime: { name: "EndTime" },
                     },
                   }}
-                  
+
                   eventClick={onEventClick} // Add this line
                   cellClick={(args) => args.cancel = true}
                   popupOpen={(args) => args.cancel = true}
@@ -1294,66 +1352,66 @@ const [dayData, setDayData] = useState([]);
                     <ViewDirective option="Month" />
                     <ViewDirective option="Agenda" />
                   </ViewsDirective>
-                  <Inject services={[ Month, Agenda]} />
+                  <Inject services={[Month, Agenda]} />
                 </ScheduleComponent>
               )}
             </div>
           )}
-            {activePanel === "pendingAppointments" && (
-        <div className="panel-v health-records-panel-v">
-          <h3>Pending Appointments</h3>
-          {loading ? (
-            <p>Loading pending appointments...</p>
-          ) : pendingAppointments.length > 0 ? (
-            <table>
-              <thead>
-                <tr>
-                  <th>Date of Appointment</th>
-                  <th>Veterinarian</th>
-                  <th>Patient Name</th>
-                  <th>Owner</th>
-                  <th>Breed</th>
-                  <th>Age</th>
-                  <th>Service</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-        <tbody>
-          {pendingAppointments.map((appointment) => (
-            <tr key={appointment.id}>
-              <td>{formatDate(appointment.dateofAppointment)}</td>
-              <td>{appointment.veterinarian || "N/A"}</td>
-              <td>{appointment.petName || "N/A"}</td>
-              <td>{`${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`}</td>
-              <td>{appointment.petRef?.Breed || "N/A"}</td>
-              <td>{calculateAge(appointment.petRef?.dateofBirth)}</td>
-              <td>{appointment.serviceType || "N/A"}</td>
-              <td>
-              <div className="v-actions">
-                              <button
-                                className="vicon-buttoncheck"
-                                onClick={() => handleAction("accept", appointment.id)}
-                              >
-                                Approve
-                              </button>
-                              <button
-                                className="vicon-buttondecline"
-                                onClick={() => handleAction("decline", appointment.id)}
-                              >
-                                Decline
-                              </button>
-                            </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <p>No pending appointments found.</p>
-                  )}
-                </div>
+          {activePanel === "pendingAppointments" && (
+            <div className="panel-v health-records-panel-v">
+              <h3>Pending Appointments</h3>
+              {loading ? (
+                <p>Loading pending appointments...</p>
+              ) : pendingAppointments.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date of Appointment</th>
+                      <th>Veterinarian</th>
+                      <th>Patient Name</th>
+                      <th>Owner</th>
+                      <th>Breed</th>
+                      <th>Age</th>
+                      <th>Service</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingAppointments.map((appointment) => (
+                      <tr key={appointment.id}>
+                        <td>{formatDate(appointment.dateofAppointment)}</td>
+                        <td>{appointment.veterinarian || "N/A"}</td>
+                        <td>{appointment.petName || "N/A"}</td>
+                        <td>{`${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`}</td>
+                        <td>{appointment.petRef?.Breed || "N/A"}</td>
+                        <td>{calculateAge(appointment.petRef?.dateofBirth)}</td>
+                        <td>{appointment.serviceType || "N/A"}</td>
+                        <td>
+                          <div className="v-actions">
+                            <button
+                              className="vicon-buttoncheck"
+                              onClick={() => handleAction("accept", appointment.id)}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              className="vicon-buttondecline"
+                              onClick={() => handleAction("decline", appointment.id)}
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p>No pending appointments found.</p>
               )}
-            {activePanel === "records" && (
+            </div>
+          )}
+          {activePanel === "records" && (
             <div className="panel-c records-panel-c">
               <h3>Records</h3>
               {loading ? (
@@ -1395,60 +1453,60 @@ const [dayData, setDayData] = useState([]);
             </div>
           )}
 
-        {activePanel === "services" && (
-        <div className="panel-c services-panel-c">
-          <h3>Services</h3>
-          <button
-            className="add-service-btn-c theme-btn-c"
-            onClick={() => {
-              setNewService({ Type: "", Price: "" });
-              setEditingServiceIndex(null);
-              setShowServiceModal(true);
-            }}
-          >
-            Add Service
-          </button>
-          <table className="theme-table-c">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Price</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {services.length > 0 ? (
-                services.map((service, index) => (
-                  <tr key={index}>
-                    <td>{service.Type}</td>
-                    <td>{service.Price}</td>
-                    <td className="action-buttons-c">
-                      <button
-                        className="edit-service-btn-c theme-action-btn-c"
-                        onClick={() => handleEditService(index)}
-                        title="Edit Service" 
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        className="delete-service-btn-c theme-action-btn-c"
-                        onClick={() => handleDeleteService(index)}
-                        title="Delete Service" 
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
+          {activePanel === "services" && (
+            <div className="panel-c services-panel-c">
+              <h3>Services</h3>
+              <button
+                className="add-service-btn-c theme-btn-c"
+                onClick={() => {
+                  setNewService({ Type: "", Price: "" });
+                  setEditingServiceIndex(null);
+                  setShowServiceModal(true);
+                }}
+              >
+                Add Service
+              </button>
+              <table className="theme-table-c">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Actions</th>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="3">No services found</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+                </thead>
+                <tbody>
+                  {services.length > 0 ? (
+                    services.map((service, index) => (
+                      <tr key={index}>
+                        <td>{service.Type}</td>
+                        <td>{service.Price}</td>
+                        <td className="action-buttons-c">
+                          <button
+                            className="edit-service-btn-c theme-action-btn-c"
+                            onClick={() => handleEditService(index)}
+                            title="Edit Service"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            className="delete-service-btn-c theme-action-btn-c"
+                            onClick={() => handleDeleteService(index)}
+                            title="Delete Service"
+                          >
+                            <FaTrash />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3">No services found</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {activePanel === "veterinarians" && (
             <div className="panel-c veterinarians-panel-c">
@@ -1505,7 +1563,7 @@ const [dayData, setDayData] = useState([]);
               </button>
             </div>
           )}
-         {activePanel === "analytics" && (
+          {activePanel === "analytics" && (
             <div className="panel-c analytics-panel-c">
               <h3>Clinic Analytics</h3>
               {loading ? (
@@ -1554,7 +1612,7 @@ const [dayData, setDayData] = useState([]);
                             <strong>{datum.id}</strong>: {datum.value}
                           </div>
                         )}
-                        // Removed legends prop
+                      // Removed legends prop
                       />
                     ) : (
                       <p style={{ textAlign: "center" }}>No service data available</p>
@@ -1574,7 +1632,7 @@ const [dayData, setDayData] = useState([]);
                         padAngle={0.7}
                         cornerRadius={3}
                         activeOuterRadiusOffset={8}
-                        colors={{ scheme: "red_purple" }} 
+                        colors={{ scheme: "red_purple" }}
                         borderWidth={1}
                         borderColor={{
                           from: "color",
@@ -1603,7 +1661,7 @@ const [dayData, setDayData] = useState([]);
                             <strong>{datum.id}</strong>: {datum.value}
                           </div>
                         )}
-                        // Removed legends prop
+                      // Removed legends prop
                       />
                     ) : (
                       <p style={{ textAlign: "center" }}>No appointment data available</p>
@@ -1617,194 +1675,194 @@ const [dayData, setDayData] = useState([]);
       </div>
 
       {showClinicModal && clinicInfo && (
-  <div className="modal-overlay-c">
-    <div className="modal-content-c edit-clinic-modal-c">
-      <span
-        className="close-button-c"
-        onClick={() => {
-          setShowClinicModal(false);
-          setIsEditingClinic(false);
-        }}
-      >
-        ×
-      </span>
-      {isEditingClinic ? (
-        <>
-          <h2>Edit Clinic Information</h2>
-          <div className="vet-image-upload-container-c">
-            <label
-              htmlFor="clinic-image-upload-modal"
-              className="vet-image-upload-c"
-              style={
-                clinicImagePreview
-                  ? { backgroundImage: `url(${clinicImagePreview})` }
-                  : { backgroundImage: `url(${editedClinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE})` }
-              }
-            >
-              <FaCamera className="camera-icon-overlay-c" />
-              {!clinicImagePreview && !editedClinicInfo.profileImageURL && (
-                <>
-                  <FaCamera className="camera-icon-c" />
-                  <p>Upload Clinic Photo</p>
-                </>
-              )}
-              <input
-                type="file"
-                id="clinic-image-upload-modal"
-                accept="image/jpeg, image/jpg, image/png"
-                onChange={handleClinicImageChange}
-                style={{ display: "none" }}
-              />
-            </label>
-          </div>
-          <div className="form-group-c">
-            <label htmlFor="clinicDescription">Clinic Description</label>
-            <textarea
-              id="clinicDescription"
-              name="clinicDescription"
-              value={editedClinicInfo.clinicDescription || ""}
-              onChange={handleClinicInputChange}
-              rows="4"
-            />
-          </div>
-          <div className="form-group-c">
-            <label htmlFor="clinicName">Clinic Name</label>
-            <input
-              type="text"
-              id="clinicName"
-              name="clinicName"
-              value={editedClinicInfo.clinicName || ""}
-              onChange={handleClinicInputChange}
-            />
-          </div>
-          <div className="form-group-c">
-            <label htmlFor="phone">Phone</label>
-            <input
-              type="text"
-              id="phone"
-              name="phone"
-              value={editedClinicInfo.phone || ""}
-              onChange={handleClinicInputChange}
-            />
-          </div>
-          <div className="form-group-c">
-            <label htmlFor="streetAddress">Street Address</label>
-            <input
-              type="text"
-              id="streetAddress"
-              name="streetAddress"
-              value={editedClinicInfo.streetAddress || ""}
-              onChange={handleClinicInputChange}
-            />
-          </div>
-          <div className="form-group-c">
-            <label htmlFor="city">City</label>
-            <input
-              type="text"
-              id="city"
-              name="city"
-              value={editedClinicInfo.city || ""}
-              onChange={handleClinicInputChange}
-            />
-          </div>
-          <div className="form-actions-c">
-            <button
-              className="submit-btn-c"
-              onClick={handleSaveClinicInfo}
-              disabled={isUpdatingClinic}
-            >
-              {isUpdatingClinic ? "Saving..." : "Save"}
-            </button>
-            <button
-              className="cancel-btn-c"
+        <div className="modal-overlay-c">
+          <div className="modal-content-c edit-clinic-modal-c">
+            <span
+              className="close-button-c"
               onClick={() => {
                 setShowClinicModal(false);
                 setIsEditingClinic(false);
               }}
             >
-              Cancel
-            </button>
+              ×
+            </span>
+            {isEditingClinic ? (
+              <>
+                <h2>Edit Clinic Information</h2>
+                <div className="vet-image-upload-container-c">
+                  <label
+                    htmlFor="clinic-image-upload-modal"
+                    className="vet-image-upload-c"
+                    style={
+                      clinicImagePreview
+                        ? { backgroundImage: `url(${clinicImagePreview})` }
+                        : { backgroundImage: `url(${editedClinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE})` }
+                    }
+                  >
+                    <FaCamera className="camera-icon-overlay-c" />
+                    {!clinicImagePreview && !editedClinicInfo.profileImageURL && (
+                      <>
+                        <FaCamera className="camera-icon-c" />
+                        <p>Upload Clinic Photo</p>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      id="clinic-image-upload-modal"
+                      accept="image/jpeg, image/jpg, image/png"
+                      onChange={handleClinicImageChange}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                </div>
+                <div className="form-group-c">
+                  <label htmlFor="clinicDescription">Clinic Description</label>
+                  <textarea
+                    id="clinicDescription"
+                    name="clinicDescription"
+                    value={editedClinicInfo.clinicDescription || ""}
+                    onChange={handleClinicInputChange}
+                    rows="4"
+                  />
+                </div>
+                <div className="form-group-c">
+                  <label htmlFor="clinicName">Clinic Name</label>
+                  <input
+                    type="text"
+                    id="clinicName"
+                    name="clinicName"
+                    value={editedClinicInfo.clinicName || ""}
+                    onChange={handleClinicInputChange}
+                  />
+                </div>
+                <div className="form-group-c">
+                  <label htmlFor="phone">Phone</label>
+                  <input
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    value={editedClinicInfo.phone || ""}
+                    onChange={handleClinicInputChange}
+                  />
+                </div>
+                <div className="form-group-c">
+                  <label htmlFor="streetAddress">Street Address</label>
+                  <input
+                    type="text"
+                    id="streetAddress"
+                    name="streetAddress"
+                    value={editedClinicInfo.streetAddress || ""}
+                    onChange={handleClinicInputChange}
+                  />
+                </div>
+                <div className="form-group-c">
+                  <label htmlFor="city">City</label>
+                  <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    value={editedClinicInfo.city || ""}
+                    onChange={handleClinicInputChange}
+                  />
+                </div>
+                <div className="form-actions-c">
+                  <button
+                    className="submit-btn-c"
+                    onClick={handleSaveClinicInfo}
+                    disabled={isUpdatingClinic}
+                  >
+                    {isUpdatingClinic ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    className="cancel-btn-c"
+                    onClick={() => {
+                      setShowClinicModal(false);
+                      setIsEditingClinic(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2>{clinicInfo.clinicName}</h2>
+                <img
+                  src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
+                  alt="Clinic"
+                  className="clinic-info-img-c"
+                />
+                <p>
+                  <strong>Phone:</strong> {clinicInfo.phone || "N/A"}
+                </p>
+                <p>
+                  <strong>Address:</strong> {clinicInfo.streetAddress || "N/A"},{" "}
+                  {clinicInfo.city || "N/A"}
+                </p>
+                <button
+                  className="modal-close-btn-c"
+                  onClick={() => setShowClinicModal(false)}
+                >
+                  Close
+                </button>
+              </>
+            )}
           </div>
-        </>
-      ) : (
-        <>
-          <h2>{clinicInfo.clinicName}</h2>
-          <img
-            src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
-            alt="Clinic"
-            className="clinic-info-img-c"
-          />
-          <p>
-            <strong>Phone:</strong> {clinicInfo.phone || "N/A"}
-          </p>
-          <p>
-            <strong>Address:</strong> {clinicInfo.streetAddress || "N/A"},{" "}
-            {clinicInfo.city || "N/A"}
-          </p>
-          <button
-            className="modal-close-btn-c"
-            onClick={() => setShowClinicModal(false)}
-          >
-            Close
-          </button>
-        </>
+        </div>
       )}
-    </div>
-  </div>
-)}
 
-    {showServiceModal && (
-            <div className="modal-overlay-c">
-              <div className="modal-content-c service-modal-c">
-                <span
-                  className="close-button-c"
+      {showServiceModal && (
+        <div className="modal-overlay-c">
+          <div className="modal-content-c service-modal-c">
+            <span
+              className="close-button-c"
+              onClick={() => setShowServiceModal(false)}
+            >
+              ×
+            </span>
+            <h2>{editingServiceIndex !== null ? "Edit Service" : "Add New Service"}</h2>
+            {serviceError && <div className="error-message-c">{serviceError}</div>}
+            <form onSubmit={handleAddOrEditService}>
+              <div className="form-group-c">
+                <label htmlFor="Type">Service Type *</label>
+                <input
+                  type="text"
+                  id="Type"
+                  name="Type"
+                  value={newService.Type}
+                  onChange={handleServiceInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group-c">
+                <label htmlFor="Price">Price (in your currency) *</label>
+                <input
+                  type="number"
+                  id="Price"
+                  name="Price"
+                  value={newService.Price}
+                  onChange={handleServiceInputChange}
+                  step="0.01"
+                  min="0"
+                  required
+                />
+              </div>
+              <div className="form-actions-c">
+                <button
+                  type="button"
+                  className="cancel-btn-c"
                   onClick={() => setShowServiceModal(false)}
                 >
-                  ×
-                </span>
-                <h2>{editingServiceIndex !== null ? "Edit Service" : "Add New Service"}</h2>
-                {serviceError && <div className="error-message-c">{serviceError}</div>}
-                <form onSubmit={handleAddOrEditService}>
-                  <div className="form-group-c">
-                    <label htmlFor="Type">Service Type *</label>
-                    <input
-                      type="text"
-                      id="Type"
-                      name="Type"
-                      value={newService.Type}
-                      onChange={handleServiceInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group-c">
-                    <label htmlFor="Price">Price (in your currency) *</label>
-                    <input
-                      type="number"
-                      id="Price"
-                      name="Price"
-                      value={newService.Price}
-                      onChange={handleServiceInputChange}
-                      step="0.01"
-                      min="0"
-                      required
-                    />
-                  </div>
-                  <div className="form-actions-c">
-                    <button
-                      type="button"
-                      className="cancel-btn-c"
-                      onClick={() => setShowServiceModal(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button type="submit" className="submit-btn-c">
-                      {editingServiceIndex !== null ? "Save Changes" : "Add Service"}
-                    </button>
-                  </div>
-                </form>
+                  Cancel
+                </button>
+                <button type="submit" className="submit-btn-c">
+                  {editingServiceIndex !== null ? "Save Changes" : "Add Service"}
+                </button>
               </div>
-            </div>
-          )}
+            </form>
+          </div>
+        </div>
+      )}
 
       {showAddVetModal && (
         <div className="modal-overlay-c">
@@ -2064,58 +2122,58 @@ const [dayData, setDayData] = useState([]);
         </div>
       )}
 
-     {/* Pet Details Modal */}
-{showPatientModal && selectedPatient && (
-  <div className="modal-overlay-c">
-    {/* Add a specific class if needed to avoid affecting other modals */}
-    <div className="modal-content-c pet-info-modal-content-c">
-      <span className="close-button-c" onClick={closePatientModal}>×</span>
+      {/* Pet Details Modal */}
+      {showPatientModal && selectedPatient && (
+        <div className="modal-overlay-c">
+          {/* Add a specific class if needed to avoid affecting other modals */}
+          <div className="modal-content-c pet-info-modal-content-c">
+            <span className="close-button-c" onClick={closePatientModal}>×</span>
 
-      {/* Left Column: Image */}
-      <div className="modal-image-column-c">
-        <div className="modal-pet-image-frame-c">
-          <img
-            src={selectedPatient.petImageURL || DEFAULT_PET_IMAGE}
-            alt={`${selectedPatient.petName}`} // Use alt text for accessibility
-            className="modal-pet-image-c" // Use a specific class
-          />
-        </div>
-      </div>
+            {/* Left Column: Image */}
+            <div className="modal-image-column-c">
+              <div className="modal-pet-image-frame-c">
+                <img
+                  src={selectedPatient.petImageURL || DEFAULT_PET_IMAGE}
+                  alt={`${selectedPatient.petName}`} // Use alt text for accessibility
+                  className="modal-pet-image-c" // Use a specific class
+                />
+              </div>
+            </div>
 
-      {/* Right Column: Details */}
-      <div className="modal-details-column-c">
-        <h2 className="modal-pet-name-c">{selectedPatient.petName}</h2>
-        <div className="modal-pet-details-list-c">
-          {/* Using p tags for key-value pairs */}
-          <p className="modal-pet-detail-item-c">
-            <span className="modal-pet-detail-label-c">Type:</span>
-            <span className="modal-pet-detail-value-c">{selectedPatient.Type || "N/A"}</span>
-          </p>
-          <p className="modal-pet-detail-item-c">
-            <span className="modal-pet-detail-label-c">Breed:</span>
-            <span className="modal-pet-detail-value-c">{selectedPatient.Breed || "N/A"}</span>
-          </p>
-          <p className="modal-pet-detail-item-c">
-            <span className="modal-pet-detail-label-c">Gender:</span>
-            <span className="modal-pet-detail-value-c">{selectedPatient.Gender || "N/A"}</span>
-          </p>
-          <p className="modal-pet-detail-item-c">
-            <span className="modal-pet-detail-label-c">Color:</span>
-            <span className="modal-pet-detail-value-c">{selectedPatient.Color || "N/A"}</span>
-          </p>
-          <p className="modal-pet-detail-item-c">
-            <span className="modal-pet-detail-label-c">Weight:</span>
-            <span className="modal-pet-detail-value-c">{selectedPatient.Weight ? `${selectedPatient.Weight} kg` : "N/A"}</span> {/* Fixed here */}
-          </p>
-          <p className="modal-pet-detail-item-c">
-            <span className="modal-pet-detail-label-c">Date of Birth:</span>
-            <span className="modal-pet-detail-value-c">{formatDOB(selectedPatient.dateofBirth)}</span>
-          </p>
+            {/* Right Column: Details */}
+            <div className="modal-details-column-c">
+              <h2 className="modal-pet-name-c">{selectedPatient.petName}</h2>
+              <div className="modal-pet-details-list-c">
+                {/* Using p tags for key-value pairs */}
+                <p className="modal-pet-detail-item-c">
+                  <span className="modal-pet-detail-label-c">Type:</span>
+                  <span className="modal-pet-detail-value-c">{selectedPatient.Type || "N/A"}</span>
+                </p>
+                <p className="modal-pet-detail-item-c">
+                  <span className="modal-pet-detail-label-c">Breed:</span>
+                  <span className="modal-pet-detail-value-c">{selectedPatient.Breed || "N/A"}</span>
+                </p>
+                <p className="modal-pet-detail-item-c">
+                  <span className="modal-pet-detail-label-c">Gender:</span>
+                  <span className="modal-pet-detail-value-c">{selectedPatient.Gender || "N/A"}</span>
+                </p>
+                <p className="modal-pet-detail-item-c">
+                  <span className="modal-pet-detail-label-c">Color:</span>
+                  <span className="modal-pet-detail-value-c">{selectedPatient.Color || "N/A"}</span>
+                </p>
+                <p className="modal-pet-detail-item-c">
+                  <span className="modal-pet-detail-label-c">Weight:</span>
+                  <span className="modal-pet-detail-value-c">{selectedPatient.Weight ? `${selectedPatient.Weight} kg` : "N/A"}</span> {/* Fixed here */}
+                </p>
+                <p className="modal-pet-detail-item-c">
+                  <span className="modal-pet-detail-label-c">Date of Birth:</span>
+                  <span className="modal-pet-detail-value-c">{formatDOB(selectedPatient.dateofBirth)}</span>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
       {showConfirmModal.open && (
         <div className="modal-overlay-v">
           <div className="modal-content-v signout-confirm-modal-v">
@@ -2160,8 +2218,8 @@ const [dayData, setDayData] = useState([]);
               </div>
             </div>
             <div className="appointment-notes-c">
-                <strong>Notes:</strong> {selectedAppointment.notes}
-              </div>
+              <strong>Notes:</strong> {selectedAppointment.notes}
+            </div>
             <div className="modal-actions-c">
               <button className="modal-close-btn-c" onClick={closeAppointmentModal}>
                 Close

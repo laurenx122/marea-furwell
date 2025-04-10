@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 import "react-calendar/dist/Calendar.css";
 import Calendar from "react-calendar";
-import { FaUser, FaCalendarAlt, FaFileMedical, FaHome, FaEnvelope, FaPlus, FaBell } from "react-icons/fa"; 
+import { FaUser, FaCalendarAlt, FaFileMedical, FaHome, FaEnvelope, FaPlus, FaBell } from "react-icons/fa";
 import { MdPets } from "react-icons/md";
 
 
@@ -50,6 +50,27 @@ const PetOwnerHome = () => {
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
 
   );
+
+  useEffect(() => {
+    const hideLicenseNotification = () => {
+      const notificationDiv = document.querySelector('div[style*="position: fixed"][style*="z-index: 999999999"]');
+      if (notificationDiv) {
+        notificationDiv.style.display = 'none';
+      }
+    };
+
+    hideLicenseNotification();
+
+    const observer = new MutationObserver((mutations) => {
+      hideLicenseNotification();
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   const EMAILJS_PUBLIC_KEY = "BxPdkZVqFheGetz3t";
   const EMAILJS_TEMPLATE_ID = "template_2j4yiho";
@@ -127,10 +148,55 @@ const PetOwnerHome = () => {
     Ferret: ["Standard", "Angora", "Sable", "Cinnamon", "Chocolate", "Albino", "Panda", "Blaze", "Mitted", "Point", "Others"],
     Fish: ["Goldfish", "Betta", "Guppy", "Neon Tetra", "Angelfish", "Mollie", "Platy", "Swordtail", "Discus", "Cichlid", "Others"],
     Reptile: ["Ball Python", "Corn Snake", "Leopard Gecko", "Bearded Dragon", "Crested Gecko", "Chameleon", "Iguana", "King Snake", "Boa Constrictor", "Monitor Lizard", "Others"],
-    Others: [] 
+    Others: []
   };
 
-  
+  // FOR RELOADD FIX
+  useEffect(() => {
+    // Initialize EmailJS
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    // Add a new state to track auth loading
+    let unsubscribe;
+
+    const initializeComponent = async () => {
+      setLoading(true); // Set loading to true initially
+      unsubscribe = auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          try {
+            await Promise.all([
+              fetchOwnerInfo(),
+              fetchPets(),
+              fetchAppointments(),
+              fetchNotifications(),
+              checkAppointmentsAndSendReminders(),
+            ]);
+          } catch (error) {
+            console.error("Error initializing data:", error);
+          } finally {
+            setLoading(false); // Done loading, user is authenticated
+          }
+        } else {
+          // No user is logged in, redirect to login
+          setLoading(false); // Done loading, no user
+          navigate("/Home");
+        }
+      });
+    };
+
+    initializeComponent();
+
+    // Set up intervals for reminders and notifications
+    const reminderInterval = setInterval(checkAppointmentsAndSendReminders, 3600000); // 1 hour
+    const notificationInterval = setInterval(fetchNotifications, 300000); // 5 minutes
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      clearInterval(reminderInterval);
+      clearInterval(notificationInterval);
+    };
+  }, [navigate]);
+
+
   // React calendar
   // Handle calendar date click
   const handleCalendarDateClick = (date) => {
@@ -217,27 +283,27 @@ const PetOwnerHome = () => {
           })
         );
         let filteredNotifications = notificationsList.filter((n) => n !== null);
-  
+
         // Check for appointments 1 day away
         const today = new Date();
         const tomorrow = new Date(today);
         tomorrow.setDate(today.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0); 
-  
+        tomorrow.setHours(0, 0, 0, 0);
+
         const appointmentsQuery = query(
           collection(db, "appointments"),
           where("owner", "==", doc(db, "users", currentUser.uid)),
           where("status", "==", "Accepted")
         );
         const apptSnapshot = await getDocs(appointmentsQuery);
-  
+
         const oneDayBeforeNotifications = await Promise.all(
           apptSnapshot.docs.map(async (docSnap) => {
             const apptData = docSnap.data();
             const apptDate = apptData.dateofAppointment.toDate();
             const apptDay = new Date(apptDate);
-            apptDay.setHours(0, 0, 0, 0); 
-  
+            apptDay.setHours(0, 0, 0, 0);
+
             // Check if the appointment is tomorrow
             if (apptDay.toDateString() === tomorrow.toDateString()) {
               const clinicDoc = await getDoc(apptData.clinic);
@@ -248,7 +314,7 @@ const PetOwnerHome = () => {
                 where("ownerId", "==", `users/${currentUser.uid}`)
               );
               const existingSnapshot = await getDocs(existingNotificationQuery);
-  
+
               // Only add notification if it doesn't already exist
               if (existingSnapshot.empty) {
                 const notificationRef = await addDoc(collection(db, "notifications"), {
@@ -261,7 +327,7 @@ const PetOwnerHome = () => {
                   removeViewPetOwner: false,
                   dateCreated: serverTimestamp(),
                 });
-  
+
                 return {
                   id: notificationRef.id,
                   clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
@@ -290,73 +356,71 @@ const PetOwnerHome = () => {
             return null;
           })
         );
-        
+
         // Check for appointments happening today reminder
-      today.setHours(0, 0, 0, 0); 
+        today.setHours(0, 0, 0, 0);
 
-      const dayOfNotifications = await Promise.all(
-        apptSnapshot.docs.map(async (docSnap) => {
-          const apptData = docSnap.data();
-          const apptDate = apptData.dateofAppointment.toDate();
-          const apptDay = new Date(apptDate);
-          apptDay.setHours(0, 0, 0, 0); 
+        const dayOfNotifications = await Promise.all(
+          apptSnapshot.docs.map(async (docSnap) => {
+            const apptData = docSnap.data();
+            const apptDate = apptData.dateofAppointment.toDate();
+            const apptDay = new Date(apptDate);
+            apptDay.setHours(0, 0, 0, 0);
 
-          // Check if the appointment is today
-          if (apptDay.toDateString() === today.toDateString()) {
-            const clinicDoc = await getDoc(apptData.clinic);
-            const existingNotificationQuery = query(
-              collection(db, "notifications"),
-              where("appointmentId", "==", docSnap.id),
-              where("type", "==", "appointment_day_of"),
-              where("ownerId", "==", `users/${currentUser.uid}`)
-            );
-            const existingSnapshot = await getDocs(existingNotificationQuery);
+            // Check if the appointment is today
+            if (apptDay.toDateString() === today.toDateString()) {
+              const clinicDoc = await getDoc(apptData.clinic);
+              const existingNotificationQuery = query(
+                collection(db, "notifications"),
+                where("appointmentId", "==", docSnap.id),
+                where("type", "==", "appointment_day_of"),
+                where("ownerId", "==", `users/${currentUser.uid}`)
+              );
+              const existingSnapshot = await getDocs(existingNotificationQuery);
 
-            // Only add notification if it doesn't already exist
-            if (existingSnapshot.empty) {
-              const notificationRef = await addDoc(collection(db, "notifications"), {
-                ownerId: `users/${currentUser.uid}`,
-                appointmentId: docSnap.id,
-                clinicId: apptData.clinic.id,
-                type: "appointment_day_of",
-                message: `Today is the day! Your appointment for ${apptData.petName} at ${
-                  clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"
-                } is scheduled for ${formatDate(apptDate)}.`,
-                hasPetOwnerOpened: false,
-                removeViewPetOwner: false,
-                dateCreated: serverTimestamp(),
-              });
+              // Only add notification if it doesn't already exist
+              if (existingSnapshot.empty) {
+                const notificationRef = await addDoc(collection(db, "notifications"), {
+                  ownerId: `users/${currentUser.uid}`,
+                  appointmentId: docSnap.id,
+                  clinicId: apptData.clinic.id,
+                  type: "appointment_day_of",
+                  message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"
+                    } is scheduled for ${formatDate(apptDate)}.`,
+                  hasPetOwnerOpened: false,
+                  removeViewPetOwner: false,
+                  dateCreated: serverTimestamp(),
+                });
 
-              return {
-                id: notificationRef.id,
-                clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
-                clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
-                dateofAppointment: apptDate,
-                hasPetOwnerOpened: false,
-                message: `Today is the day! Your appointment for ${apptData.petName} at ${
-                  clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"
-                } is scheduled for ${formatDate(apptDate)}.`,
-                dateCreated: new Date(),
-              };
-            } else {
-              const existingNotif = existingSnapshot.docs[0];
-              const existingData = existingNotif.data();
-              if (existingData.removeViewPetOwner !== true) {
                 return {
-                  id: existingNotif.id,
+                  id: notificationRef.id,
                   clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
                   clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
                   dateofAppointment: apptDate,
-                  hasPetOwnerOpened: existingData.hasPetOwnerOpened,
-                  message: existingData.message,
-                  dateCreated: existingData.dateCreated ? existingData.dateCreated.toDate() : null,
+                  hasPetOwnerOpened: false,
+                  message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"
+                    } is scheduled for ${formatDate(apptDate)}.`,
+                  dateCreated: new Date(),
                 };
+              } else {
+                const existingNotif = existingSnapshot.docs[0];
+                const existingData = existingNotif.data();
+                if (existingData.removeViewPetOwner !== true) {
+                  return {
+                    id: existingNotif.id,
+                    clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+                    clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+                    dateofAppointment: apptDate,
+                    hasPetOwnerOpened: existingData.hasPetOwnerOpened,
+                    message: existingData.message,
+                    dateCreated: existingData.dateCreated ? existingData.dateCreated.toDate() : null,
+                  };
+                }
               }
             }
-          }
-          return null;
-        })
-      );
+            return null;
+          })
+        );
 
         // Combine both types of notifications and filter out nulls
         filteredNotifications = [
@@ -371,7 +435,7 @@ const PetOwnerHome = () => {
           const dateB = b.dateCreated || new Date(0);
           return dateB - dateA; // Newest first
         });
-  
+
         setNotifications(filteredNotifications);
         setUnreadNotifications(filteredNotifications.some((n) => !n.hasPetOwnerOpened));
       }
@@ -385,7 +449,7 @@ const PetOwnerHome = () => {
   const handleContactUsClick = () => navigate("/ClinicSubscribe"); // Adjust path
   const handleBookNowClick = () => navigate("/FindClinic");
   // Handle notification icon click
-const handleNotificationClick = async () => {
+  const handleNotificationClick = async () => {
     setShowNotificationsModal(true);
     if (unreadNotifications) {
       try {
@@ -1011,8 +1075,10 @@ const handleNotificationClick = async () => {
     const reminderInterval = setInterval(checkAppointmentsAndSendReminders, 3600000); // 1 hour
     const notificationInterval = setInterval(fetchNotifications, 300000);
 
-    return () => {clearInterval(reminderInterval);
-    clearInterval(notificationInterval);};
+    return () => {
+      clearInterval(reminderInterval);
+      clearInterval(notificationInterval);
+    };
   }, []);
 
   useEffect(() => {
@@ -1318,379 +1384,379 @@ const handleNotificationClick = async () => {
 
   return (
     <div className="pet-owner-container-p">
-    {isMobile ? (
-      <>
-        {/* TikTok Mobile Layout */}
-        <div className="header-p">
-          {ownerInfo && (
-            <>
-              <div className="owner-img-container-p">
-                <img
-                  src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
-                  alt="Owner Profile"
-                  className="owner-profile-image-p"
-                />
-              </div>
-              <h1 className="owner-name-p">{ownerInfo.FirstName} {ownerInfo.LastName}</h1>
-            </>
-          )}
-        </div>
-
-        <div className="tabs-p">
-          <button
-            className={`tab-btn-p ${activePanel === "petDetails" ? "active" : ""}`}
-            onClick={() => setActivePanel("petDetails")}
-          >
-            <MdPets className="tab-icon-p" />
-            Pet Details
-          </button>
-          <button
-            className={`tab-btn-p ${activePanel === "appointments" ? "active" : ""}`}
-            onClick={() => setActivePanel("appointments")}
-          >
-            <FaCalendarAlt className="tab-icon-p" />
-            Appointments
-          </button>
-          <button
-            className={`tab-btn-p ${activePanel === "healthRecords" ? "active" : ""}`}
-            onClick={() => setActivePanel("healthRecords")}
-          >
-            <FaFileMedical className="tab-icon-p" />
-            Health Records
-          </button>
-        </div>
-
-        <div className="content-p">
-          <div className="panel-container-p">
-            {activePanel === "petDetails" && (
-              <div className="panel-p pet-details-panel-p">
-                <div className="pet-details-header-p">
-                  <h3>Pet Details</h3>
-                  <button className="addpetbutt-p" onClick={openAddPetModal}>
-                    Add A Pet
-                  </button>
-                </div>
-                {loading ? (
-                  <p>Loading pet details...</p>
-                ) : (
-                  <table>
-                    <thead>
-                      <tr><th>Pet Name</th></tr>
-                    </thead>
-                    <tbody>
-                      {pets.length > 0 ? (
-                        pets.map((pet) => (
-                          <tr key={pet.id}>
-                            <td>
-                              <a
-                                href="#!"
-                                onClick={(e) => { e.preventDefault(); handlePetClick(pet); }}
-                                className="pet-name-link-p"
-                              >
-                                {pet.petName}
-                              </a>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr><td>No pets found</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-            {activePanel === "appointments" && (
-              <div className="panel-p appointments-panel-p">
-                <div className="appointments-header-p">
-                  <h3>Appointments</h3>
-                  <button className="bookapptbutt-p" onClick={handleBookNowClick}>
-                    Book Appointment
-                  </button>
-                </div>
-                {loading ? (
-                  <p>Loading appointments...</p>
-                ) : (
-                  <ScheduleComponent
-                    width="100%"
-                    height="650px"
-                    currentView="Month"
-                    eventSettings={{ dataSource: appointments }}
-                    eventClick={handleEventClick}
-                    popupOpen={(args) => args.cancel = true}
-                  >
-                    <ViewsDirective>
-                      <ViewDirective option="Month" />
-                      <ViewDirective option="Agenda" />
-                    </ViewsDirective>
-                    <Inject services={[Month, Agenda]} />
-                  </ScheduleComponent>
-                )}
-              </div>
-            )}
-            {activePanel === "healthRecords" && (
-              <div className="panel-p health-records-panel-p">
-                <h3>Health Records</h3>
-                <form className="psearch-bar-container">
-                  <input
-                    type="text"
-                    placeholder="Search records..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+      {isMobile ? (
+        <>
+          {/* TikTok Mobile Layout */}
+          <div className="header-p">
+            {ownerInfo && (
+              <>
+                <div className="owner-img-container-p">
+                  <img
+                    src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
+                    alt="Owner Profile"
+                    className="owner-profile-image-p"
                   />
-                </form>
-                {loading ? (
-                  <p>Loading health records...</p>
-                ) : (
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Pet</th>
-                        <th>Clinic</th>
-                        <th>Service</th>
-                        <th>Vet</th>
-                        <th>Remarks</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredAppointments.length > 0 ? (
-                        filteredAppointments.map((record) => (
-                          <tr key={record.Id}>
-                            <td>{formatDate(record.dateofAppointment)}</td>
-                            <td>{record.petName}</td>
-                            <td>{record.clinicName}</td>
-                            <td>{record.serviceType}</td>
-                            <td>{record.veterinarian}</td>
-                            <td>{record.remarks}</td>
-                            <td>{record.status}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr><td colSpan="7">No records found</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+                </div>
+                <h1 className="owner-name-p">{ownerInfo.FirstName} {ownerInfo.LastName}</h1>
+              </>
             )}
           </div>
-        </div>
 
-        <div className="footer-p">
-          <button className="footer-btn-p" onClick={handleHomeClick}>
-            <FaHome />
-          </button>
-          <button className="footer-btn-p" onClick={handleContactUsClick}>
-            <FaEnvelope />
-          </button>
-          <button className="footer-btn-p" onClick={handleBookNowClick}>
-            <FaPlus />
-          </button>
-          <button className="footer-btn-p" onClick={handleNotificationClick}>
-            <FaBell />
-            {unreadNotifications && <span className="notification-dot-p"></span>}
-          </button>
-          <button className="footer-btn-p active">
-            <FaUser />
-          </button>
-        </div>
-      </>
-    ) : (
-      <>
-        {/* Original Desktop Layout with Sidebar */}
-        <div className="sidebar-p">
-          {ownerInfo && (
-            <div className="owner-sidebar-panel-p">
-              <div className="owner-img-container-p">
-                <img
-                  src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
-                  alt="Owner Profile"
-                  className="owner-profile-image-p"
-                />
-              </div>
-              <div className="owner-notification-wrapper">
-                <button
-                  className={`owner-button ${activePanel === "profile" ? "active" : ""}`}
-                  onClick={() => setActivePanel("profile")}
-                >
-                  <FaUser className="sidebar-icon-p" />
-                  {ownerInfo.FirstName} {ownerInfo.LastName}
-                </button>
-                <button className="notification-btn-p" onClick={handleNotificationClick}>
-                  <div className="notification-icon-container-p">
-                    <FaBell className="bell-notif-p" />
-                    {unreadNotifications && <span className="notification-dot-p"></span>}
-                  </div>
-                </button>
-              </div>
-            </div>
-          )}
-          <div className="sidebar-buttons-p">
+          <div className="tabs-p">
             <button
-              className={`sidebar-btn-p ${activePanel === "petDetails" ? "active" : ""}`}
+              className={`tab-btn-p ${activePanel === "petDetails" ? "active" : ""}`}
               onClick={() => setActivePanel("petDetails")}
             >
-              <MdPets className="sidebar-icon-p" />
+              <MdPets className="tab-icon-p" />
               Pet Details
             </button>
             <button
-              className={`sidebar-btn-p ${activePanel === "appointments" ? "active" : ""}`}
-              onClick={handleAppointmentsClick}
+              className={`tab-btn-p ${activePanel === "appointments" ? "active" : ""}`}
+              onClick={() => setActivePanel("appointments")}
             >
-              <FaCalendarAlt className="sidebar-icon-p" />
+              <FaCalendarAlt className="tab-icon-p" />
               Appointments
             </button>
             <button
-              className={`sidebar-btn-p ${activePanel === "healthRecords" ? "active" : ""}`}
+              className={`tab-btn-p ${activePanel === "healthRecords" ? "active" : ""}`}
               onClick={() => setActivePanel("healthRecords")}
             >
-              <FaFileMedical className="sidebar-icon-p" />
+              <FaFileMedical className="tab-icon-p" />
               Health Records
             </button>
           </div>
-        </div>
 
-        <div className="content-p">
-          <div className="panel-container-p">
-            {activePanel === "profile" && ownerInfo && (
-              <div className="panel-p profile-panel-p">
-                <h3>Profile</h3>
-                <div className="owner-details-p">
+          <div className="content-p">
+            <div className="panel-container-p">
+              {activePanel === "petDetails" && (
+                <div className="panel-p pet-details-panel-p">
+                  <div className="pet-details-header-p">
+                    <h3>Pet Details</h3>
+                    <button className="addpetbutt-p" onClick={openAddPetModal}>
+                      Add A Pet
+                    </button>
+                  </div>
+                  {loading ? (
+                    <p>Loading pet details...</p>
+                  ) : (
+                    <table>
+                      <thead>
+                        <tr><th>Pet Name</th></tr>
+                      </thead>
+                      <tbody>
+                        {pets.length > 0 ? (
+                          pets.map((pet) => (
+                            <tr key={pet.id}>
+                              <td>
+                                <a
+                                  href="#!"
+                                  onClick={(e) => { e.preventDefault(); handlePetClick(pet); }}
+                                  className="pet-name-link-p"
+                                >
+                                  {pet.petName}
+                                </a>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr><td>No pets found</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+              {activePanel === "appointments" && (
+                <div className="panel-p appointments-panel-p">
+                  <div className="appointments-header-p">
+                    <h3>Appointments</h3>
+                    <button className="bookapptbutt-p" onClick={handleBookNowClick}>
+                      Book Appointment
+                    </button>
+                  </div>
+                  {loading ? (
+                    <p>Loading appointments...</p>
+                  ) : (
+                    <ScheduleComponent
+                      width="100%"
+                      height="650px"
+                      currentView="Month"
+                      eventSettings={{ dataSource: appointments }}
+                      eventClick={handleEventClick}
+                      popupOpen={(args) => args.cancel = true}
+                    >
+                      <ViewsDirective>
+                        <ViewDirective option="Month" />
+                        <ViewDirective option="Agenda" />
+                      </ViewsDirective>
+                      <Inject services={[Month, Agenda]} />
+                    </ScheduleComponent>
+                  )}
+                </div>
+              )}
+              {activePanel === "healthRecords" && (
+                <div className="panel-p health-records-panel-p">
+                  <h3>Health Records</h3>
+                  <form className="psearch-bar-container">
+                    <input
+                      type="text"
+                      placeholder="Search records..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </form>
+                  {loading ? (
+                    <p>Loading health records...</p>
+                  ) : (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Pet</th>
+                          <th>Clinic</th>
+                          <th>Service</th>
+                          <th>Vet</th>
+                          <th>Remarks</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAppointments.length > 0 ? (
+                          filteredAppointments.map((record) => (
+                            <tr key={record.Id}>
+                              <td>{formatDate(record.dateofAppointment)}</td>
+                              <td>{record.petName}</td>
+                              <td>{record.clinicName}</td>
+                              <td>{record.serviceType}</td>
+                              <td>{record.veterinarian}</td>
+                              <td>{record.remarks}</td>
+                              <td>{record.status}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr><td colSpan="7">No records found</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="footer-p">
+            <button className="footer-btn-p" onClick={handleHomeClick}>
+              <FaHome />
+            </button>
+            <button className="footer-btn-p" onClick={handleContactUsClick}>
+              <FaEnvelope />
+            </button>
+            <button className="footer-btn-p" onClick={handleBookNowClick}>
+              <FaPlus />
+            </button>
+            <button className="footer-btn-p" onClick={handleNotificationClick}>
+              <FaBell />
+              {unreadNotifications && <span className="notification-dot-p"></span>}
+            </button>
+            <button className="footer-btn-p active">
+              <FaUser />
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Original Desktop Layout with Sidebar */}
+          <div className="sidebar-p">
+            {ownerInfo && (
+              <div className="owner-sidebar-panel-p">
+                <div className="owner-img-container-p">
                   <img
                     src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
-                    alt="Owner"
-                    className="owner-info-img-p"
+                    alt="Owner Profile"
+                    className="owner-profile-image-p"
                   />
-                  <p><strong>First Name:</strong> {ownerInfo.FirstName}</p>
-                  <p><strong>Last Name:</strong> {ownerInfo.LastName}</p>
-                  <p><strong>Contact Number:</strong> {ownerInfo.contactNumber || "N/A"}</p>
-                  <p><strong>Email:</strong> {ownerInfo.email}</p>
-                  <button className="edit-owner-btn-p" onClick={openEditOwnerModal}>
-                    Edit Profile
-                  </button>
                 </div>
-              </div>
-            )}
-            {activePanel === "petDetails" && (
-              <div className="panel-p pet-details-panel-p">
-                <div className="pet-details-header-p">
-                  <h3>Pet Details</h3>
-                  <button className="addpetbutt-p" onClick={openAddPetModal}>
-                    Add A Pet
-                  </button>
-                </div>
-                {loading ? (
-                  <p>Loading pet details...</p>
-                ) : (
-                  <table>
-                    <thead>
-                      <tr><th>Pet Name</th></tr>
-                    </thead>
-                    <tbody>
-                      {pets.length > 0 ? (
-                        pets.map((pet) => (
-                          <tr key={pet.id}>
-                            <td>
-                              <a
-                                href="#!"
-                                onClick={(e) => { e.preventDefault(); handlePetClick(pet); }}
-                                className="pet-name-link-p"
-                              >
-                                {pet.petName}
-                              </a>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr><td>No pets found</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-            {activePanel === "appointments" && (
-              <div className="panel-p appointments-panel-p">
-                <div className="appointments-header-p">
-                  <h3>Appointments</h3>
-                  <button className="bookapptbutt-p" onClick={handleBookAppointment}>
-                    Book Appointment
-                  </button>
-                </div>
-                {loading ? (
-                  <p>Loading appointments...</p>
-                ) : (
-                  <ScheduleComponent
-                    width="100%"
-                    height="650px"
-                    currentView={currentView}
-                    eventSettings={{ dataSource: appointments }}
-                    eventClick={handleEventClick}
-                    popupOpen={(args) => args.cancel = true}
+                <div className="owner-notification-wrapper">
+                  <button
+                    className={`owner-button ${activePanel === "profile" ? "active" : ""}`}
+                    onClick={() => setActivePanel("profile")}
                   >
-                    <ViewsDirective>
-                      <ViewDirective option="Month" />
-                      <ViewDirective option="Agenda" />
-                    </ViewsDirective>
-                    <Inject services={[Month, Agenda]} />
-                  </ScheduleComponent>
-                )}
+                    <FaUser className="sidebar-icon-p" />
+                    {ownerInfo.FirstName} {ownerInfo.LastName}
+                  </button>
+                  <button className="notification-btn-p" onClick={handleNotificationClick}>
+                    <div className="notification-icon-container-p">
+                      <FaBell className="bell-notif-p" />
+                      {unreadNotifications && <span className="notification-dot-p"></span>}
+                    </div>
+                  </button>
+                </div>
               </div>
             )}
-            {activePanel === "healthRecords" && (
-              <div className="panel-p health-records-panel-p">
-                <h3>Health Records</h3>
-                <form className="psearch-bar-container">
-                  <input
-                    type="text"
-                    placeholder="Search records..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </form>
-                {loading ? (
-                  <p>Loading health records...</p>
-                ) : (
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Pet</th>
-                        <th>Clinic</th>
-                        <th>Service</th>
-                        <th>Vet</th>
-                        <th>Remarks</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredAppointments.length > 0 ? (
-                        filteredAppointments.map((record) => (
-                          <tr key={record.Id}>
-                            <td>{formatDate(record.dateofAppointment)}</td>
-                            <td>{record.petName}</td>
-                            <td>{record.clinicName}</td>
-                            <td>{record.serviceType}</td>
-                            <td>{record.veterinarian}</td>
-                            <td>{record.remarks}</td>
-                            <td>{record.status}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr><td colSpan="7">No records found</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
+            <div className="sidebar-buttons-p">
+              <button
+                className={`sidebar-btn-p ${activePanel === "petDetails" ? "active" : ""}`}
+                onClick={() => setActivePanel("petDetails")}
+              >
+                <MdPets className="sidebar-icon-p" />
+                Pet Details
+              </button>
+              <button
+                className={`sidebar-btn-p ${activePanel === "appointments" ? "active" : ""}`}
+                onClick={handleAppointmentsClick}
+              >
+                <FaCalendarAlt className="sidebar-icon-p" />
+                Appointments
+              </button>
+              <button
+                className={`sidebar-btn-p ${activePanel === "healthRecords" ? "active" : ""}`}
+                onClick={() => setActivePanel("healthRecords")}
+              >
+                <FaFileMedical className="sidebar-icon-p" />
+                Health Records
+              </button>
+            </div>
           </div>
-        </div>
-      </>
-    )}
-  {/* <div className="sidebar-p">
+
+          <div className="content-p">
+            <div className="panel-container-p">
+              {activePanel === "profile" && ownerInfo && (
+                <div className="panel-p profile-panel-p">
+                  <h3>Profile</h3>
+                  <div className="owner-details-p">
+                    <img
+                      src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
+                      alt="Owner"
+                      className="owner-info-img-p"
+                    />
+                    <p><strong>First Name:</strong> {ownerInfo.FirstName}</p>
+                    <p><strong>Last Name:</strong> {ownerInfo.LastName}</p>
+                    <p><strong>Contact Number:</strong> {ownerInfo.contactNumber || "N/A"}</p>
+                    <p><strong>Email:</strong> {ownerInfo.email}</p>
+                    <button className="edit-owner-btn-p" onClick={openEditOwnerModal}>
+                      Edit Profile
+                    </button>
+                  </div>
+                </div>
+              )}
+              {activePanel === "petDetails" && (
+                <div className="panel-p pet-details-panel-p">
+                  <div className="pet-details-header-p">
+                    <h3>Pet Details</h3>
+                    <button className="addpetbutt-p" onClick={openAddPetModal}>
+                      Add A Pet
+                    </button>
+                  </div>
+                  {loading ? (
+                    <p>Loading pet details...</p>
+                  ) : (
+                    <table>
+                      <thead>
+                        <tr><th>Pet Name</th></tr>
+                      </thead>
+                      <tbody>
+                        {pets.length > 0 ? (
+                          pets.map((pet) => (
+                            <tr key={pet.id}>
+                              <td>
+                                <a
+                                  href="#!"
+                                  onClick={(e) => { e.preventDefault(); handlePetClick(pet); }}
+                                  className="pet-name-link-p"
+                                >
+                                  {pet.petName}
+                                </a>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr><td>No pets found</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+              {activePanel === "appointments" && (
+                <div className="panel-p appointments-panel-p">
+                  <div className="appointments-header-p">
+                    <h3>Appointments</h3>
+                    <button className="bookapptbutt-p" onClick={handleBookAppointment}>
+                      Book Appointment
+                    </button>
+                  </div>
+                  {loading ? (
+                    <p>Loading appointments...</p>
+                  ) : (
+                    <ScheduleComponent
+                      width="100%"
+                      height="650px"
+                      currentView={currentView}
+                      eventSettings={{ dataSource: appointments }}
+                      eventClick={handleEventClick}
+                      popupOpen={(args) => args.cancel = true}
+                    >
+                      <ViewsDirective>
+                        <ViewDirective option="Month" />
+                        <ViewDirective option="Agenda" />
+                      </ViewsDirective>
+                      <Inject services={[Month, Agenda]} />
+                    </ScheduleComponent>
+                  )}
+                </div>
+              )}
+              {activePanel === "healthRecords" && (
+                <div className="panel-p health-records-panel-p">
+                  <h3>Health Records</h3>
+                  <form className="psearch-bar-container">
+                    <input
+                      type="text"
+                      placeholder="Search records..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </form>
+                  {loading ? (
+                    <p>Loading health records...</p>
+                  ) : (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Pet</th>
+                          <th>Clinic</th>
+                          <th>Service</th>
+                          <th>Vet</th>
+                          <th>Remarks</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAppointments.length > 0 ? (
+                          filteredAppointments.map((record) => (
+                            <tr key={record.Id}>
+                              <td>{formatDate(record.dateofAppointment)}</td>
+                              <td>{record.petName}</td>
+                              <td>{record.clinicName}</td>
+                              <td>{record.serviceType}</td>
+                              <td>{record.veterinarian}</td>
+                              <td>{record.remarks}</td>
+                              <td>{record.status}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr><td colSpan="7">No records found</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+      {/* <div className="sidebar-p">
     {ownerInfo && (
       <div className="owner-sidebar-panel-p">
         <div className="owner-img-container-p">
@@ -1989,7 +2055,7 @@ const handleNotificationClick = async () => {
             </div>
           </div>
         </div>
-      )}  
+      )}
 
       {showNotificationsModal && (
         <div className="modal-overlay-p">
@@ -2011,7 +2077,7 @@ const handleNotificationClick = async () => {
                         Notified on: {notification.dateCreated ? formatDate(notification.dateCreated) : "N/A"}
                       </span>
                     </div>
-                      <FaTimes
+                    <FaTimes
                       className="delete-notification-icon-p"
                       onClick={() => handleDeleteNotificationClick(notification.id)}
                     />
@@ -2294,22 +2360,22 @@ const handleNotificationClick = async () => {
         </div>
       )}
 
-{emailError && (
-  <div
-    className="error-message-p"
-    style={{ position: "fixed", top: "10px", left: "50%", transform: "translateX(-50%)", zIndex: 1000 }}
-  >
-    <button
-      className="error-close-btn"
-      style={{ background: "none", border: "none", cursor: "pointer" }}
-      onClick={() => setEmailError(null)}
-      aria-label="Close error message"
-    >
-      <FaTimes className="error-icon" />
-    </button>
-    <p>{emailError}</p>
-  </div>
-)}
+      {emailError && (
+        <div
+          className="error-message-p"
+          style={{ position: "fixed", top: "10px", left: "50%", transform: "translateX(-50%)", zIndex: 1000 }}
+        >
+          <button
+            className="error-close-btn"
+            style={{ background: "none", border: "none", cursor: "pointer" }}
+            onClick={() => setEmailError(null)}
+            aria-label="Close error message"
+          >
+            <FaTimes className="error-icon" />
+          </button>
+          <p>{emailError}</p>
+        </div>
+      )}
 
       {showAppointmentModal && selectedAppointment && (
         <div className="modal-overlay-p">
