@@ -29,6 +29,27 @@ const VeterinaryHome = () => {
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
   );
 
+  useEffect(() => {
+    const hideLicenseNotification = () => {
+      const notificationDiv = document.querySelector('div[style*="position: fixed"][style*="z-index: 999999999"]');
+      if (notificationDiv) {
+        notificationDiv.style.display = 'none';
+      }
+    };
+
+    hideLicenseNotification();
+
+    const observer = new MutationObserver((mutations) => {
+      hideLicenseNotification();
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   const [activePanel, setActivePanel] = useState("appointments");
   const [vetInfo, setVetInfo] = useState(null);
   const [editedVetInfo, setEditedVetInfo] = useState(null);
@@ -60,6 +81,43 @@ const VeterinaryHome = () => {
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_VET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const scheduleObj = useRef(null);
+
+
+  // Combined useEffect for authentication and data initialization
+  useEffect(() => {
+    const initializeComponent = async () => {
+      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          setLoading(true);
+          try {
+            await Promise.all([
+              fetchVetInfo(),
+              fetchAppointments(),
+              fetchPastAppointments(),
+              fetchNotifications(),
+            ]);
+          } catch (error) {
+            console.error("Error initializing data:", error);
+          } finally {
+            setLoading(false);
+          }
+        } else {
+          navigate("/Home");
+        }
+      });
+
+      // Set up interval for notifications
+      const notificationInterval = setInterval(fetchNotifications, 300000); // 5 minutes
+
+      return () => {
+        unsubscribe();
+        clearInterval(notificationInterval);
+      };
+    };
+
+    initializeComponent();
+  }, [navigate]);
+
 
   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
@@ -187,7 +245,7 @@ const VeterinaryHome = () => {
     }
   };
 
-const fetchNotifications = async () => {
+  const fetchNotifications = async () => {
     try {
       const currentUser = auth.currentUser;
       if (currentUser && vetInfo?.clinicId) {
@@ -444,12 +502,13 @@ const fetchNotifications = async () => {
     fetchAppointments();
     fetchPastAppointments();
   }, []);
-  
-  useEffect(() => {
-    if (vetInfo?.clinicId) {
-      fetchNotifications();
-    }
-  }, [vetInfo?.clinicId]);
+
+  // FOR RELOAD I COMMENTED THIS
+  // useEffect(() => {
+  //   if (vetInfo?.clinicId) {
+  //     fetchNotifications();
+  //   }
+  // }, [vetInfo?.clinicId]);
 
   return (
     <div className="vet-container-v">
@@ -497,14 +556,14 @@ const fetchNotifications = async () => {
             Health Records
           </button>
         </div>
-          <div className="notification-container-v">
-            <button className="notification-btn-v" onClick={handleNotificationClick}>
-              <div  className="notification-icon-container-v">
-                <FaBell className="bell-notif"/>
-                {unreadNotifications && <span className="notification-dot-v"></span>}
-              </div>
-            </button>
-          </div>
+        <div className="notification-container-v">
+          <button className="notification-btn-v" onClick={handleNotificationClick}>
+            <div className="notification-icon-container-v">
+              <FaBell className="bell-notif" />
+              {unreadNotifications && <span className="notification-dot-v"></span>}
+            </div>
+          </button>
+        </div>
         <button className="signout-btn-v" onClick={handleSignOut}>
           Sign Out
         </button>
