@@ -7,6 +7,7 @@
   font-family: 'Albert Sans', sans-serif;
 }
 
+/* Sidebar */
 .sidebar-v {
   width: 250px;
   background-color: #EDBFC6;
@@ -15,11 +16,12 @@
   flex-direction: column;
   gap: 15px;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
   height: auto;
   max-height: 100vh;
 }
 
+/* Profile Image Container */
 .vet-sidebar-panel-v {
   width: 100%;
 }
@@ -50,64 +52,160 @@
   padding: 5px;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  width: 18px;
-  height: 18px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.sidebar-v button {
+/* Notification and Name Wrapper */
+.vet-notification-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
+}
+
+/* Name Button */
+.vet-button {
+  width: 80%;
   padding: 12px;
   font-size: 16px;
   border: none;
   cursor: pointer;
-  background-color: #fff;
+  background-color: #EDBFC6;
   border-radius: 5px;
   text-align: left;
   transition: 0.3s;
   font-family: 'Albert Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.sidebar-v button:hover {
-  background-color: #ffcdd2;
+.vet-button:hover {
+  background-color: #f1a6ae;
+  transform: translateY(-2px);
 }
 
-.sidebar-v button.active {
+.vet-button.active {
   background-color: #ff8c94;
   color: #fff;
   font-weight: bold;
 }
 
+/* Notification Button */
+.notification-btn-v {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.notification-icon-container-v {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bell-notif {
+  font-size: 1.2rem;
+  color: #ff4081;
+}
+
+.bell-notif:hover {
+  color: #f50057;
+}
+
+.notification-dot-v {
+  position: absolute;
+  top: -2px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  background-color: red;
+  border-radius: 50%;
+  border: 2px solid white;
+  pointer-events: none;
+}
+
+/* Sidebar Buttons */
 .sidebar-buttons-v {
-  width: 100%;
-  margin-top: 20px;
-  flex-grow: 1;
   display: flex;
   flex-direction: column;
   gap: 5px;
+  width: 100%;
 }
 
+.sidebar-btn-v {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  background-color: #EDBFC6;
+  border-radius: 5px;
+  text-align: left;
+  transition: 0.3s;
+  font-family: 'Albert Sans', sans-serif;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-btn-v:hover {
+  background-color: #f1a6ae;
+  transform: translateY(-2px);
+}
+
+.sidebar-btn-v.active {
+  background-color: #ff8c94;
+  color: #fff;
+  font-weight: bold;
+}
+
+/* Sidebar Icons */
+.sidebar-icon-v {
+  font-size: 1.2em;
+  color: #ff4081;
+  flex-shrink: 0;
+}
+
+.sidebar-btn-v:hover .sidebar-icon-v {
+  color: #f50057;
+}
+
+.sidebar-btn-v.active .sidebar-icon-v {
+  color: #fff;
+}
+
+/* Sign Out Button */
 .signout-btn-v {
   width: 100%;
   padding: 12px;
   font-size: 16px;
   border: none;
   cursor: pointer;
-  background-color: #ff8c94;
-  color: black;
+  background-color: #EDBFC6;
+  color: #333;
   border-radius: 5px;
   text-align: left;
   transition: background-color 0.3s, transform 0.3s;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .signout-btn-v:hover {
   background-color: #ff5555;
   transform: translateY(-2px);
+  color: #fff;
 }
 
+/* Content Area */
 .content-v {
   flex: 1;
   padding: 20px;
@@ -121,6 +219,7 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Table Styles */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -137,60 +236,10 @@ th {
   background-color: #ffb6c1;
 }
 
+/* Panel Styles */
 .appointments-panel-v {
   padding: 10px;
   background-color: #fdf6c2;
-}
-/* Appointment Info Grid */
-.appointment-info-grid-v {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.info-item-v {
-  padding: 10px;
-  background-color: #fff5f6;
-  border-radius: 4px;
-  text-align: left;
-}
-
-.info-item-v strong {
-  color: #555;
-}
-
-/* Appointment Notes */
-.appointment-notes-v {
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #fff5f6;
-  border-radius: 4px;
-  text-align: left;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.appointment-notes-v strong {
-  color: #555;
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.appointment-notes-v p {
-  margin: 0;
-  word-wrap: break-word;
-  color: #333;
-  width: 100%;
-}
-
-/* Modal Actions */
-.modal-actions-v {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
 }
 
 .schedule-panel-v {
@@ -236,6 +285,7 @@ th {
   background-color: #f50057;
 }
 
+/* Modal Styles */
 .modal-overlay-v {
   position: fixed;
   top: 0;
@@ -381,6 +431,7 @@ th {
   background-color: #f50057;
 }
 
+/* Schedule Styles */
 .e-schedule {
   border: 1px solid #ffb6c1;
   border-radius: 5px;
@@ -400,20 +451,25 @@ th {
   background-color: #f50057 !important;
 }
 
+/* Sign Out Modals */
 .signout-confirm-modal-v {
   padding: 20px;
   text-align: center;
 }
 
 .signout-success-modal-v {
-  padding: 10px;
+  padding: 20px;
   text-align: center;
+  background-color: #d3f0f7;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .success-content-v {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 15px;
 }
 
 .success-image-v {
@@ -426,8 +482,10 @@ th {
   margin: 0;
   font-size: 18px;
   font-weight: bold;
+  color: #333;
 }
 
+/* Remarks Overlay */
 .remarks-overlay-v {
   position: fixed;
   top: 0;
@@ -467,49 +525,56 @@ th {
   font-size: 16px;
 }
 
-
-
-.sidebar-v  .notification-container-v button {
-  background-color: #25091200;
-  margin-top: 100px;
-  margin-bottom:5px;
-  width:50px;
-  border: transparent;
-  box-shadow: none;
-}
-.notification-icon-container-v:hover {
- background-color: transparent;
+/* Appointment Info Grid */
+.appointment-info-grid-v {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
-
-/* Container for the FaBell icon and the red dot */
-.notification-icon-container-v {
-  position: relative;
-  display: inline-block;
+.info-item-v {
+  padding: 10px;
+  background-color: #fff5f6;
+  border-radius: 4px;
+  text-align: left;
 }
 
+.info-item-v strong {
+  color: #555;
+}
 
-/* Style the red dot */
-.notification-dot-v {
-  position: absolute;
-  top: -2px; /* Adjust as needed */
-  right: -1px; /* Adjust as needed */
-  width: 9px;
-  height: 9px;
-  background-color: red;
-  border-radius: 50%;
-  border: 2px solid white; /* Optional: Add a border for better visibility */
-  pointer-events: none; /* Prevent the dot from interfering with clicks */
+/* Appointment Notes */
+.appointment-notes-v {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #fff5f6;
+  border-radius: 4px;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
 }
-.bell-notif{
-  color:#ff4081;
-  width: 25px;
-  height: 25px;
+
+.appointment-notes-v strong {
+  color: #555;
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
 }
-.bell-notif:hover {
-  color:#ffffff;
-  width: 25px;
-  height: 25px;
+
+.appointment-notes-v p {
+  margin: 0;
+  word-wrap: break-word;
+  color: #333;
+  width: 100%;
+}
+
+/* Modal Actions */
+.modal-actions-v {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
 }
 
 /* Notifications Modal */
