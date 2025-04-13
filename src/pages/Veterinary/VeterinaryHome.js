@@ -3,7 +3,7 @@ import "./VeterinaryHome.css";
 import { db, auth } from "../../firebase";
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
-import { FaCamera, FaTrash, FaCheck, FaBell, FaTimes } from "react-icons/fa";
+import { FaCamera, FaTrash, FaCheck, FaBell, FaTimes, FaUser, FaCalendarAlt, FaFileMedical, FaHome, FaEnvelope, FaPlus, FaClock, FaSignOutAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import {
   ScheduleComponent,
@@ -54,7 +54,6 @@ const VeterinaryHome = () => {
   const [vetInfo, setVetInfo] = useState(null);
   const [editedVetInfo, setEditedVetInfo] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  const [pastAppointments, setPastAppointments] = useState([]);
   const [schedule, setSchedule] = useState([]);
   const [scheduleEvents, setScheduleEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,40 +82,58 @@ const VeterinaryHome = () => {
   const scheduleObj = useRef(null);
 
 
-  // Combined useEffect for authentication and data initialization
   useEffect(() => {
+    let unsubscribe;
+  
     const initializeComponent = async () => {
-      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      setLoading(true);
+      unsubscribe = auth.onAuthStateChanged(async (user) => {
         if (user) {
-          setLoading(true);
           try {
-            await Promise.all([
-              fetchVetInfo(),
-              fetchAppointments(),
-              fetchPastAppointments(),
-              fetchNotifications(),
-            ]);
+            await fetchVetInfo();
           } catch (error) {
-            console.error("Error initializing data:", error);
-          } finally {
-            setLoading(false);
+            console.error("Error fetching vet info:", error);
           }
         } else {
           navigate("/Home");
+          setLoading(false);
         }
       });
-
-      // Set up interval for notifications
-      const notificationInterval = setInterval(fetchNotifications, 300000); // 5 minutes
-
-      return () => {
-        unsubscribe();
-        clearInterval(notificationInterval);
-      };
     };
-
+  
     initializeComponent();
+  
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [navigate]);
+  
+  // useEffect to fetch appointments, notifications, and set up interval after vetInfo is set
+  useEffect(() => {
+    if (vetInfo?.clinicId) {
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          console.log("Fetching data with clinicId:", vetInfo.clinicId);
+          await Promise.all([fetchAppointments(), fetchNotifications()]);
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchData();
+  
+      // Set up interval for notifications
+      const notificationInterval = setInterval(() => {
+        console.log("Polling notifications for clinicId:", vetInfo.clinicId);
+        fetchNotifications();
+      }, 300000); // 5 minutes
+  
+      return () => clearInterval(notificationInterval);
+    }
+  }, [vetInfo?.clinicId]);
 
 
   const formatDate = (dateValue) => {
@@ -369,7 +386,7 @@ const VeterinaryHome = () => {
       setLoading(true);
       const user = auth.currentUser;
       if (user) {
-        const q = query(collection(db, "appointments"), where("veterinarianId", "==", user.uid), where("status", "==", "Accepted"));
+        const q = query(collection(db, "appointments"), where("veterinarianId", "==", user.uid));
         const querySnapshot = await getDocs(q);
         const appointmentsList = await Promise.all(querySnapshot.docs.map(async (doc) => {
           const data = doc.data();
@@ -392,6 +409,8 @@ const VeterinaryHome = () => {
             service: data.serviceType || "N/A",
             notes: data.notes || "No Notes",
             dateofAppointment: startTime,
+            status: data.status || "Accepted",
+            completionRemark: data.completionRemark || "",
           };
         }));
 
@@ -400,41 +419,6 @@ const VeterinaryHome = () => {
     } catch (error) {
       console.error("Error fetching appointments:", error);
       setAppointments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPastAppointments = async () => {
-    try {
-      setLoading(true);
-      const user = auth.currentUser;
-      if (user) {
-        const q = query(collection(db, "pastAppointments"), where("veterinarianId", "==", user.uid));
-        const querySnapshot = await getDocs(q);
-        const appointmentsList = await Promise.all(querySnapshot.docs.map(async (doc) => {
-          const data = doc.data();
-          const [petData, ownerData] = await Promise.all([
-            data.petRef ? getDoc(data.petRef) : Promise.resolve(null),
-            data.owner ? getDoc(data.owner) : Promise.resolve(null),
-          ]);
-
-          return {
-            Id: doc.id,
-            petName: data.petName || "N/A",
-            owner: ownerData?.data() ? `${ownerData.data().FirstName || ""} ${ownerData.data().LastName || ""}`.trim() || "N/A" : "N/A",
-            service: data.serviceType || "N/A",
-            notes: data.notes || "No Notes",
-            dateofAppointment: data.dateofAppointment.toDate(),
-            completionRemark: data.completionRemark || "No completion remark",
-          };
-        }));
-
-        setPastAppointments(appointmentsList.sort((a, b) => b.dateofAppointment - a.dateofAppointment));
-      }
-    } catch (error) {
-      console.error("Error fetching past appointments:", error);
-      setPastAppointments([]);
     } finally {
       setLoading(false);
     }
@@ -463,19 +447,18 @@ const VeterinaryHome = () => {
         const appointmentRef = doc(db, "appointments", selectedAppointment.Id);
         const appointmentDoc = await getDoc(appointmentRef);
         if (!appointmentDoc.exists()) throw new Error("Appointment not found");
-
-        const data = appointmentDoc.data();
-        await addDoc(collection(db, "pastAppointments"), {
-          ...data,
+  
+        await updateDoc(appointmentRef, {
           status: "Completed",
           completionRemark: completionRemark || "No completion remark",
-          timestampCompleted: new Date().toISOString(),
         });
-
-        await deleteDoc(appointmentRef);
-        setAppointments(appointments.filter(appt => appt.Id !== selectedAppointment.Id));
-        await fetchPastAppointments();
-
+  
+        setAppointments(appointments.map(appt => 
+          appt.Id === selectedAppointment.Id 
+            ? { ...appt, status: "Completed", completionRemark: completionRemark || "No completion remark" }
+            : appt
+        ));
+  
         setShowRemarksModal(false);
         setShowDetailsModal(false);
         setCompletionRemark("");
@@ -500,7 +483,6 @@ const VeterinaryHome = () => {
   useEffect(() => {
     fetchVetInfo();
     fetchAppointments();
-    fetchPastAppointments();
   }, []);
 
   // FOR RELOAD I COMMENTED THIS
@@ -516,7 +498,11 @@ const VeterinaryHome = () => {
         {vetInfo && (
           <div className="vet-sidebar-panel-v">
             <div className="vet-img-container-v">
-              <img src={vetInfo.profileImageURL} alt="Vet Profile" className="veterinarian-profile-image-v" />
+              <img
+                src={vetInfo.profileImageURL}
+                alt="Vet Profile"
+                className="veterinarian-profile-image-v"
+              />
               <label htmlFor="vet-image-upload-v" className="edit-icon-v">
                 <FaCamera />
               </label>
@@ -528,43 +514,48 @@ const VeterinaryHome = () => {
                 style={{ display: "none" }}
               />
             </div>
-            <button
-              className={activePanel === "vetInfo" ? "active" : ""}
-              onClick={() => setActivePanel("vetInfo")}
-            >
-              {vetInfo.FirstName} {vetInfo.LastName}
-            </button>
+            <div className="vet-notification-wrapper">
+              <button
+                className={`vet-button ${activePanel === "vetInfo" ? "active" : ""}`}
+                onClick={() => setActivePanel("vetInfo")}
+              >
+                <FaUser className="sidebar-icon-v" />
+                {vetInfo.FirstName} {vetInfo.LastName}
+              </button>
+              <button className="notification-btn-v" onClick={handleNotificationClick}>
+                <div className="notification-icon-container-v">
+                  <FaBell className="bell-notif" />
+                  {unreadNotifications && <span className="notification-dot-v"></span>}
+                </div>
+              </button>
+            </div>
           </div>
         )}
         <div className="sidebar-buttons-v">
           <button
-            className={activePanel === "appointments" ? "active" : ""}
+            className={`sidebar-btn-v ${activePanel === "appointments" ? "active" : ""}`}
             onClick={() => setActivePanel("appointments")}
           >
+            <FaCalendarAlt className="sidebar-icon-v" />
             Upcoming Appointments
           </button>
           <button
-            className={activePanel === "schedule" ? "active" : ""}
+            className={`sidebar-btn-v ${activePanel === "schedule" ? "active" : ""}`}
             onClick={() => setActivePanel("schedule")}
           >
+            <FaClock className="sidebar-icon-v" />
             Schedule
           </button>
           <button
-            className={activePanel === "healthRecords" ? "active" : ""}
+            className={`sidebar-btn-v ${activePanel === "healthRecords" ? "active" : ""}`}
             onClick={() => setActivePanel("healthRecords")}
           >
+            <FaFileMedical className="sidebar-icon-v" />
             Health Records
           </button>
         </div>
-        <div className="notification-container-v">
-          <button className="notification-btn-v" onClick={handleNotificationClick}>
-            <div className="notification-icon-container-v">
-              <FaBell className="bell-notif" />
-              {unreadNotifications && <span className="notification-dot-v"></span>}
-            </div>
-          </button>
-        </div>
         <button className="signout-btn-v" onClick={handleSignOut}>
+          <FaSignOutAlt className="sidebar-icon-v" />
           Sign Out
         </button>
       </div>
@@ -606,7 +597,7 @@ const VeterinaryHome = () => {
                   height="650px"
                   currentDate={new Date()}
                   eventSettings={{
-                    dataSource: appointments,
+                    dataSource: appointments.filter(appt => appt.status === "Accepted"),
                     fields: {
                       id: "Id",
                       subject: { name: "Subject" },
@@ -679,8 +670,8 @@ const VeterinaryHome = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {pastAppointments.length > 0 ? (
-                      pastAppointments.map((record) => (
+                    {appointments.filter(appt => appt.status === "Completed").length > 0 ? (
+                      appointments.filter(appt => appt.status === "Completed").map((record) => (
                         <tr key={record.Id}>
                           <td>{formatDate(record.dateofAppointment)}</td>
                           <td>{record.petName}</td>
@@ -691,7 +682,7 @@ const VeterinaryHome = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5">No past appointments found</td>
+                        <td colSpan="5">No completed appointments found</td>
                       </tr>
                     )}
                   </tbody>
