@@ -186,6 +186,11 @@
   width: 100%;
 }
 
+.footer-btn-p p {
+  font-size: 10px; 
+  margin: 0;
+}
+
 /* Signout button */
 .signout-btn-p {
   width: 100%;
@@ -289,7 +294,6 @@
   font-size: 1.5rem;
   color: #ff4081;
   cursor: pointer;
-  padding: 10px;
   transition: color 0.3s;
 }
 
@@ -297,11 +301,7 @@
   color: #f50057;
 }
 
-.footer-btn-p.active {
-  color: #fff;
-  background-color: #ff8c94;
-  border-radius: 50%;
-}
+
 
 .content-p {
   flex: 1;
@@ -1155,7 +1155,6 @@ form {
     font-size: 1.2rem;
     color: #ff4081;
     cursor: pointer;
-    padding: 10px;
     transition: color 0.3s;
   }
 
@@ -1167,5 +1166,153 @@ form {
     color: #fff;
     background-color: #ff8c94;
     border-radius: 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .clinic-container-c {
+    flex-direction: column;
+    height: auto; 
+  }
+
+  .sidebar-c {
+    width: 100%;
+    max-height: none; 
+    padding: 10px;
+    align-items: center; 
+  }
+
+  .content-c {
+    padding: 10px; 
+    width: 100%;
+  }
+
+  .panel-container-c {
+    min-height: auto; 
+    padding: 10px; 
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-c button {
+    width: 90%; 
+    font-size: 14px; 
+    padding: 10px; 
+    margin-bottom: 8px;
+  }
+
+  .sidebar-icon-c {
+    font-size: 1em; 
+  }
+
+  .clinic-sidebar-panel-c {
+    text-align: center; 
+  }
+
+  .clinic-img-container-c {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 10px;
+  }
+
+  .clinic-profile-image-c {
+    width: 100px;
+    height: 100px;
+  }
+
+  .signout-btn-c {
+    width: 90%;
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .panel-c h3 {
+    font-size: 20px; 
+    margin-bottom: 15px;
+  }
+
+  .clinic-header-row-c {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .clinic-header-info-c {
+    text-align: center;
+    min-width: 100%; 
+  }
+
+  .clinic-title-c {
+    font-size: 2rem; 
+  }
+
+  .clinic-contact-block-c {
+    text-align: center;
+    margin-left: 0;
+    font-size: 0.85rem;
+  }
+
+  .clinic-description-text-c {
+    font-size: 0.9rem;
+  }
+  table {
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 8px; 
+  }
+
+  @media (max-width: 500px) {
+    thead th:nth-child(n+3),
+    tbody td:nth-child(n+3) { 
+    }
+
+    table {
+      display: block;
+      overflow-x: auto; 
+      white-space: nowrap;
+    }
+  }
+}
+.mobile-header-p {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-header-p {
+    display: block;
+    padding: 10px;
+    background-color: #EDBFC6;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    width: 100%;
+
+  }
+
+  .mobile-header-p button {
+    font-size: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .sidebar-p {
+    display: none;
+  }
+
+  .sidebar-p.open {
+    display: flex;
+    position: fixed;
+    top: 40px;
+    left: 0;
+    width: 45%;
+    z-index: 600;
+    height: calc(100vh - 50px);
+    background-color: #EDBFC6;
+    border-radius: 2px;;
   }
 }
