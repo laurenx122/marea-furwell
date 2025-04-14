@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 
 import "react-calendar/dist/Calendar.css";
 import Calendar from "react-calendar";
-import { FaUser, FaCalendarAlt, FaFileMedical, FaHome, FaEnvelope, FaPlus, FaBell } from "react-icons/fa";
+import { FaUser, FaCalendarAlt, FaFileMedical, FaHome, FaEnvelope, FaPlus, FaBell, FaSignOutAlt } from "react-icons/fa";
 import { MdPets } from "react-icons/md";
-
+import {getAuth, signOut} from "firebase/auth";
 
 import {
   collection,
@@ -96,6 +96,8 @@ const PetOwnerHome = () => {
     Weight: "",
     dateofBirth: "",
   });
+  const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
+  const [isSignOutSuccessOpen, setIsSignOutSuccessOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [addingPet, setAddingPet] = useState(false);
   const [addPetError, setAddPetError] = useState("");
@@ -1317,6 +1319,24 @@ const PetOwnerHome = () => {
     }
   };
 
+const handleSignOut = () => {
+    setIsSignOutConfirmOpen(true);
+  };
+
+  const confirmSignOut = async () => {
+    try {
+      await signOut(getAuth());
+      setIsSignOutConfirmOpen(false);
+      setIsSignOutSuccessOpen(true);
+      setTimeout(() => {
+        setIsSignOutSuccessOpen(false);
+        navigate("/Home");
+      }, 2000);
+    } catch (error) {
+      console.error("Error signing out:", error);
+      setIsSignOutConfirmOpen(false);
+    }
+  };
 
 
   // Fetch data when appointment modal opens
@@ -1616,6 +1636,10 @@ const PetOwnerHome = () => {
                 Health Records
               </button>
             </div>
+            <button className="signout-btn-p" onClick={handleSignOut}>
+              <FaSignOutAlt className="sidebar-icon-p" />
+              Sign Out
+            </button>
           </div>
 
           <div className="content-p">
@@ -2191,6 +2215,40 @@ const PetOwnerHome = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+{isSignOutConfirmOpen && (
+        <div className="modal-overlay-c">
+          <div className="modal-content-c signout-confirm-modal-c">
+            <p>Are you sure you want to sign out?</p>
+            <div className="form-actions-ph">
+              <button className="submit-btn-p" onClick={confirmSignOut}>
+                Yes
+              </button>
+              <button
+                className="cancel-btn-p"
+                onClick={() => setIsSignOutConfirmOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isSignOutSuccessOpen && (
+        <div className="modal-overlay-p">
+          <div className="modal-content-p signout-success-modal-p">
+            <div className="success-content-p">
+              <img
+                src="/images/check.gif"
+                alt="Success Checkmark"
+                className="success-image-p"
+              />
+              <p>Signed Out Successfully</p>
+            </div>
           </div>
         </div>
       )}
