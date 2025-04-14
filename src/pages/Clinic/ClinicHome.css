@@ -1404,6 +1404,27 @@ tbody tr:hover .pet-name-link-c {
   box-shadow: 0 0 0 3px rgba(255, 64, 129, 0.3); 
 }
 
+.error-message-c {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 500px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.error-close-btn {
+  font-size: 16px;
+  color: #721c24;
+}
+
+.error-icon {
+  cursor: pointer;
+}
+
 
 /* Responsive Adjustments */
 @media (max-width: 500px) {
