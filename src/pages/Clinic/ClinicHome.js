@@ -33,7 +33,8 @@ import {
   FaChartBar,      
   FaSignOutAlt,    
   FaClinicMedical,
-  FaEdit, FaTrash,  
+  FaEdit, FaTrash, 
+  FaTimes,
 } from "react-icons/fa";
 
 import { useNavigate } from "react-router-dom";
@@ -47,6 +48,7 @@ import {
 } from "@syncfusion/ej2-react-schedule";
 //npm install @syncfusion/ej2-grids --save
 import { registerLicense } from "@syncfusion/ej2-base";
+import emailjs from "emailjs-com";
 
 // Import Syncfusion CSS
 import "@syncfusion/ej2-base/styles/material.css";
@@ -61,6 +63,14 @@ import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveBar } from "@nivo/bar";
 
 const ClinicHome = () => {
+
+  const EMAILJS_PUBLIC_KEY = "6M4Xlw1XjSDBaIr4t";
+  const EMAILJS_TEMPLATE_ID = "template_k8aiq7z";
+  const EMAILJS_SERVICE_ID = "service_Furwell";
+  const LOGO_URL = "https://furwell.vercel.app/images/furwell_logo.png";
+  const [sentEmails, setSentEmails] = useState({});
+  const [emailError, setEmailError] = useState(null);
+
   // Register Syncfusion license (replace with your valid key if different)
   registerLicense(
     "Ngo9BigBOggjHTQxAR8/V1NMaF1cXmhNYVF0WmFZfVtgdVVMZFhbRX5PIiBoS35Rc0VgW3xccnBRRGBbVUZz"
@@ -158,7 +168,7 @@ const ClinicHome = () => {
   const DEFAULT_CLINIC_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const scheduleObj = useRef(null);
-// Analytics State
+
 const [serviceData, setServiceData] = useState([]);
 const [dayData, setDayData] = useState([]);
 
@@ -190,6 +200,39 @@ const [dayData, setDayData] = useState([]);
       return () => unsubscribe();
     };
 
+    initializeComponent();
+  }, [navigate]);
+
+  useEffect(() => {
+    // Initialize EmailJS
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+  
+    const initializeComponent = async () => {
+      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          setLoading(true);
+          try {
+            await Promise.all([
+              fetchUserFirstName(),
+              fetchClinicInfo(),
+              fetchPatients(),
+              fetchAppointments(),
+              fetchVeterinarians(),
+              fetchChartData(),
+              fetchPendingAppointments(),
+            ]);
+          } catch (error) {
+            console.error("Error initializing data:", error);
+          } finally {
+            setLoading(false);
+          }
+        } else {
+          navigate("/Home");
+        }
+      });
+      return () => unsubscribe();
+    };
+  
     initializeComponent();
   }, [navigate]);
 
@@ -521,56 +564,130 @@ const [dayData, setDayData] = useState([]);
   });
  
   //Action confirmation modal
-    const handleActionConfirm = async (action) => {
-      const { appointmentId } = showConfirmModal;
-      try {
-        const appointmentRef = doc(db, "appointments", appointmentId);
-        const appointmentDoc = await getDoc(appointmentRef);
-        if (!appointmentDoc.exists()) throw new Error("Appointment not found");
-    
-        if (action === "accept") {
-          const appointmentData = appointmentDoc.data();
-          const newData = { 
-            ...appointmentData, 
-            status: "Accepted", 
-            timestamp: new Date().toISOString() 
-          };
-          await updateDoc(appointmentRef, newData);
-    
-          // Create notification in the "notifications" collection
-          const notificationRef = collection(db, "notifications");
-          const appointmentDate = appointmentData.dateofAppointment.toDate();
-          const formattedDateTime = formatDate(appointmentDate);
-
-          await setDoc(doc(notificationRef), {
-            appointmentId: appointmentId,
-            clinicId: auth.currentUser.uid, 
-            ownerId: appointmentData.owner?.path || null, 
-            petId: appointmentData.petRef?.path || null,
-            messageVet: `You have a new appointment on ${formattedDateTime} for ${appointmentData.petName}`,
-            message: `Your appointment for ${appointmentData.petName} has been accepted by ${clinicInfo?.clinicName}.`,
-            dateCreated: serverTimestamp(),
-            hasVetOpened: false,
-            hasPetOwnerOpened: false, 
-            status: "unread",
-            type: "appointment_accepted",
+  const handleActionConfirm = async (action) => {
+    const { appointmentId } = showConfirmModal;
+    try {
+      const appointmentRef = doc(db, "appointments", appointmentId);
+      const appointmentDoc = await getDoc(appointmentRef);
+      if (!appointmentDoc.exists()) throw new Error("Appointment not found");
+  
+      const appointmentData = appointmentDoc.data();
+  
+      if (action === "accept") {
+        const newData = {
+          ...appointmentData,
+          status: "Accepted",
+          timestamp: new Date().toISOString(),
+        };
+        await updateDoc(appointmentRef, newData);
+  
+        // Create notification
+        const notificationRef = collection(db, "notifications");
+        const appointmentDate = appointmentData.dateofAppointment.toDate();
+        const formattedDateTime = formatDate(appointmentDate);
+  
+        await setDoc(doc(notificationRef), {
+          appointmentId: appointmentId,
+          clinicId: auth.currentUser.uid,
+          ownerId: appointmentData.owner?.path || null,
+          petId: appointmentData.petRef?.path || null,
+          messageVet: `You have a new appointment on ${formattedDateTime} for ${appointmentData.petName}`,
+          message: `Your appointment for ${appointmentData.petName} has been accepted by ${clinicInfo?.clinicName}.`,
+          dateCreated: serverTimestamp(),
+          hasVetOpened: false,
+          hasPetOwnerOpened: false,
+          status: "unread",
+          type: "appointment_accepted",
+        });
+  
+        // Send email to pet owner
+        const appointmentKey = `accepted-${appointmentId}`;
+        if (!sentEmails[appointmentKey]) {
+          const ownerDoc = appointmentData.owner ? await getDoc(appointmentData.owner) : null;
+          const clinicDoc = await getDoc(doc(db, "clinics", auth.currentUser.uid));
+          const petDoc = appointmentData.petRef ? await getDoc(appointmentData.petRef) : null;
+  
+          if (!clinicDoc.exists() || !petDoc?.exists()) {
+            throw new Error("Missing clinic or pet data for email");
+          }
+  
+          let ownerEmail = "default@email.com";
+          let ownerName = "Pet Owner";
+          if (ownerDoc?.exists()) {
+            const ownerData = ownerDoc.data();
+            ownerEmail = ownerData.email || ownerEmail;
+            ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || ownerName;
+          } else {
+            // Fallback to Firebase Auth email
+            const user = auth.currentUser;
+            if (user && appointmentData.owner?.id === user.uid) {
+              ownerEmail = user.email || ownerEmail;
+            }
+          }
+  
+          const clinicData = clinicDoc.data();
+          const petData = petDoc.data();
+  
+          const apptDate = appointmentData.dateofAppointment.toDate();
+          const date = apptDate.toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
           });
-    
-          await fetchAppointments();
-          console.log("Appointment accepted successfully and notification created!");
-        } else if (action === "decline") {
-          await updateDoc(appointmentRef, { status: "Declined" });
-          await fetchPendingAppointments(); 
-          console.log("Appointment declined successfully!");
+          const time = apptDate.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+  
+          const location = `${clinicData.streetAddress || ""}, ${clinicData.province || ""}, ${clinicData.city || ""}`
+            .trim()
+            .replace(/,\s*,/g, ",")
+            .replace(/,\s*$/, "") || "N/A";
+  
+          const emailParams = {
+            name: ownerName,
+            pet_name: petData.petName || "Your Pet",
+            clinic: clinicData.clinicName || "Our Clinic",
+            service: appointmentData.serviceType || "N/A",
+            date: date,
+            time: time,
+            location: location,
+            vet_name: appointmentData.veterinarian || "N/A",
+            email: ownerEmail,
+            logo: LOGO_URL,
+          };
+  
+          console.log("Email Params:", emailParams);
+  
+          await emailjs.send(
+            EMAILJS_SERVICE_ID,
+            EMAILJS_TEMPLATE_ID,
+            emailParams,
+            EMAILJS_PUBLIC_KEY
+          );
+  
+          console.log("Acceptance email sent successfully for appointment:", appointmentId);
+          setSentEmails((prev) => ({ ...prev, [appointmentKey]: true }));
+        } else {
+          console.log("Email already sent for appointment:", appointmentKey);
         }
-    
-        setPendingAppointments(pendingAppointments.filter(appt => appt.id !== appointmentId));
-        setShowConfirmModal({ open: false, action: null, appointmentId: null });
-      } catch (error) {
-        console.error(`Error ${action}ing appointment:`, error);
-        alert(`Failed to ${action} the appointment. Please try again.`);
+  
+        await fetchAppointments();
+        console.log("Appointment accepted successfully and notification created!");
+      } else if (action === "decline") {
+        await updateDoc(appointmentRef, { status: "Declined" });
+        await fetchPendingAppointments();
+        console.log("Appointment declined successfully!");
       }
-    };
+  
+      setPendingAppointments(pendingAppointments.filter((appt) => appt.id !== appointmentId));
+      setShowConfirmModal({ open: false, action: null, appointmentId: null });
+    } catch (error) {
+      console.error(`Error ${action}ing appointment:`, error);
+      setEmailError(`Failed to ${action} appointment or send email: ${error.message}`);
+    }
+  };
 
     const calculateAge = (dateOfBirth) => {
       if (!dateOfBirth) return "N/A";
@@ -2074,6 +2191,23 @@ const [dayData, setDayData] = useState([]);
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {emailError && (
+        <div
+          className="error-message-c"
+          style={{ position: "fixed", top: "10px", left: "50%", transform: "translateX(-50%)", zIndex: 1000 }}
+        >
+          <button
+            className="error-close-btn"
+            style={{ background: "none", border: "none", cursor: "pointer" }}
+            onClick={() => setEmailError(null)}
+            aria-label="Close error message"
+          >
+            <FaTimes className="error-icon" />
+          </button>
+          <p>{emailError}</p>
         </div>
       )}
 
