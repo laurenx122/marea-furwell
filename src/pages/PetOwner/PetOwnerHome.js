@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./PetOwnerHome.css";
 import { db, auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
-
+import Mobile_Footer from '../../components/Footer/Mobile_Footer';
 import "react-calendar/dist/Calendar.css";
 import Calendar from "react-calendar";
 import { FaUser, FaCalendarAlt, FaFileMedical, FaHome, FaEnvelope, FaPlus, FaBell, FaSignOutAlt } from "react-icons/fa";
@@ -72,6 +72,8 @@ const PetOwnerHome = () => {
     };
   }, []);
 
+
+
   const EMAILJS_PUBLIC_KEY = "BxPdkZVqFheGetz3t";
   const EMAILJS_TEMPLATE_ID = "template_2j4yiho";
   const EMAILJS_SERVICE_ID = "service_FurWell";
@@ -96,6 +98,8 @@ const PetOwnerHome = () => {
     Weight: "",
     dateofBirth: "",
   });
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
   const [isSignOutSuccessOpen, setIsSignOutSuccessOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -447,24 +451,24 @@ const PetOwnerHome = () => {
       setUnreadNotifications(false);
     }
   };
-  const handleHomeClick = () => navigate("/"); // Adjust path as needed
-  const handleContactUsClick = () => navigate("/ClinicSubscribe"); // Adjust path
-  const handleBookNowClick = () => navigate("/FindClinic");
   // Handle notification icon click
   const handleNotificationClick = async () => {
-    setShowNotificationsModal(true);
-    if (unreadNotifications) {
-      try {
-        const unreadNotifications = notifications.filter(n => !n.hasPetOwnerOpened);
-        for (const notification of unreadNotifications) {
+    try {
+      setShowNotificationsModal(true);
+      console.log("Set showNotificationsModal to true");
+      if (unreadNotifications) {
+        console.log("Processing unread notifications");
+        const unreadNotificationsList = notifications.filter(n => !n.hasPetOwnerOpened);
+        for (const notification of unreadNotificationsList) {
           const notificationRef = doc(db, "notifications", notification.id);
           await updateDoc(notificationRef, { hasPetOwnerOpened: true });
         }
         setNotifications(notifications.map(n => ({ ...n, hasPetOwnerOpened: true })));
         setUnreadNotifications(false);
-      } catch (error) {
-        console.error("Error updating notifications:", error);
+        console.log("Unread notifications marked as read");
       }
+    } catch (error) {
+      console.error("Error in handleNotificationClick:", error);
     }
   };
 
@@ -1398,195 +1402,26 @@ const handleSignOut = () => {
     setImageUploadError("");
   };
 
+  // Handle account button click to show profile panel
+  const handleAccountClick = () => {
+    console.log("handleAccountClick invoked");
+    setActivePanel("profile");
+    console.log("activePanel set to profile");
+  };
+
   // const onCellClick = (args) => {
   //   args.cancel = true; // Prevent adding new events
   // };
 
   return (
     <div className="pet-owner-container-p">
-      {isMobile ? (
-        <>
-          {/* TikTok Mobile Layout */}
-          <div className="header-p">
-            {ownerInfo && (
-              <>
-                <div className="owner-img-container-p">
-                  <img
-                    src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
-                    alt="Owner Profile"
-                    className="owner-profile-image-p"
-                  />
-                </div>
-                <h1 className="owner-name-p">{ownerInfo.FirstName} {ownerInfo.LastName}</h1>
-              </>
-            )}
-          </div>
-
-          <div className="tabs-p">
-            <button
-              className={`tab-btn-p ${activePanel === "petDetails" ? "active" : ""}`}
-              onClick={() => setActivePanel("petDetails")}
-            >
-              <MdPets className="tab-icon-p" />
-              Pet Details
-            </button>
-            <button
-              className={`tab-btn-p ${activePanel === "appointments" ? "active" : ""}`}
-              onClick={() => setActivePanel("appointments")}
-            >
-              <FaCalendarAlt className="tab-icon-p" />
-              Appointments
-            </button>
-            <button
-              className={`tab-btn-p ${activePanel === "healthRecords" ? "active" : ""}`}
-              onClick={() => setActivePanel("healthRecords")}
-            >
-              <FaFileMedical className="tab-icon-p" />
-              Health Records
-            </button>
-          </div>
-
-          <div className="content-p">
-            <div className="panel-container-p">
-              {activePanel === "petDetails" && (
-                <div className="panel-p pet-details-panel-p">
-                  <div className="pet-details-header-p">
-                    <h3>Pet Details</h3>
-                    <button className="addpetbutt-p" onClick={openAddPetModal}>
-                      Add A Pet
-                    </button>
-                  </div>
-                  {loading ? (
-                    <p>Loading pet details...</p>
-                  ) : (
-                    <table>
-                      <thead>
-                        <tr><th>Pet Name</th></tr>
-                      </thead>
-                      <tbody>
-                        {pets.length > 0 ? (
-                          pets.map((pet) => (
-                            <tr key={pet.id}>
-                              <td>
-                                <a
-                                  href="#!"
-                                  onClick={(e) => { e.preventDefault(); handlePetClick(pet); }}
-                                  className="pet-name-link-p"
-                                >
-                                  {pet.petName}
-                                </a>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr><td>No pets found</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
-              {activePanel === "appointments" && (
-                <div className="panel-p appointments-panel-p">
-                  <div className="appointments-header-p">
-                    <h3>Appointments</h3>
-                    <button className="bookapptbutt-p" onClick={handleBookNowClick}>
-                      Book Appointment
-                    </button>
-                  </div>
-                  {loading ? (
-                    <p>Loading appointments...</p>
-                  ) : (
-                    <ScheduleComponent
-                      width="100%"
-                      height="650px"
-                      currentView="Month"
-                      eventSettings={{ dataSource: appointments }}
-                      eventClick={handleEventClick}
-                      popupOpen={(args) => args.cancel = true}
-                    >
-                      <ViewsDirective>
-                        <ViewDirective option="Month" />
-                        <ViewDirective option="Agenda" />
-                      </ViewsDirective>
-                      <Inject services={[Month, Agenda]} />
-                    </ScheduleComponent>
-                  )}
-                </div>
-              )}
-              {activePanel === "healthRecords" && (
-                <div className="panel-p health-records-panel-p">
-                  <h3>Health Records</h3>
-                  <form className="psearch-bar-container">
-                    <input
-                      type="text"
-                      placeholder="Search records..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </form>
-                  {loading ? (
-                    <p>Loading health records...</p>
-                  ) : (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th>Pet</th>
-                          <th>Clinic</th>
-                          <th>Service</th>
-                          <th>Vet</th>
-                          <th>Remarks</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredAppointments.length > 0 ? (
-                          filteredAppointments.map((record) => (
-                            <tr key={record.Id}>
-                              <td>{formatDate(record.dateofAppointment)}</td>
-                              <td>{record.petName}</td>
-                              <td>{record.clinicName}</td>
-                              <td>{record.serviceType}</td>
-                              <td>{record.veterinarian}</td>
-                              <td>{record.remarks}</td>
-                              <td>{record.status}</td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr><td colSpan="7">No records found</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="footer-p">
-            <button className="footer-btn-p" onClick={handleHomeClick}>
-              <FaHome />
-            </button>
-            <button className="footer-btn-p" onClick={handleContactUsClick}>
-              <FaEnvelope />
-            </button>
-            <button className="footer-btn-p" onClick={handleBookNowClick}>
-              <FaPlus />
-            </button>
-            <button className="footer-btn-p" onClick={handleNotificationClick}>
-              <FaBell />
-              {unreadNotifications && <span className="notification-dot-p"></span>}
-            </button>
-            <button className="footer-btn-p active">
-              <FaUser />
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Original Desktop Layout with Sidebar */}
-          <div className="sidebar-p">
+      {/* Mobile Header with Hamburger Menu */}
+      <div className="mobile-header-p">
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          ☰ {/* Hamburger icon */}
+        </button>
+      </div>
+      <div className={`sidebar-p ${isSidebarOpen ? "open" : ""}`}>
             {ownerInfo && (
               <div className="owner-sidebar-panel-p">
                 <div className="owner-img-container-p">
@@ -1640,16 +1475,17 @@ const handleSignOut = () => {
               <FaSignOutAlt className="sidebar-icon-p" />
               Sign Out
             </button>
-          </div>
+        </div>
 
           <div className="content-p">
             <div className="panel-container-p">
-              {activePanel === "profile" && ownerInfo && (
-                <div className="panel-p profile-panel-p">
-                  <h3>Profile</h3>
+            {activePanel === "profile" && (
+              <div className="panel-p profile-panel-p">
+                <h3>Profile</h3>
+                {ownerInfo ? (
                   <div className="owner-details-p">
                     <img
-                      src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
+                      src={ownerInfo.profileImageURL || "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png"}
                       alt="Owner"
                       className="owner-info-img-p"
                     />
@@ -1657,12 +1493,15 @@ const handleSignOut = () => {
                     <p><strong>Last Name:</strong> {ownerInfo.LastName}</p>
                     <p><strong>Contact Number:</strong> {ownerInfo.contactNumber || "N/A"}</p>
                     <p><strong>Email:</strong> {ownerInfo.email}</p>
-                    <button className="edit-owner-btn-p" onClick={openEditOwnerModal}>
+                    <button className="edit-owner-btn-p" onClick={() => setShowEditOwnerModal(true)}>
                       Edit Profile
                     </button>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p>Loading profile...</p>
+                )}
+              </div>
+            )}
               {activePanel === "petDetails" && (
                 <div className="panel-p pet-details-panel-p">
                   <div className="pet-details-header-p">
@@ -1778,8 +1617,7 @@ const handleSignOut = () => {
               )}
             </div>
           </div>
-        </>
-      )}
+      
       {/* <div className="sidebar-p">
     {ownerInfo && (
       <div className="owner-sidebar-panel-p">
@@ -2079,7 +1917,7 @@ const handleSignOut = () => {
             </div>
           </div>
         </div>
-      )}
+  )}
 
       {showNotificationsModal && (
         <div className="modal-overlay-p">
@@ -2098,8 +1936,7 @@ const handleSignOut = () => {
                     <div className="notification-details-p">
                       <p>{notification.message}</p>
                       <span className="notification-timestamp-p">
-                        Notified on: {notification.dateCreated ? formatDate(notification.dateCreated) : "N/A"}
-                      </span>
+                      Notified on: {notification.dateCreated ? formatDate(notification.dateCreated) : "N/A"}                      </span>
                     </div>
                     <FaTimes
                       className="delete-notification-icon-p"
@@ -2572,6 +2409,12 @@ const handleSignOut = () => {
           </div>
         </div>
       )}
+      <Mobile_Footer
+        onNotificationClick={handleNotificationClick}
+        onAccountClick={handleAccountClick}
+        activePanel={activePanel} 
+        unreadNotifications={unreadNotifications}
+      />
     </div>
   );
 };

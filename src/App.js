@@ -1,9 +1,8 @@
-import React from 'react'; // Removed useEffect import if not used elsewhere in App.js
-
+// src/App.jsx
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import Navbar from './components/Navbar/Navbar';
-
 import Login from './pages/Login/Login';
 import Signup from './pages/Signup/Signup';
 import Home from './pages/Home/Home';
@@ -11,7 +10,6 @@ import ClinicLocator from './pages/Home/ClinicLocator';
 import Maps from './pages/Maps/Maps';
 import About from './pages/About/About';
 import Services from './pages/Services/Services';
-// import Appointments from './pages/Appointments/Appointments';
 import ClinicSubscribe from './pages/Signup/ClinicSubscribe';
 import ContactUs from './pages/ContactUs/ContactUs';
 import ClinicHome from './pages/Clinic/ClinicHome';
@@ -25,10 +23,10 @@ import ClinicDetails from './pages/ClinicDetails/ClinicDetails';
 
 const Layout = ({ children }) => {
   const location = useLocation();
-  // Add routes where Navbar should not appear (e.g., specific dashboards)
   const noNavbarRoutes = ['/ClinicHome', '/VeterinaryHome', '/PetOwnerHome'];
-  // Check if the current path starts with any of the noNavbarRoutes
   const hideNavbar = noNavbarRoutes.some(route => location.pathname.startsWith(route));
+
+  console.log("Layout rendered, current path:", location.pathname);
 
   return (
     <>
@@ -38,10 +36,8 @@ const Layout = ({ children }) => {
   );
 };
 
-
 function App() {
-
-  // *** The useEffect hook for Chatbase has been removed from here ***
+  console.log("App.jsx rendered");
 
   return (
     <Router>
@@ -55,12 +51,11 @@ function App() {
           <Route path="/maps" element={<Maps />} />
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
-          {/* <Route path="/appointments" element={<Appointments />} /> */}
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/ClinicSubscribe" element={<ClinicSubscribe />} />
           {/* Clinic Routes */}
           <Route path="/ClinicHome" element={<ClinicHome />} />
-           {/* Pet Owner Routes */}
+          {/* Pet Owner Routes */}
           <Route path="/PetOwnerHome" element={<PetOwnerHome />} />
           {/* Veterinary Routes */}
           <Route path="/VeterinaryHome" element={<VeterinaryHome />} />
@@ -72,8 +67,6 @@ function App() {
           <Route path="/FindClinic" element={<FindClinic />} />
           <Route path="/FindClinic/:clinicName" element={<ClinicDetails />} />
           <Route path="/clinic/:clinicId" element={<ClinicDetails />} />
-           {/* Fallback or 404 Route - Optional */}
-           {/* <Route path="*" element={<NotFound />} /> */}
         </Routes>
       </Layout>
     </Router>
