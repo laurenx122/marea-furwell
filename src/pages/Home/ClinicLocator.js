@@ -24,6 +24,8 @@ const ClinicLocator = () => {
     const [searchRadius, setSearchRadius] = useState(5);
     const [clinics, setClinics] = useState([]);
 
+    const [showClinicLocatorNoClinicsModal, setShowClinicLocatorNoClinicsModal] = useState(false);
+
     useEffect(() => {
         if (location.state && location.state.searchQuery) {
             setClinicSearchQuery(location.state.searchQuery);
@@ -113,7 +115,7 @@ const ClinicLocator = () => {
                     icon: userIcon,
                 }).addTo(mapRef.current);
 
-            
+
                 console.log("BEFORE: Map initialized at:", userLat, userLng);
 
                 userMarkerRef.current.on('dragend', function (event) {
@@ -151,16 +153,45 @@ const ClinicLocator = () => {
 
         const nearbyClinicMarkers = [];
         const clinicIcon = L.icon({
-            iconUrl: '/images/furBlue.png',
+            iconUrl: '/images/blue_fur.png',
             iconSize: [32, 32],
             iconAnchor: [16, 32],
             popupAnchor: [0, -32],
         });
 
-        clinicsData.forEach(clinic => {
+        // Overlapping
+        // Store adjusted coordinates to avoid overlap
+        const usedCoordinates = new Set();
+        const coordinateThreshold = 0.00001; // ~1 meter
+        const offset = 0.0005; // ~11 meters
+
+        clinicsData.forEach((clinic, index) => {
+            // Validate coordinates
+            if (!clinic.lat || !clinic.lng || isNaN(clinic.lat) || isNaN(clinic.lng)) {
+                console.warn(`Skipping clinic ${clinic.clinicName || 'Unnamed'} (index ${index}) due to invalid coordinates: lat=${clinic.lat}, lng=${clinic.lng}`);
+                return;
+            }
+
             const distance = calculateDistance(lat, lng, clinic.lat, clinic.lng);
             if (distance <= searchRadius) {
-                const marker = L.marker([clinic.lat, clinic.lng], { icon: clinicIcon }).addTo(mapRef.current);
+                // Check for overlapping coordinates
+                let adjustedLat = clinic.lat;
+                let adjustedLng = clinic.lng;
+                const coordKey = `${clinic.lat.toFixed(6)},${clinic.lng.toFixed(6)}`;
+
+                // If coordinates are too close to an existing marker, apply offset
+                let offsetCount = 0;
+                while (usedCoordinates.has(`${adjustedLat.toFixed(6)},${adjustedLng.toFixed(6)}`)) {
+                    offsetCount++;
+                    adjustedLat = clinic.lat + offset * offsetCount;
+                    console.log(`Applied offset to clinic ${clinic.clinicName || 'Unnamed'} (index ${index}) to avoid overlap: new lat=${adjustedLat}, attempt ${offsetCount}`);
+                }
+                usedCoordinates.add(`${adjustedLat.toFixed(6)},${adjustedLng.toFixed(6)}`);
+
+                const marker = L.marker([adjustedLat, adjustedLng], { icon: clinicIcon }).addTo(mapRef.current);
+
+                //original
+                // const marker = L.marker([clinic.lat, clinic.lng], { icon: clinicIcon }).addTo(mapRef.current);
 
                 let fullAddress = '';
                 if (clinic.streetAddress) {
@@ -207,9 +238,15 @@ const ClinicLocator = () => {
         console.log("Clinic Markers:", nearbyClinicMarkers);
 
         if (nearbyClinicMarkers.length === 0) {
-            alert(`No clinics found within ${searchRadius} km of your location.`);
+            setShowClinicLocatorNoClinicsModal(true);
         } else {
             console.log(`Found ${nearbyClinicMarkers.length} clinics within ${searchRadius} km.`);
+            // Fit map to show all markers
+            if (nearbyClinicMarkers.length > 0) {
+                const group = L.featureGroup(nearbyClinicMarkers);
+                mapRef.current.fitBounds(group.getBounds().pad(0.2)); // 20% padding
+                console.log("Map adjusted to fit all markers");
+            }
         }
     };
 
@@ -242,6 +279,30 @@ const ClinicLocator = () => {
             alert('Error fetching clinics. Please try again.');
         }
     };
+
+    // modal
+    const ClinicLocatorNoClinicsModal = () => (
+        <div className="clinic-locator-modal-overlay">
+            <div className="clinic-locator-modal-content">
+                <h3>No Clinics Found</h3>
+                <p>No clinics were found within {searchRadius} km of your location.</p>
+                <div className="clinic-locator-modal-buttons">
+                    <button
+                        className="clinic-locator-modal-see-all-button"
+                        onClick={() => navigate('/FindClinic')}
+                    >
+                        See All Clinics
+                    </button>
+                    <button
+                        className="clinic-locator-modal-close-button"
+                        onClick={() => setShowClinicLocatorNoClinicsModal(false)}
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="clinicLocatorContainer">
@@ -296,7 +357,7 @@ const ClinicLocator = () => {
 
             <div id="mapClinicLocator" className="mapClinicLocatorContainer" style={{ height: '420px' }}></div>
 
-
+            {showClinicLocatorNoClinicsModal && <ClinicLocatorNoClinicsModal />}
 
         </div>
     );
