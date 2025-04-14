@@ -151,13 +151,14 @@ const ClinicLocator = () => {
 
         const nearbyClinicMarkers = [];
         const clinicIcon = L.icon({
-            iconUrl: '/images/furBlue.png',
+            iconUrl: '/images/blue_fur.png',
             iconSize: [32, 32],
             iconAnchor: [16, 32],
             popupAnchor: [0, -32],
         });
 
         clinicsData.forEach(clinic => {
+            
             const distance = calculateDistance(lat, lng, clinic.lat, clinic.lng);
             if (distance <= searchRadius) {
                 const marker = L.marker([clinic.lat, clinic.lng], { icon: clinicIcon }).addTo(mapRef.current);
