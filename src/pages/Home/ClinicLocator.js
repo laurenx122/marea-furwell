@@ -286,12 +286,20 @@ const ClinicLocator = () => {
             <div className="clinic-locator-modal-content">
                 <h3>No Clinics Found</h3>
                 <p>No clinics were found within {searchRadius} km of your location.</p>
-                <button
-                    className="clinic-locator-modal-close-button"
-                    onClick={() => setShowClinicLocatorNoClinicsModal(false)}
-                >
-                    Close
-                </button>
+                <div className="clinic-locator-modal-buttons">
+                    <button
+                        className="clinic-locator-modal-see-all-button"
+                        onClick={() => navigate('/FindClinic')}
+                    >
+                        See All Clinics
+                    </button>
+                    <button
+                        className="clinic-locator-modal-close-button"
+                        onClick={() => setShowClinicLocatorNoClinicsModal(false)}
+                    >
+                        Close
+                    </button>
+                </div>
             </div>
         </div>
     );

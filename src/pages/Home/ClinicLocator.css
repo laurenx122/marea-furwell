@@ -16,6 +16,7 @@
 
 .clinicSearchInputContainer {
     display: flex;
+    flex-wrap: wrap;
     width: 80%;
     max-width: 600px;
     margin-bottom: 20px;
@@ -26,7 +27,8 @@
 }
 
 .clinicSearchInputField {
-    flex-grow: 1;
+    /* flex-grow: 1; */
+    flex: 1 1 200px; 
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px 0 0 5px;
@@ -75,6 +77,7 @@
 }
 
 .clinicSearchButton {
+    flex: 1 1 100px;
     padding: 10px 20px;
     background-color: #007bff;
     color: white;
@@ -197,6 +200,13 @@
     color: #4b5563;
 }
 
+.clinic-locator-modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+}
+
+
 .clinic-locator-modal-close-button {
     padding: 10px 20px;
     background: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -215,5 +225,27 @@
 }
 
 .clinic-locator-modal-close-button:active {
+    transform: translateY(0);
+}
+
+/* modal see all clinics button */
+.clinic-locator-modal-see-all-button {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6ab04c, #2ecc71);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.clinic-locator-modal-see-all-button:hover {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    transform: translateY(-2px);
+}
+
+.clinic-locator-modal-see-all-button:active {
     transform: translateY(0);
 }
