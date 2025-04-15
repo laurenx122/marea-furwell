@@ -345,7 +345,7 @@ const Navbar = () => {
 
             {scrollProgress > 0 && <div className={styles.scrollProgressBar} style={{ width: `${scrollProgress}%` }}></div>}
 
-            {isMenuOpen && !isLoggedIn && (
+            {/* {isMenuOpen && !isLoggedIn && (
                 <>
                     <div className={`${styles.mobileMenuOverlay} ${isMenuOpen ? styles.active : ''}`} onClick={toggleMenu}></div>
                     <div className={`${styles.mobileMenu} ${isMenuOpen ? styles.active : ''}`}>
@@ -362,8 +362,60 @@ const Navbar = () => {
                         </ul>
                     </div>
                 </>
-            )}
-
+            )} */}
+            {isMenuOpen && (
+                    <>
+                        <div className={`${styles.mobileMenuOverlay} ${isMenuOpen ? styles.active : ''}`} onClick={toggleMenu}></div>
+                        <div className={`${styles.mobileMenu} ${isMenuOpen ? styles.active : ''}`}>
+                        <ul className={styles.mobileMenuList}>
+                            {isLoggedIn && isAdmin ? (
+                            <>
+                                {/* Admin Links for Mobile Menu */}
+                                <li className={styles.mobileMenuItem}>
+                                <Link to="/AdminHome" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
+                                    Clinics
+                                </Link>
+                                </li>
+                                <li className={styles.mobileMenuItem}>
+                                <Link to="/AdminAnalytics" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
+                                    Analytics
+                                </Link>
+                                </li>
+                                <li className={styles.mobileMenuItem}>
+                                <Link to="/AdminSubscription" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
+                                    Subscription
+                                </Link>
+                                </li>
+                                <li className={styles.mobileMenuItem}>
+                                <button onClick={() => { handleSignOut(); setIsMenuOpen(false); }} className={styles.mobileLogoutButton}>
+                                    Sign Out
+                                </button>
+                                </li>
+                            </>
+                            ) : !isLoggedIn ? (
+                            <>
+                                {/* Not Logged-In User Links (Existing) */}
+                                <li className={styles.mobileMenuItem}>
+                                <Link to="/Home" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
+                                    Home
+                                </Link>
+                                </li>
+                                <li className={styles.mobileMenuItem}>
+                                <button onClick={() => { handleLoginClick(); setIsMenuOpen(false); }} className={styles.mobileLoginButton}>
+                                    Login
+                                </button>
+                                </li>
+                                <li className={styles.mobileMenuItem}>
+                                <button onClick={() => { handleSignUpClick(); setIsMenuOpen(false); }} className={styles.mobileSignupButton}>
+                                    Sign Up
+                                </button>
+                                </li>
+                            </>
+                            ) : null}
+                        </ul>
+                        </div>
+                    </>
+                    )}
                         
             {isModalOpen && (
                 <div className={styles.modalOverlay}>

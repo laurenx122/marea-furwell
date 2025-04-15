@@ -44,7 +44,7 @@ const AdminHome = () => {
       {/* Search Bar */}
          <div className="search-container-a">
         <input type="text" placeholder="Search" className="search-input" />
-        <Search className="search-icon" />
+        {/* <Search className="search-icon" /> */}
       </div>
 
       {/* Clinic Grid */}
