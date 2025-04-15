@@ -392,7 +392,7 @@
   margin: 15px 0;
 }
 
-.mobileMenuLink, .mobileLoginButton, .mobileSignupButton {
+.mobileMenuLink, .mobileLoginButton, .mobileSignupButton, .mobileLogoutButton{
   display: block;
   padding: 10px;
   text-decoration: none;
@@ -404,7 +404,7 @@
   transition: color 0.3s;
 }
 
-.mobileMenuLink:hover, .mobileLoginButton:hover, .mobileSignupButton:hover {
+.mobileMenuLink:hover, .mobileLoginButton:hover, .mobileSignupButton:hover, .mobileLogoutButton:hover {
   color: #3E6680;
 }
 
@@ -441,7 +441,19 @@
   background-color: #3E6680;
   color: #AEF0FF;
 }
-
+.mobileLogoutButton {
+  width: 100%;
+  text-align: left;
+  color: #AEF0FF;
+  background-color: #3E6680;
+  border: 2px solid #3E6680;
+  border-radius: 20px;
+  margin-top: 10px;
+}
+.mobileLogoutButton:hover {
+  background-color: #3E6680;
+  color: #AEF0FF;
+}
 @media screen and (max-width: 1024px) { 
   .navbarList {
     display: none;

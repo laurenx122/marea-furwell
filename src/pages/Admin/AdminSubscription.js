@@ -313,7 +313,7 @@ return (
                       </>
                     ) : (
                       <button 
-                        className="icon-buttondelete"
+                        className="icon-buttondelete-unsubscribe"
                         onClick={() => handleConfirmUnsubscribeClinic(clinic)}
                       >
                         Unsubscribe

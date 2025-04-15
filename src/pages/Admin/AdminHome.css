@@ -1,14 +1,21 @@
 /* General Styles */
 body {
   font-family: "Poppins", sans-serif;
-  background: linear-gradient(to bottom, #d6f0ff, #ffe8ff);
   margin: 0;
   padding: 0;
+  background-color: #CDEDF6;
 }
 
 /* Container */
 .app-container {
   padding: 20px;
+}
+
+.admin-home-container {
+  background-color: #CDEDF6;
+  min-height: 100vh;
+  margin-top: -30px;
+  margin-bottom: 10px;
 }
 
 /* Header */
@@ -54,90 +61,248 @@ body {
 }
 
 /* Search Bar */
-.search-container {
+.search-container-a {
+  /* margin: 20px 0; */
   display: flex;
+  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  position: relative;
-  margin: 20px 0;
   margin-top: 100px;
+  margin-bottom: 20px;
 }
 
 .search-input {
-  width: 100%;
-  padding: 10px 40px 10px 10px;
+  width: 50%;
+  padding: 10px 10px 10px 10px;
   border: 2px solid #ccc;
-  border-radius: 10px;
+  border-radius: 20px;
   font-size: 16px;
+  margin-top: 70px;
+  justify-content: center;
 }
 
 .search-icon {
   position: absolute;
-  right: 10px;
+  right: 500px;
   color: gray;
+  margin-top: 70px;
 }
 
 /* Clinic Grid */
-.clinics-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr); /* Ensures 5 cards per row */
-  gap: 20px; /* Reduce space between cards */
-  justify-content: center; /* Centers the grid */
+.clinics-grid-con {
+  display: flex; /* Use flexbox for horizontal scrolling */
+  flex-wrap: nowrap; /* Prevent wrapping */
+  overflow-x: auto; /* Enable horizontal scrolling */
+  gap: 10px; /* Space between cards */
+  margin-left: 80px;
   padding: 20px;
+  scroll-snap-type: x mandatory; /* Optional: Smooth scrolling behavior */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  justify-content: flex-start; /* Start from the left for scrolling */
+  width: 100%; /* Ensure the grid takes the full width */
+  box-sizing: border-box; /* Include padding in width */
+
+ 
+}
+.clinics-grid-admin{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+  justify-items: center;
 }
 
-.clinics-card {
-  /* background: rgba(255, 255, 255, 0.9); */
-  padding: 25px; /* More padding inside */
+/* Scrollbar styling */
+.clinics-grid-admin::-webkit-scrollbar {
+  height: 8px; /* Scrollbar height */
+}
+
+.clinics-grid-admin::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.clinics-grid-admin::-webkit-scrollbar-thumb {
+  background: #1b7fd1;
+  border-radius: 10px;
+}
+
+.clinics-grid-admin::-webkit-scrollbar-thumb:hover {
+  background: #166286;
+}
+
+.clinics-card-con {
+  background: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
+  padding: 20px;
   border-radius: 12px;
   text-align: center;
-  /* box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); */
-  width: 80%;
-  max-width: 200px; /* Increase size */
-  height: 150px; /* Increase height */
-  gap: 20px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  width: 350px; /* Fixed width for horizontal scrolling */
+  flex: 0 0 auto; /* Prevent cards from shrinking */
+  scroll-snap-align: start; /* Optional: Snap cards into view */
+  position: relative;
+  cursor: pointer; /* Indicate the card is clickable */
+ 
 }
 
 .clinic-image {
-  width: 120%;
-  height: 150px; /* Increase image size */
-  background-image: url('/public/images/clinicss.png');
+  width: 100%;
+  height: 300px; /* Adjusted image height */
+  background-image: url('/public/images/veterinarian.jpg');
   background-size: cover;
   background-position: center;
-  opacity: 0.6; /* Slightly clearer */
   border-radius: 10px;
-  margin-bottom: 15px; /* More space below the image */
-  text-align: center;
+  margin-bottom: 10px;
 }
+
 .clinic-name {
   font-weight: bold;
   font-size: 15px;
   text-align: center;
+  color: #1b7fd1;
+  margin: 5px 0;
+}
+
+.clinic-location {
+  font-size: 12px;
+  color: #666;
+  margin: 5px 0;
+}
+
+.clinic-services {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin: 10px 0;
+}
+
+.service-button {
+  background-color: #e6f0fa;
+  color: #1b7fd1;
+  border: none;
+  border-radius: 20px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: default;
+}
+
+.more-button {
+  background: transparent;
+  border: none;
+  color: #1b7fd1;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  margin-top: -60px; /* Pushes text inside card */
-  color:#1b7fd1;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
-   
 
+.modal {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  min-width: 300px;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative; /* For positioning the close icon */
+}
+
+.modal h2 {
+  font-size: 20px;
+  color: #1b7fd1;
+  margin-bottom: 10px;
+}
+
+.modal p {
+  font-size: 14px;
+  color: #333;
+  margin: 5px 0;
+}
+
+.modal-services {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin: 10px 0;
+}
+
+.close-icon-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.close-icon {
+  font-size: 20px;
+  color: #1b7fd1;
+  transition: color 0.3s ease;
+}
+
+.close-icon:hover {
+  color: #166286;
+}
+
+/* Responsive Adjustments */
 @media (max-width: 1200px) {
-  .clinics-grid {
-      grid-template-columns: repeat(4, 1fr); /* 4 per row on medium screens */
+  .clinics-grid-admin {
+    overflow-x: auto; /* Ensure horizontal scrolling */
+    grid-template-columns: repeat(4, 1fr);
+
   }
 }
 
-@media (max-width: 900px) {
-  .clinics-grid {
-      grid-template-columns: repeat(3, 1fr); /* 3 per row on smaller screens */
+
+@media (max-width: 1024px) {
+  .clinics-grid-admin {
+    overflow-x: auto; /* Ensure horizontal scrolling */
+    grid-template-columns: repeat(1, 1fr);
+  }
+  .search-input {
+    width: 50%; /* Wider search input on smaller screens */
+  }
+  .search-icon {
+    right: calc(10% + 5px); /* Adjust icon position for smaller screens */
   }
 }
 
-@media (max-width: 600px) {
-  .clinics-grid {
-      grid-template-columns: repeat(2, 1fr); /* 2 per row on mobile */
+@media (max-width: 768px) {
+  .clinics-grid-admin {
+    flex-direction: column; /* Switch to vertical layout */
+    overflow-x: hidden; /* Disable horizontal scrolling */
+    align-items: center; /* Center the cards */
   }
-}
-
-@media (max-width: 400px) {
-  .clinics-grid {
-      grid-template-columns: repeat(1, 1fr); /* 1 per row on very small screens */
+  .clinics-card-con {
+    width: 90%; /* Take up most of the screen width */
+    max-width: 300px; /* Slightly wider for better readability */
+  }
+  .search-input {
+    width: 50%; /* Even wider search input for very small screens */
+    margin-left: 0; /* Reset margin-left */
+  }
+  .search-icon {
+    right: 5%; /* Further adjust icon position */
+  }
+  .admin-home-container {
+    margin-top: -40px;
   }
 }

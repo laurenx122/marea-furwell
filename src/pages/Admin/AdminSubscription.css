@@ -2,8 +2,6 @@
   padding: 20px;
 }
 
-
-
 .search-bar {
   margin: 20px 0;
   display: flex;
@@ -25,19 +23,9 @@
 .clinic-table {
   width: 100%;
   border-collapse: collapse;
-  background: rgba(255, 240, 245, 0.7);
+  background:#e0f7fa;
   border-radius: 10px;
   overflow: hidden;
-  display: block;
-  max-width: 100%; /* Ensure it fits the parent */
-}
-/* Ensure table elements adapt */
-.clinic-table thead,
-.clinic-table tbody,
-.clinic-table tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed; /* Force columns to fit container width */
 }
 
 .clinic-table th,
@@ -45,10 +33,27 @@
   padding: 12px;
   border: 1px solid #ffb6c1;
   text-align: center;
-  min-width: 80px;
-  word-wrap: break-word; /* Break long content like URLs */
-  white-space: normal; /* Allow wrapping */
 }
+
+/* Scrollbar styling for better UX */
+.clinic-table::-webkit-scrollbar {
+  height: 10px; /* Slightly larger for touch usability */
+}
+
+.clinic-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.clinic-table::-webkit-scrollbar-thumb {
+  background: #ffb6c1;
+  border-radius: 10px;
+}
+
+.clinic-table::-webkit-scrollbar-thumb:hover {
+  background: #ff99ac;
+}
+
 .A-actions .icon-buttoncheck:hover,
 .A-actions .icon-buttondelete:hover {
   background-color: rgb(120, 204, 246);
@@ -65,26 +70,32 @@
   flex-wrap: wrap;
   max-width: 100%;
 }
-.A-actions .icon-buttoncheck {
-  
-  background-color: rgb(247, 0, 152);
-  border-color: rgb(247, 0, 152);;
-  color: white;
-  border-radius: 10px;
-  padding: 8px; /* Ensure clickable area */
-}
 
-.A-actions .icon-buttondelete {
+.A-actions .icon-buttoncheck {
   background-color: rgb(247, 0, 152);
   border-color: rgb(247, 0, 152);
   color: white;
   border-radius: 10px;
   padding: 8px;
-
 }
 
-/* flitered buttons */
- .button-container {
+.A-actions .icon-buttondelete  {
+  background-color: rgb(247, 0, 152);
+  border-color: rgb(247, 0, 152);
+  color: white;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.A-actions .icon-buttondelete-unsubscribe {
+  background-color: rgb(247, 0, 152);
+  border-color: rgb(247, 0, 152);
+  color: white;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.button-container {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
@@ -118,8 +129,6 @@
   background-color: #166286;
 }
 
-
-/* confirmation modal */
 .adminClinicApprovalModal-overlay,
 .adminClinicRegistrationSuccessModal-overlay {
   position: fixed;
@@ -132,10 +141,10 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  width: 90%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
+  margin: auto; /* Center the modal */
 }
 
 .adminClinicApprovalModal,
@@ -153,7 +162,7 @@
   margin: 10px;
   padding: 8px 16px;
   cursor: pointer;
-  transition: background-color 0.3s ease; 
+  transition: background-color 0.3s ease;
 }
 
 .adminClinicApprovalModal button:hover,
@@ -161,75 +170,75 @@
   background-color: #f0f0f0;
 }
 
-/* Media Queries */
-@media (max-width: 900px) {
-  .search-bar input {
-    width: 80%;
-    margin-top: 35px;
-  }
-
-  .clinic-table th,
-  .clinic-table td {
-    padding: 10px;
-    min-width: 60px; /* Reduce min-width */
-  }
-}
-
 @media (max-width: 600px) {
-  .search-bar {
-    margin-top: 60px;
-    margin-top: 35px;
-  }
-
-  .search-bar input {
-    width: 90%;
-    margin-top: 35px;
+  .clinic-table {
+    overflow-x: auto; /* Enable horizontal scroll */
+    display: block; /* Ensure the table can scroll horizontally */
+    border-collapse: collapse;
   }
 
   .clinic-table th,
   .clinic-table td {
-    padding: 8px;
-    font-size: 14px;
-    min-width: 50px; /* Further reduce */
+    white-space: normal; /* Allow text to wrap */
+    overflow-wrap: break-word; /* Break long words to fit within the cell */
+    word-break: break-word; /* Additional support for breaking words */
+    max-width: 150px; /* Optional: Set a reasonable max-width for cells */
+    min-width: 80px; /* Optional: Ensure cells don’t collapse too small */
   }
-
-  .A-actions .icon-buttoncheck,
-  .A-actions .icon-buttondelete {
-    padding: 6px;
-  }
-
-  .button-container {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .adminApproveClinicsButton,
-  .adminRegisteredClinicsButton {
-    margin-right: 0;
-    width: 60%;
-    max-width: 150px;
+  .icon-buttondelete-unsubscribe {
+    background-color: rgb(247, 0, 152);
+    border-color: rgb(247, 0, 152);
+    color: white;
+    border-radius: 10px;
+    padding: 5px;
+    font-size: 10px; /* Adjust font size for smaller screens */  
   }
 }
-
 @media (max-width: 400px) {
-  .dashboard-container {
-    padding: 10px;
-  }
-
-  .search-bar {
-    margin-top: 40px;
+  .clinic-table {
+    overflow-x: auto; /* Enable horizontal scroll */
+    display: block; /* Ensure the table can scroll horizontally */
+    border-collapse: collapse;
   }
 
   .clinic-table th,
   .clinic-table td {
-    padding: 6px;
-    font-size: 12px;
-    min-width: 40px; /* Smallest min-width */
+    white-space: normal; /* Allow text to wrap */
+    overflow-wrap: break-word; /* Break long words to fit within the cell */
+    word-break: break-word; /* Additional support for breaking words */
+    max-width: 150px; /* Optional: Set a reasonable max-width for cells */
+    min-width: 80px; /* Optional: Ensure cells don’t collapse too small */
+  }
+  .icon-buttondelete-unsubscribe {
+    background-color: rgb(247, 0, 152);
+    border-color: rgb(247, 0, 152);
+    color: white;
+    border-radius: 10px;
+    padding: 5px;
+    font-size: 10px; /* Adjust font size for smaller screens */  
+  }
+}
+@media (max-width: 900px) {
+  .clinic-table {
+    overflow-x: auto; /* Enable horizontal scroll */
+    display: block; /* Ensure the table can scroll horizontally */
+    border-collapse: collapse;
   }
 
-  .adminClinicApprovalModal,
-  .adminClinicRegistrationSuccessModal {
-    min-width: 0;
-    width: 95%;
+  .clinic-table th,
+  .clinic-table td {
+    white-space: normal; /* Allow text to wrap */
+    overflow-wrap: break-word; /* Break long words to fit within the cell */
+    word-break: break-word; /* Additional support for breaking words */
+    max-width: 150px; /* Optional: Set a reasonable max-width for cells */
+    min-width: 80px; /* Optional: Ensure cells don’t collapse too small */
+  }
+  .icon-buttondelete-unsubscribe {
+    background-color: rgb(247, 0, 152);
+    border-color: rgb(247, 0, 152);
+    color: white;
+    border-radius: 10px;
+    padding: 5px;
+    font-size: 10px; /* Adjust font size for smaller screens */  
   }
 }
