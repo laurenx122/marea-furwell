@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./VeterinaryHome.css";
+import Mobile_Footer from '../../components/Footer/Mobile_Footer';
 import { db, auth } from "../../firebase";
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
@@ -75,6 +76,9 @@ const VeterinaryHome = () => {
   const [unreadNotifications, setUnreadNotifications] = useState(false);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState(null);
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); 
 
   const navigate = useNavigate();
   const UPLOAD_PRESET = "furwell";
@@ -212,6 +216,10 @@ const VeterinaryHome = () => {
     }).filter(Boolean);
   };
 
+  const handleAccountClick = () => {
+    setActivePanel("vetInfo");
+  };
+
   const handleVetImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -306,6 +314,16 @@ const VeterinaryHome = () => {
       setUnreadNotifications(false);
     }
   };
+
+  const filteredAppointments = appointments.filter((appointment) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      appointment.petName.toLowerCase().includes(searchLower) ||
+      appointment.owner.toLowerCase().includes(searchLower) ||
+      appointment.service.toLowerCase().includes(searchLower) ||
+      appointment.status.toLowerCase().includes(searchLower)
+    );
+  });
 
   const fetchVetInfo = async () => {
     try {
@@ -494,7 +512,12 @@ const VeterinaryHome = () => {
 
   return (
     <div className="vet-container-v">
-      <div className="sidebar-v">
+      <div className="mobile-header-v">
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          ☰ {/* Hamburger icon */}
+        </button>
+      </div>
+      <div className={`sidebar-v ${isSidebarOpen ? "open" : ""}`}>
         {vetInfo && (
           <div className="vet-sidebar-panel-v">
             <div className="vet-img-container-v">
@@ -517,7 +540,10 @@ const VeterinaryHome = () => {
             <div className="vet-notification-wrapper">
               <button
                 className={`vet-button ${activePanel === "vetInfo" ? "active" : ""}`}
-                onClick={() => setActivePanel("vetInfo")}
+                onClick={() => {
+                  setActivePanel("vetInfo");
+                  setIsSidebarOpen(false);
+                }}
               >
                 <FaUser className="sidebar-icon-v" />
                 {vetInfo.FirstName} {vetInfo.LastName}
@@ -534,21 +560,31 @@ const VeterinaryHome = () => {
         <div className="sidebar-buttons-v">
           <button
             className={`sidebar-btn-v ${activePanel === "appointments" ? "active" : ""}`}
-            onClick={() => setActivePanel("appointments")}
+            onClick={() => {
+              setActivePanel("appointments");
+              setIsSidebarOpen(false);
+            }}
+            
           >
             <FaCalendarAlt className="sidebar-icon-v" />
             Upcoming Appointments
           </button>
           <button
             className={`sidebar-btn-v ${activePanel === "schedule" ? "active" : ""}`}
-            onClick={() => setActivePanel("schedule")}
+            onClick={() => {
+              setActivePanel("schedule");
+              setIsSidebarOpen(false);
+            }}
           >
             <FaClock className="sidebar-icon-v" />
             Schedule
           </button>
           <button
             className={`sidebar-btn-v ${activePanel === "healthRecords" ? "active" : ""}`}
-            onClick={() => setActivePanel("healthRecords")}
+            onClick={() => {
+              setActivePanel("healthRecords");
+              setIsSidebarOpen(false);
+            }}
           >
             <FaFileMedical className="sidebar-icon-v" />
             Health Records
@@ -656,6 +692,14 @@ const VeterinaryHome = () => {
           {activePanel === "healthRecords" && (
             <div className="panel-v health-records-panel-v">
               <h3>Health Records</h3>
+                <div className="search-bar-container-v">
+                  <input
+                    type="text"
+                    placeholder="Search records..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               {loading ? (
                 <p>Loading health records...</p>
               ) : (
@@ -670,8 +714,18 @@ const VeterinaryHome = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {appointments.filter(appt => appt.status === "Completed").length > 0 ? (
-                      appointments.filter(appt => appt.status === "Completed").map((record) => (
+                    {appointments
+                      .filter(appt => appt.status === "Completed") // Filter only completed appointments
+                      .filter(appt => {
+                        const searchLower = searchQuery.toLowerCase();
+                        return (
+                          appt.petName.toLowerCase().includes(searchLower) ||
+                          appt.owner.toLowerCase().includes(searchLower) ||
+                          appt.service.toLowerCase().includes(searchLower) ||
+                          appt.completionRemark.toLowerCase().includes(searchLower)
+                        );
+                      }) // Apply search query to completed appointments
+                      .map(record => (
                         <tr key={record.Id}>
                           <td>{formatDate(record.dateofAppointment)}</td>
                           <td>{record.petName}</td>
@@ -680,7 +734,8 @@ const VeterinaryHome = () => {
                           <td>{record.completionRemark || "N/A"}</td>
                         </tr>
                       ))
-                    ) : (
+                    }
+                    {appointments.filter(appt => appt.status === "Completed").length === 0 && (
                       <tr>
                         <td colSpan="5">No completed appointments found</td>
                       </tr>
@@ -1001,6 +1056,15 @@ const VeterinaryHome = () => {
           </div>
         </div>
       )}
+
+      <Mobile_Footer
+          onNotificationClick={handleNotificationClick}
+          onAccountClick={handleAccountClick}
+          activePanel={activePanel}
+          unreadNotifications={unreadNotifications}
+          isVeterinarian={true}
+          setActivePanel={setActivePanel}
+      />
     </div>
   );
 };

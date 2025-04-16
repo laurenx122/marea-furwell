@@ -4,7 +4,7 @@ import { FaUser, FaHome, FaEnvelope, FaPlus, FaBell } from "react-icons/fa";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unreadNotifications }) => {
+const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unreadNotifications, isVeterinarian, setActivePanel }) => {
   const navigate = useNavigate();
 
   console.log("Mobile_Footer rendered with props:", {
@@ -12,10 +12,19 @@ const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unrea
     onAccountClick: typeof onAccountClick,
     activePanel,
     unreadNotifications,
+    setActivePanel: typeof setActivePanel,
   });
 
   const handleHomeClick = () => navigate("/Home");
-  const handleDashboardClick = () => navigate("/PetOwnerHome");
+  
+  const handleDashboardClick = () => {
+    if (isVeterinarian) {
+      setActivePanel("appointments"); // Switch to "Upcoming Appointments" panel
+    } else {
+      setActivePanel("petDetails"); 
+    }
+  };
+
   const handleBookNowClick = () => navigate("/FindClinic");
 
   const handleNotificationClickWrapper = () => {
@@ -37,9 +46,11 @@ const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unrea
           <FaEnvelope />
           <p>Dashboard</p>
         </button>
-        <button className="footer-btn-p" onClick={handleBookNowClick}>
-          <FaPlus />
-        </button>
+        {!isVeterinarian &&
+          <button className="footer-btn-p" onClick={handleBookNowClick}>
+            <FaPlus />
+          </button>
+        }
         <button className="footer-btn-p" onClick={handleNotificationClickWrapper}>
           <FaBell />
           <p>Notifications</p>
