@@ -993,6 +993,20 @@ tbody tr:hover .pet-name-link-c {
   gap: 5px;
 }
 
+.schedule-list-c li {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  width: 100%; /* Allow items to take full width of the flex container */
+  box-sizing: border-box; /* Ensure padding and border are within the width */
+  display: flex; /* To potentially center content within each li if needed */
+  justify-content: space-between; /* Keep delete button on the right */
+  align-items: center; /* Vertically align text and button */
+}
+
+.schedule-list-c li:last-child {
+  border-bottom: none;
+}
+
 .schedule-item-c {
   display: flex;
   justify-content: space-between;
@@ -1725,6 +1739,7 @@ tbody tr:hover .pet-name-link-c {
 /* Add Schedule Section */
 .add-schedule-section-c {
   margin-bottom: 30px;
+  
 }
 
 .add-schedule-section-c h3 {
@@ -1734,6 +1749,16 @@ tbody tr:hover .pet-name-link-c {
   font-weight: 600;
   border-bottom: 1px solid #ffb6c1;
   padding-bottom: 5px;
+}
+
+.schedule-section-c ul.schedule-list-c { /* Target the ul specifically */
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex; /* Make the ul a flex container */
+  flex-direction: column; /* Keep items stacked vertically */
+  align-items: center; /* Center items horizontally along the cross-axis */
+  gap: 5px; /* Maintain the gap between list items */
 }
 
 /* Add Schedule Form */
