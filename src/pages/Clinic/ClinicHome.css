@@ -1718,3 +1718,154 @@ tbody tr:hover .pet-name-link-c {
     border-radius: 2px;;
   }
 }
+
+
+/* edit schedule modal */
+/* Edit Schedule Modal Specific Styling */
+/* Add Schedule Section */
+.add-schedule-section-c {
+  margin-bottom: 30px;
+}
+
+.add-schedule-section-c h3 {
+  font-size: 1.2rem;
+  color: #ff4081;
+  margin-bottom: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid #ffb6c1;
+  padding-bottom: 5px;
+}
+
+/* Add Schedule Form */
+.add-schedule-form-c {
+  padding: 15px;
+  background: #fff5f6;
+  border-radius: 8px;
+  border: 1px solid #ffb6c1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+/* Single Row for Schedule Inputs */
+.schedule-input-row-c {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+  width: 100%;
+}
+
+/* Individual Input Fields */
+.schedule-input-field-c {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 120px;
+}
+
+.schedule-input-field-c label {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.schedule-input-field-c select,
+.schedule-input-field-c input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 0.95rem;
+  font-family: 'Albert Sans', sans-serif;
+  color: #333;
+  background: #fff;
+  transition: border-color 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.schedule-input-field-c select:focus,
+.schedule-input-field-c input:focus {
+  border-color: #ff4081;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 64, 129, 0.1);
+}
+
+/* Add Schedule Button */
+.add-schedule-btn-c {
+.list-unstyled {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list-unstyled li {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.list-unstyled li:last-child {
+  border-bottom: none;
+}
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #d3d3d3; /* Gray background as in the image */
+  color: #333;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  height: fit-content;
+}
+
+.add-schedule-btn-c:hover:not(:disabled) {
+  background: #c0c0c0; /* Slightly darker gray on hover */
+  transform: translateY(-1px);
+}
+
+.add-schedule-btn-c:disabled {
+  background: #e0e0e0;
+  cursor: not-allowed;
+  color: #999;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 500px) {
+  .modal-content-c.edit-schedule-modal-c {
+    width: 90%;
+    padding: 20px;
+  }
+
+  .modal-content-c.edit-schedule-modal-c h2 {
+    font-size: 20px;
+  }
+
+  .schedule-input-row-c {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+  }
+
+  .schedule-input-field-c {
+    min-width: 100%;
+  }
+
+  .add-schedule-btn-c {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modal-content-c.edit-schedule-modal-c .modal-actions-c {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-content-c.edit-schedule-modal-c .cancel-btn-c,
+  .modal-content-c.edit-schedule-modal-c .submit-btn-c {
+    width: 100%;
+    padding: 12px;
+  }
+}
