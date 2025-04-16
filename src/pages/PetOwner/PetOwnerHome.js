@@ -2414,6 +2414,8 @@ const handleSignOut = () => {
         onAccountClick={handleAccountClick}
         activePanel={activePanel} 
         unreadNotifications={unreadNotifications}
+        isVeterinarian={false}
+        setActivePanel={setActivePanel}
       />
     </div>
   );

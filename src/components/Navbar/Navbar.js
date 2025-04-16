@@ -39,6 +39,8 @@ const Navbar = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+    const [userType, setUserType] = useState('');
+
     const UPLOAD_PRESET = "furwell";
 
     useEffect(() => {
@@ -81,21 +83,37 @@ const Navbar = () => {
                         profileImageURL: userData.profileImageURL || ''
                     });
                     setIsAdmin(userData.Type === "Admin");
+                    setUserType(userData.Type || '');
                 } else {
                     await signOut(auth);
                     setIsLoggedIn(false);
                     setIsAdmin(false);
+                    setUserType('');
                     setUserDetails({ firstName: '', lastName: '', contactNumber: '', profileImageURL: '' });
                 }
             } else {
                 setIsLoggedIn(false);
                 setIsAdmin(false);
+                setUserType('');
                 setUserDetails({ firstName: '', lastName: '', contactNumber: '', profileImageURL: '' });
             }
         });
 
         return () => unsubscribe();
     }, []);
+
+    const getUserHomeRoute = () => {
+        switch (userType) {
+            case 'Pet owner':
+                return '/PetOwnerHome';
+            case 'Veterinarian':
+                return '/VeterinaryHome';
+            case 'Clinic':
+                return '/ClinicHome';
+            default:
+                return '/Home';
+        }
+    };
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -255,7 +273,7 @@ const Navbar = () => {
         <>
             <nav className={styles.navbar}>
                 <div className={styles.navbarContent}>
-                <div className={`${styles.hamburger} ${isMenuOpen ? styles.active : ''}`} onClick={toggleMenu}>
+                    <div className={`${styles.hamburger} ${isMenuOpen ? styles.active : ''}`} onClick={toggleMenu}>
                         <span></span>
                         <span></span>
                         <span></span>
@@ -364,58 +382,90 @@ const Navbar = () => {
                 </>
             )} */}
             {isMenuOpen && (
-                    <>
-                        <div className={`${styles.mobileMenuOverlay} ${isMenuOpen ? styles.active : ''}`} onClick={toggleMenu}></div>
-                        <div className={`${styles.mobileMenu} ${isMenuOpen ? styles.active : ''}`}>
+                <>
+                    <div className={`${styles.mobileMenuOverlay} ${isMenuOpen ? styles.active : ''}`} onClick={toggleMenu}></div>
+                    <div className={`${styles.mobileMenu} ${isMenuOpen ? styles.active : ''}`}>
                         <ul className={styles.mobileMenuList}>
                             {isLoggedIn && isAdmin ? (
-                            <>
-                                {/* Admin Links for Mobile Menu */}
-                                <li className={styles.mobileMenuItem}>
-                                <Link to="/AdminHome" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
-                                    Clinics
-                                </Link>
-                                </li>
-                                <li className={styles.mobileMenuItem}>
-                                <Link to="/AdminAnalytics" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
-                                    Analytics
-                                </Link>
-                                </li>
-                                <li className={styles.mobileMenuItem}>
-                                <Link to="/AdminSubscription" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
-                                    Subscription
-                                </Link>
-                                </li>
-                                <li className={styles.mobileMenuItem}>
-                                <button onClick={() => { handleSignOut(); setIsMenuOpen(false); }} className={styles.mobileLogoutButton}>
-                                    Sign Out
-                                </button>
-                                </li>
-                            </>
-                            ) : !isLoggedIn ? (
-                            <>
-                                {/* Not Logged-In User Links (Existing) */}
-                                <li className={styles.mobileMenuItem}>
-                                <Link to="/Home" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
-                                    Home
-                                </Link>
-                                </li>
-                                <li className={styles.mobileMenuItem}>
-                                <button onClick={() => { handleLoginClick(); setIsMenuOpen(false); }} className={styles.mobileLoginButton}>
-                                    Login
-                                </button>
-                                </li>
-                                <li className={styles.mobileMenuItem}>
-                                <button onClick={() => { handleSignUpClick(); setIsMenuOpen(false); }} className={styles.mobileSignupButton}>
-                                    Sign Up
-                                </button>
-                                </li>
-                            </>
-                            ) : null}
+                                <>
+                                    <li className={styles.mobileMenuItem}>
+                                        <Link to="/AdminHome" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
+                                            Clinics
+                                        </Link>
+                                    </li>
+                                    <li className={styles.mobileMenuItem}>
+                                        <Link to="/AdminAnalytics" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
+                                            Analytics
+                                        </Link>
+                                    </li>
+                                    <li className={styles.mobileMenuItem}>
+                                        <Link to="/AdminSubscription" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
+                                            Subscription
+                                        </Link>
+                                    </li>
+                                    <li className={styles.mobileMenuItem}>
+                                        <button onClick={() => { handleSignOut(); setIsMenuOpen(false); }} className={styles.mobileLogoutButton}>
+                                            Sign Out
+                                        </button>
+                                    </li>
+                                </>
+                            ) : isLoggedIn ? (
+                                <>
+                                    {location.pathname === '/Home' && (
+                                        <li className={styles.mobileMenuItem}>
+                                            <Link to={getUserHomeRoute()} className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
+                                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                    {userDetails.profileImageURL && (
+                                                        <img
+                                                            src={userDetails.profileImageURL}
+                                                            alt="Profile"
+                                                            style={{
+                                                                width: '30px',
+                                                                height: '30px',
+                                                                borderRadius: '50%',
+                                                                marginRight: '10px'
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <span>{userDetails.firstName}</span>
+                                                </div>
+                                            </Link>
+                                        </li>
+                                    )}
+                                    <li className={styles.mobileMenuItem}>
+                                        <Link to="/Home" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
+                                            Home
+                                        </Link>
+                                    </li>
+                                    <li className={styles.mobileMenuItem}>
+                                        <button onClick={() => { handleSignOut(); setIsMenuOpen(false); }} className={styles.mobileLogoutButton}>
+                                            Sign Out
+                                        </button>
+                                    </li>
+                                </>
+                            ) : (
+                                <>
+                                    <li className={styles.mobileMenuItem}>
+                                        <Link to="/Home" className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
+                                            Home
+                                        </Link>
+                                    </li>
+                                    <li className={styles.mobileMenuItem}>
+                                        <button onClick={() => { handleLoginClick(); setIsMenuOpen(false); }} className={styles.mobileLoginButton}>
+                                            Login
+                                        </button>
+                                    </li>
+                                    <li className={styles.mobileMenuItem}>
+                                        <button onClick={() => { handleSignUpClick(); setIsMenuOpen(false); }} className={styles.mobileSignupButton}>
+                                            Sign Up
+                                        </button>
+                                    </li>
+                                </>
+                            )}
                         </ul>
-                        </div>
-                    </>
-                    )}
+                    </div>
+                </>
+            )}
                         
             {isModalOpen && (
                 <div className={styles.modalOverlay}>
