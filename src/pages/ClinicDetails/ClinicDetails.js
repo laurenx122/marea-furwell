@@ -307,7 +307,15 @@ const ClinicDetails = () => {
         where("clinic", "==", doc(db, "clinics", clinicId))
       );
       const querySnapshot = await getDocs(vetsQuery);
-      const vetList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      // const vetList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const vetList = querySnapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        status: doc.data().status || "Available", 
+      }))
+      .filter((vet) => vet.status !== "Unavailable");
+
       setVeterinarians(vetList);
       setVetServices(vetList.reduce((acc, v) => ({ ...acc, [v.id]: v.services || [] }), {}));
     } catch (error) {
@@ -315,7 +323,9 @@ const ClinicDetails = () => {
     } finally {
       setLoadingVeterinarians(false);
     }
+
   };
+
 
   const fetchVetSchedule = async (veterinarianId) => {
     try {
