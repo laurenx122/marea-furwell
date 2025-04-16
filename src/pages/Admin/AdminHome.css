@@ -101,10 +101,9 @@ body {
   justify-content: flex-start; /* Start from the left for scrolling */
   width: 100%; /* Ensure the grid takes the full width */
   box-sizing: border-box; /* Include padding in width */
-
- 
 }
-.clinics-grid-admin{
+
+.clinics-grid-admin {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 40px;
@@ -141,13 +140,20 @@ body {
   scroll-snap-align: start; /* Optional: Snap cards into view */
   position: relative;
   cursor: pointer; /* Indicate the card is clickable */
- 
 }
 
 .clinic-image {
   width: 100%;
   height: 300px; /* Adjusted image height */
-  background-image: url('/public/images/veterinarian.jpg');
+  object-fit: cover; /* Replace background-size: cover */
+  object-position: center; /* Replace background-position: center */
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.modal-profile-image {
+  width: 100%;
+  height: 300px; /* Adjusted image height */
   background-size: cover;
   background-position: center;
   border-radius: 10px;
@@ -196,7 +202,7 @@ body {
 }
 
 /* Modal Styles */
-.modal-overlay {
+.modal-overlay-admin {
   position: fixed;
   top: 0;
   left: 0;
@@ -209,37 +215,133 @@ body {
   z-index: 1000;
 }
 
-.modal {
-  background-color: white;
-  padding: 20px;
+.modal-admin {
+  background-color: #CDEDF6;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   text-align: center;
   min-width: 300px;
-  max-width: 500px;
+  max-width: 600px;
   max-height: 80vh;
   overflow-y: auto;
-  position: relative; /* For positioning the close icon */
+  position: relative;
+  padding: 20px;
 }
 
-.modal h2 {
+.modal-profile-image {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.modal-header h2 {
   font-size: 20px;
   color: #1b7fd1;
-  margin-bottom: 10px;
+  margin: 0 0 5px 0;
 }
 
-.modal p {
+.modal-location {
   font-size: 14px;
-  color: #333;
-  margin: 5px 0;
+  color: #666;
+  margin: 0 0 15px 0;
 }
 
-.modal-services {
+.modal-description {
+  margin-bottom: 15px;
+}
+
+.modal-description p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  text-align: justify;
+}
+
+.modal-section-contact {
+  margin-bottom: 20px;
+  text-align: left;
+}
+.modal-section-admin{
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.modal-section-contact h3 {
+  font-size: 16px;
+  color: #1b7fd1;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #1b7fd1;
+  display: inline-block;
+}
+.modal-section-admin h3 {
+  font-size: 16px;
+  color: #1b7fd1;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #1b7fd1;
+  display: inline-block;
+}
+.modal-services-admin {
   display: flex;
   flex-wrap: wrap;
+  gap: 10px;
   justify-content: center;
-  gap: 5px;
-  margin: 10px 0;
+}
+
+.service-button-wrapper {
+  position: relative;
+}
+
+.service-button-a {
+  background-color: #1b7fd1;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: default;
+  transition: background-color 0.3s ease;
+}
+
+.service-price-a {
+  display: none;
+  margin-left: 5px;
+}
+
+.service-button-a:hover .service-price-a {
+  display: inline;
+}
+
+.service-button-a:hover {
+  background-color: #166286;
+}
+
+.contact-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  text-align: left;
+}
+
+.contact-item {
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.contact-item strong {
+  display: block;
+  font-size: 14px;
+  color: #333;
+}
+
+.contact-item p {
+  font-size: 14px;
+  color: #666;
+  margin: 5px 0 0 0;
 }
 
 .close-icon-button {
@@ -262,15 +364,21 @@ body {
   color: #166286;
 }
 
+
+.clinic-image-admin {
+  width: 100%;
+  height: 120px; /* Adjust based on your design */
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 1200px) {
   .clinics-grid-admin {
     overflow-x: auto; /* Ensure horizontal scrolling */
     grid-template-columns: repeat(4, 1fr);
-
   }
 }
-
 
 @media (max-width: 1024px) {
   .clinics-grid-admin {
