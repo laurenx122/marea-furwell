@@ -19,7 +19,7 @@ import {
   serverTimestamp,
   getDoc,
   updateDoc,
-  deleteDoc,
+  deleteDoc,onSnapshot,
 } from "firebase/firestore";
 import { FaCamera, FaTimes } from "react-icons/fa";
 import {
@@ -136,7 +136,7 @@ const PetOwnerHome = () => {
   const [unreadNotifications, setUnreadNotifications] = useState(false);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState(null);
-
+  
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const DEFAULT_OWNER_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
@@ -262,210 +262,221 @@ const PetOwnerHome = () => {
   const fetchNotifications = async () => {
     try {
       const currentUser = auth.currentUser;
-      if (currentUser) {
-        const notificationsQuery = query(
-          collection(db, "notifications"),
-          where("ownerId", "==", `users/${currentUser.uid}`),
-          where("type", "==", "appointment_accepted")
-        );
-        const querySnapshot = await getDocs(notificationsQuery);
-        const notificationsList = await Promise.all(
-          querySnapshot.docs.map(async (docSnap) => {
-            const data = docSnap.data();
-            if (data.removeViewPetOwner !== true) {
-              const clinicDoc = await getDoc(doc(db, "clinics", data.clinicId));
-              const appointmentDoc = await getDoc(doc(db, "appointments", data.appointmentId));
+      if (!currentUser) {
+        console.log("No current user, skipping notification fetch.");
+        return;
+      }
+  
+      // Fetch notifications
+      const notificationsQuery = query(
+        collection(db, "notifications"),
+        where("ownerId", "==", `users/${currentUser.uid}`),
+        where("type", "in", [
+          "appointment_accepted",
+          "appointment_reminder",
+          "appointment_day_of",
+          "cancellation_approved",
+          "cancellation_declined",
+          "reschedule_approved",
+          "reschedule_declined",
+        ]),
+        where("removeViewPetOwner", "==", false)
+      );
+  
+      const querySnapshot = await getDocs(notificationsQuery);
+      const notificationsList = await Promise.all(
+        querySnapshot.docs.map(async (docSnap) => {
+          const data = docSnap.data();
+          try {
+            const clinicDoc = await getDoc(doc(db, "clinics", data.clinicId));
+            const appointmentDoc = await getDoc(doc(db, "appointments", data.appointmentId));
+            return {
+              id: docSnap.id,
+              clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+              clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+              dateofAppointment: appointmentDoc.exists() ? appointmentDoc.data().dateofAppointment.toDate() : null,
+              hasPetOwnerOpened: data.hasPetOwnerOpened || false,
+              message: data.message,
+              dateCreated: data.dateCreated ? data.dateCreated.toDate() : new Date(),
+              type: data.type,
+            };
+          } catch (error) {
+            console.error(`Error processing notification ${docSnap.id}:`, error);
+            return null;
+          }
+        })
+      );
+  
+      // Filter out null entries and sort by dateCreated
+      const filteredNotifications = notificationsList
+        .filter((n) => n !== null)
+        .sort((a, b) => b.dateCreated - a.dateCreated);
+  
+      // Check for one-day-before and day-of reminders
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+  
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        where("owner", "==", doc(db, "users", currentUser.uid)),
+        where("status", "==", "Accepted")
+      );
+      const apptSnapshot = await getDocs(appointmentsQuery);
+  
+      const reminderNotifications = await Promise.all(
+        apptSnapshot.docs.map(async (docSnap) => {
+          const apptData = docSnap.data();
+          const apptDate = apptData.dateofAppointment.toDate();
+          const apptDay = new Date(apptDate);
+          apptDay.setHours(0, 0, 0, 0);
+  
+          const clinicDoc = await getDoc(apptData.clinic);
+          const clinicName = clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic";
+          const clinicProfileImageURL = clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE;
+  
+          // One-day-before reminder
+          if (apptDay.toDateString() === tomorrow.toDateString()) {
+            const existingNotificationQuery = query(
+              collection(db, "notifications"),
+              where("appointmentId", "==", docSnap.id),
+              where("type", "==", "appointment_reminder"),
+              where("ownerId", "==", `users/${currentUser.uid}`),
+              where("removeViewPetOwner", "==", false)
+            );
+            const existingSnapshot = await getDocs(existingNotificationQuery);
+  
+            if (existingSnapshot.empty) {
+              const notificationRef = await addDoc(collection(db, "notifications"), {
+                ownerId: `users/${currentUser.uid}`,
+                appointmentId: docSnap.id,
+                clinicId: apptData.clinic.id,
+                type: "appointment_reminder",
+                message: `Reminder: Your appointment for ${apptData.petName} at ${clinicName} is tomorrow!`,
+                hasPetOwnerOpened: false,
+                removeViewPetOwner: false,
+                dateCreated: serverTimestamp(),
+              });
+  
               return {
-                id: docSnap.id,
-                clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
-                clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
-                dateofAppointment: appointmentDoc.exists() ? appointmentDoc.data().dateofAppointment.toDate() : null,
-                hasPetOwnerOpened: data.hasPetOwnerOpened,
-                message: data.message,
-                dateCreated: data.dateCreated ? data.dateCreated.toDate() : null,
+                id: notificationRef.id,
+                clinicProfileImageURL,
+                clinicName,
+                dateofAppointment: apptDate,
+                hasPetOwnerOpened: false,
+                message: `Reminder: Your appointment for ${apptData.petName} at ${clinicName} is tomorrow!`,
+                dateCreated: new Date(),
+                type: "appointment_reminder",
+              };
+            } else {
+              const existingNotif = existingSnapshot.docs[0];
+              const existingData = existingNotif.data();
+              return {
+                id: existingNotif.id,
+                clinicProfileImageURL,
+                clinicName,
+                dateofAppointment: apptDate,
+                hasPetOwnerOpened: existingData.hasPetOwnerOpened,
+                message: existingData.message,
+                dateCreated: existingData.dateCreated ? existingData.dateCreated.toDate() : new Date(),
+                type: existingData.type,
               };
             }
-            return null;
-          })
-        );
-        let filteredNotifications = notificationsList.filter((n) => n !== null);
-
-        // Check for appointments 1 day away
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-
-        const appointmentsQuery = query(
-          collection(db, "appointments"),
-          where("owner", "==", doc(db, "users", currentUser.uid)),
-          where("status", "==", "Accepted")
-        );
-        const apptSnapshot = await getDocs(appointmentsQuery);
-
-        const oneDayBeforeNotifications = await Promise.all(
-          apptSnapshot.docs.map(async (docSnap) => {
-            const apptData = docSnap.data();
-            const apptDate = apptData.dateofAppointment.toDate();
-            const apptDay = new Date(apptDate);
-            apptDay.setHours(0, 0, 0, 0);
-
-            // Check if the appointment is tomorrow
-            if (apptDay.toDateString() === tomorrow.toDateString()) {
-              const clinicDoc = await getDoc(apptData.clinic);
-              const existingNotificationQuery = query(
-                collection(db, "notifications"),
-                where("appointmentId", "==", docSnap.id),
-                where("type", "==", "appointment_reminder"),
-                where("ownerId", "==", `users/${currentUser.uid}`)
-              );
-              const existingSnapshot = await getDocs(existingNotificationQuery);
-
-              // Only add notification if it doesn't already exist
-              if (existingSnapshot.empty) {
-                const notificationRef = await addDoc(collection(db, "notifications"), {
-                  ownerId: `users/${currentUser.uid}`,
-                  appointmentId: docSnap.id,
-                  clinicId: apptData.clinic.id,
-                  type: "appointment_reminder",
-                  message: `Reminder: Your appointment for ${apptData.petName} at ${clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"} is tomorrow!`,
-                  hasPetOwnerOpened: false,
-                  removeViewPetOwner: false,
-                  dateCreated: serverTimestamp(),
-                });
-
-                return {
-                  id: notificationRef.id,
-                  clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
-                  clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
-                  dateofAppointment: apptDate,
-                  hasPetOwnerOpened: false,
-                  message: `Reminder: Your appointment for ${apptData.petName} at ${clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"} is tomorrow!`,
-                  dateCreated: new Date(),
-                };
-              } else {
-                const existingNotif = existingSnapshot.docs[0];
-                const existingData = existingNotif.data();
-                if (existingData.removeViewPetOwner !== true) {
-                  return {
-                    id: existingNotif.id,
-                    clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
-                    clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
-                    dateofAppointment: apptDate,
-                    hasPetOwnerOpened: existingData.hasPetOwnerOpened,
-                    message: existingData.message,
-                    dateCreated: existingData.dateCreated ? existingData.dateCreated.toDate() : null,
-                  };
-                }
-              }
+          }
+  
+          // Day-of reminder
+          if (apptDay.toDateString() === today.toDateString()) {
+            const existingNotificationQuery = query(
+              collection(db, "notifications"),
+              where("appointmentId", "==", docSnap.id),
+              where("type", "==", "appointment_day_of"),
+              where("ownerId", "==", `users/${currentUser.uid}`),
+              where("removeViewPetOwner", "==", false)
+            );
+            const existingSnapshot = await getDocs(existingNotificationQuery);
+  
+            if (existingSnapshot.empty) {
+              const notificationRef = await addDoc(collection(db, "notifications"), {
+                ownerId: `users/${currentUser.uid}`,
+                appointmentId: docSnap.id,
+                clinicId: apptData.clinic.id,
+                type: "appointment_day_of",
+                message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicName} is scheduled for ${formatDate(apptDate)}.`,
+                hasPetOwnerOpened: false,
+                removeViewPetOwner: false,
+                dateCreated: serverTimestamp(),
+              });
+  
+              return {
+                id: notificationRef.id,
+                clinicProfileImageURL,
+                clinicName,
+                dateofAppointment: apptDate,
+                hasPetOwnerOpened: false,
+                message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicName} is scheduled for ${formatDate(apptDate)}.`,
+                dateCreated: new Date(),
+                type: "appointment_day_of",
+              };
+            } else {
+              const existingNotif = existingSnapshot.docs[0];
+              const existingData = existingNotif.data();
+              return {
+                id: existingNotif.id,
+                clinicProfileImageURL,
+                clinicName,
+                dateofAppointment: apptDate,
+                hasPetOwnerOpened: existingData.hasPetOwnerOpened,
+                message: existingData.message,
+                dateCreated: existingData.dateCreated ? existingData.dateCreated.toDate() : new Date(),
+                type: existingData.type,
+              };
             }
-            return null;
-          })
-        );
-
-        // Check for appointments happening today reminder
-        today.setHours(0, 0, 0, 0);
-
-        const dayOfNotifications = await Promise.all(
-          apptSnapshot.docs.map(async (docSnap) => {
-            const apptData = docSnap.data();
-            const apptDate = apptData.dateofAppointment.toDate();
-            const apptDay = new Date(apptDate);
-            apptDay.setHours(0, 0, 0, 0);
-
-            // Check if the appointment is today
-            if (apptDay.toDateString() === today.toDateString()) {
-              const clinicDoc = await getDoc(apptData.clinic);
-              const existingNotificationQuery = query(
-                collection(db, "notifications"),
-                where("appointmentId", "==", docSnap.id),
-                where("type", "==", "appointment_day_of"),
-                where("ownerId", "==", `users/${currentUser.uid}`)
-              );
-              const existingSnapshot = await getDocs(existingNotificationQuery);
-
-              // Only add notification if it doesn't already exist
-              if (existingSnapshot.empty) {
-                const notificationRef = await addDoc(collection(db, "notifications"), {
-                  ownerId: `users/${currentUser.uid}`,
-                  appointmentId: docSnap.id,
-                  clinicId: apptData.clinic.id,
-                  type: "appointment_day_of",
-                  message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"
-                    } is scheduled for ${formatDate(apptDate)}.`,
-                  hasPetOwnerOpened: false,
-                  removeViewPetOwner: false,
-                  dateCreated: serverTimestamp(),
-                });
-
-                return {
-                  id: notificationRef.id,
-                  clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
-                  clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
-                  dateofAppointment: apptDate,
-                  hasPetOwnerOpened: false,
-                  message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic"
-                    } is scheduled for ${formatDate(apptDate)}.`,
-                  dateCreated: new Date(),
-                };
-              } else {
-                const existingNotif = existingSnapshot.docs[0];
-                const existingData = existingNotif.data();
-                if (existingData.removeViewPetOwner !== true) {
-                  return {
-                    id: existingNotif.id,
-                    clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
-                    clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
-                    dateofAppointment: apptDate,
-                    hasPetOwnerOpened: existingData.hasPetOwnerOpened,
-                    message: existingData.message,
-                    dateCreated: existingData.dateCreated ? existingData.dateCreated.toDate() : null,
-                  };
-                }
-              }
-            }
-            return null;
-          })
-        );
-
-        // Combine both types of notifications and filter out nulls
-        filteredNotifications = [
-          ...filteredNotifications,
-          ...oneDayBeforeNotifications.filter((n) => n !== null),
-          ...dayOfNotifications.filter((n) => n !== null),
-        ];
-
-        // Sort notifications by createdAt in descending order (newest first)
-        filteredNotifications.sort((a, b) => {
-          const dateA = a.dateCreated || new Date(0); // Fallback to epoch if null
-          const dateB = b.dateCreated || new Date(0);
-          return dateB - dateA; // Newest first
-        });
-
-        setNotifications(filteredNotifications);
-        setUnreadNotifications(filteredNotifications.some((n) => !n.hasPetOwnerOpened));
-      }
+          }
+  
+          return null;
+        })
+      );
+  
+      const allNotifications = [
+        ...filteredNotifications,
+        ...reminderNotifications.filter((n) => n !== null),
+      ].sort((a, b) => b.dateCreated - a.dateCreated);
+  
+      setNotifications(allNotifications);
+      setUnreadNotifications(allNotifications.some((n) => !n.hasPetOwnerOpened));
     } catch (error) {
       console.error("Error fetching notifications:", error);
       setNotifications([]);
       setUnreadNotifications(false);
     }
   };
+            
+  const NOTIFICATION_TYPES = {
+    APPOINTMENT_ACCEPTED: "appointment_accepted",
+    APPOINTMENT_REMINDER: "appointment_reminder",
+    APPOINTMENT_DAY_OF: "appointment_day_of",
+    CANCELLATION_APPROVED: "cancellation_approved",
+    CANCELLATION_DECLINED: "cancellation_declined",
+    RESCHEDULE_APPROVED: "reschedule_approved",
+    RESCHEDULE_DECLINED: "reschedule_declined",
+  };
   // Handle notification icon click
   const handleNotificationClick = async () => {
     try {
       setShowNotificationsModal(true);
       console.log("Set showNotificationsModal to true");
+  
       if (unreadNotifications) {
         console.log("Processing unread notifications");
-        const unreadNotificationsList = notifications.filter(n => !n.hasPetOwnerOpened);
+        const unreadNotificationsList = notifications.filter((n) => !n.hasPetOwnerOpened);
         for (const notification of unreadNotificationsList) {
-          const notificationRef = doc(db, "notifications", notification.id);
-          await updateDoc(notificationRef, { hasPetOwnerOpened: true });
+          await markNotificationAsRead(notification.id);
         }
-        setNotifications(notifications.map(n => ({ ...n, hasPetOwnerOpened: true })));
+        setNotifications(notifications.map((n) => ({ ...n, hasPetOwnerOpened: true, status: "read" })));
         setUnreadNotifications(false);
         console.log("Unread notifications marked as read");
+        await fetchAppointments(); // Refetch to reflect any status changes
       }
     } catch (error) {
       console.error("Error in handleNotificationClick:", error);
@@ -794,41 +805,53 @@ const PetOwnerHome = () => {
     }
   };
 
+  useEffect(() => {
+    if (!auth.currentUser) return;
+  
+    const q = query(
+      collection(db, "appointments"),
+      where("owner", "==", doc(db, "users", auth.currentUser.uid))
+    );
+  
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        console.log("Appointments snapshot received:", snapshot.docs.length);
+        fetchAppointments(); // Refresh appointments
+      },
+      (error) => {
+        console.error("Error listening to appointments:", error);
+      }
+    );
+  
+    return () => unsubscribe();
+  }, [auth.currentUser]);
+
   const fetchAppointments = async () => {
     try {
       setLoading(true);
       const currentUser = auth.currentUser;
       if (currentUser) {
         console.log("Fetching appointments for user:", currentUser.uid);
-
-        // Fetch current appointments (Accepted or Request Cancel)
+  
         const appointmentsQuery = query(
           collection(db, "appointments"),
           where("owner", "==", doc(db, "users", currentUser.uid))
         );
         const querySnapshot = await getDocs(appointmentsQuery);
-        console.log("Appointments fetched with status Accepted/Request Cancel:", querySnapshot.docs.length);
-
-        // Fetch all appointments to include Cancelled and past appointments
-        const allAppointmentsQuery = query(
-          collection(db, "appointments"),
-          where("owner", "==", doc(db, "users", currentUser.uid))
-        );
-        const allSnapshot = await getDocs(allAppointmentsQuery);
-        console.log("All appointments fetched:", allSnapshot.docs.length);
-
+        console.log("All appointments fetched:", querySnapshot.docs.length);
+  
         const currentAppointmentsList = [];
         const pastAppointmentsList = [];
         const today = new Date();
         console.log("Today’s date and time:", today.toISOString());
-
-        // Process current appointments (Accepted only for future/present)
+  
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
           const clinicDoc = await getDoc(data.clinic);
           const startTime = data.dateofAppointment.toDate();
           const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-
+  
           const appointmentDetails = {
             Id: doc.id,
             Subject: `${data.petName || "Unknown Pet"} - ${data.serviceType || "N/A"}`,
@@ -844,105 +867,82 @@ const PetOwnerHome = () => {
             notes: data.notes || "No notes",
             status: data.status || "N/A",
             dateofAppointment: startTime,
+            rescheduleDate: data.rescheduleDate ? data.rescheduleDate.toDate() : null,
           };
-
+  
           console.log(
-            "From Accepted/Request Cancel query - ID:", doc.id,
+            "Processing appointment - ID:", doc.id,
             "Date:", startTime.toISOString(),
             "Firestore Status:", data.status
           );
-
-          if (startTime >= today && appointmentDetails.status === "Accepted") {
-            currentAppointmentsList.push(appointmentDetails);
-            console.log(
-              "Added to currentAppointmentsList:",
-              appointmentDetails.Id,
-              "Date:", startTime.toISOString(),
-              "Status:", appointmentDetails.status
-            );
-          } else if (startTime < today) {
-            // Past appointments from this query (Request Cancel or Accepted)
-            pastAppointmentsList.push({
-              ...appointmentDetails,
-              status:
-                data.status === "Request Cancel" ? "Cancel Requested" : "Done"
-            });
-            console.log(
-              "Moved to pastAppointmentsList (from Accepted/Request Cancel):",
-              appointmentDetails.Id,
-              "Date:", startTime.toISOString(),
-              "Firestore Status:", data.status,
-              "→ Table Status:",
-              data.status === "Request Cancel" ? "Cancel Requested" : "Done"
-            );
-          }
-        }
-
-        // Process all appointments (to include Cancelled and other past appointments)
-        for (const doc of allSnapshot.docs) {
-          const data = doc.data();
-          const clinicDoc = await getDoc(data.clinic);
-          const startTime = data.dateofAppointment.toDate();
-          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-
-          const appointmentDetails = {
-            Id: doc.id,
-            Subject: `${data.petName || "Unknown Pet"} - ${data.serviceType || "N/A"}`,
-            StartTime: startTime,
-            EndTime: endTime,
-            petName: data.petName || "Unknown Pet",
-            clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
-            clinicId: data.clinic.id,
-            serviceType: data.serviceType || "N/A",
-            veterinarian: data.veterinarian || "N/A",
-            veterinarianId: data.veterinarianId,
-            remarks: data.remarks || "No remarks",
-            notes: data.notes || "No notes",
-            status: data.status || "N/A",
-            dateofAppointment: startTime,
-          };
-
-          // Include all Cancelled appointments (past, present, or future)
-          if (data.status === "Cancelled") {
-            const isDuplicate = pastAppointmentsList.some((appt) => appt.Id === doc.id);
-            if (!isDuplicate) {
-              pastAppointmentsList.push({
+  
+          // Handle future/present appointments (including Cancelled if date is in the future)
+          if (startTime >= today) {
+            if (["Accepted", "Request Cancel", "Request Reschedule", "Cancelled"].includes(data.status)) {
+              currentAppointmentsList.push({
                 ...appointmentDetails,
-                status: "Cancelled"
+                status:
+                  data.status === "Request Cancel"
+                    ? "Pending Cancellation"
+                    : data.status === "Request Reschedule"
+                    ? "Pending Reschedule"
+                    : data.status === "Cancelled"
+                    ? "Cancelled"
+                    : "Accepted",
               });
               console.log(
-                "Added to pastAppointmentsList (Cancelled, any date):",
+                "Added to currentAppointmentsList:",
                 appointmentDetails.Id,
                 "Date:", startTime.toISOString(),
-                "Firestore Status:", data.status,
-                "→ Table Status:", "Cancelled"
+                "Status:", data.status,
+                "→ Display Status:",
+                data.status === "Request Cancel"
+                  ? "Pending Cancellation"
+                  : data.status === "Request Reschedule"
+                  ? "Pending Reschedule"
+                  : data.status === "Cancelled"
+                  ? "Cancelled"
+                  : "Accepted"
               );
             }
           }
-          // Include only past appointments for other statuses
-          else if (startTime < today) {
+  
+          // Handle past appointments
+          if (startTime < today || (data.status === "Cancelled" && startTime < today)) {
             const isDuplicate = pastAppointmentsList.some((appt) => appt.Id === doc.id);
             if (!isDuplicate) {
               pastAppointmentsList.push({
                 ...appointmentDetails,
                 status:
-                  data.status === "Request Cancel" ? "Cancel Requested" : "Done"
+                  data.status === "Request Cancel"
+                    ? "Cancel Requested"
+                    : data.status === "Request Reschedule"
+                    ? "Reschedule Requested"
+                    : data.status === "Cancelled"
+                    ? "Cancelled"
+                    : "Done",
               });
               console.log(
-                "Added to pastAppointmentsList (past, other statuses):",
+                "Added to pastAppointmentsList:",
                 appointmentDetails.Id,
                 "Date:", startTime.toISOString(),
                 "Firestore Status:", data.status,
                 "→ Table Status:",
-                data.status === "Request Cancel" ? "Cancel Requested" : "Done"
+                data.status === "Request Cancel"
+                  ? "Cancel Requested"
+                  : data.status === "Request Reschedule"
+                  ? "Reschedule Requested"
+                  : data.status === "Cancelled"
+                  ? "Cancelled"
+                  : "Done"
               );
             }
           }
         }
-
+  
         console.log("Final Current Appointments:", currentAppointmentsList);
         console.log("Final Past Appointments (Health Records):", pastAppointmentsList);
-
+  
         setAppointments(currentAppointmentsList);
         setPastAppointments(pastAppointmentsList);
       } else {
@@ -1099,32 +1099,28 @@ const PetOwnerHome = () => {
       // Reference to the original appointment
       const appointmentRef = doc(db, "appointments", appointmentId);
       const appointmentSnap = await getDoc(appointmentRef);
-
+  
       if (!appointmentSnap.exists()) {
         throw new Error("Appointment not found");
       }
-
-      // Get the appointment data
-      const appointmentData = appointmentSnap.data();
-
-      // Update the appointment with status "Request Cancel" and a cancelledAt timestamp
+  
+      // Update the appointment with status "Request Cancel" and a timestamp
       await updateDoc(appointmentRef, {
         status: "Request Cancel",
-        cancelledAt: serverTimestamp(),
+        cancelRequestedAt: serverTimestamp(), // Optional: Track when the request was made
       });
-
+  
       // Update local state to reflect the new status
       setAppointments(
         appointments.map((appt) =>
           appt.Id === appointmentId
-            ? { ...appt, status: "Request Cancel", cancelledAt: serverTimestamp() }
+            ? { ...appt, status: "Request Cancel" }
             : appt
         )
       );
-
-      await fetchAppointments();
+  
       setShowAppointmentModal(false);
-      alert("Appointment cancellation requested successfully!");
+      alert("Cancellation request submitted successfully! Awaiting clinic approval.");
     } catch (error) {
       console.error("Error requesting appointment cancellation:", error);
       alert("Failed to request appointment cancellation.");
@@ -1287,34 +1283,43 @@ const PetOwnerHome = () => {
       alert("Please select a new time slot.");
       return;
     }
-
+  
     setIsRescheduling(true);
     try {
-      const newDateTime = selectedRescheduleSlot.time; // This is a Date object from the slot
+      const newDateTime = selectedRescheduleSlot.time; // Date object from the slot
       console.log("Requesting reschedule to date:", newDateTime.toISOString().split("T")[0]);
       console.log(
         "Requesting reschedule to time:",
         newDateTime.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
       );
-
-      // Format the newDateTime to match your example: "April 2, 2025 at 8:00:00 AM UTC+8"
-      // Since Firestore stores timestamps, we'll use the Date object directly
+  
+      // Reference to the appointment
       const appointmentRef = doc(db, "appointments", appointmentId);
+  
+      // Update Firestore with "Request Reschedule" status and the proposed new time
       await updateDoc(appointmentRef, {
-        status: "Request Reschedule", // Update status to Request Reschedule
-        dateofAppointment: newDateTime, // Update dateofAppointment to the new time
+        status: "Request Reschedule",
+        rescheduleDate: newDateTime, // Use rescheduleDate to match ClinicHome expectation
+        rescheduleRequestedAt: serverTimestamp(), // Optional: Track request time
       });
-
-      // Remove the appointment from the current list
+  
+      // Update local state to reflect the pending reschedule
       setAppointments(
-        appointments.filter((appt) => appt.Id !== appointmentId)
+        appointments.map((appt) =>
+          appt.Id === appointmentId
+            ? {
+                ...appt,
+                status: "Pending Reschedule", // Reflect the pending status in UI
+              }
+            : appt
+        )
       );
-
+  
       setShowAppointmentModal(false);
       setAvailableSlots([]);
       setSelectedRescheduleSlot(null);
-      setClickedDate(null); // Reset clicked date
-      alert("Reschedule request submitted successfully!");
+      setClickedDate(null);
+      alert("Reschedule request submitted successfully! Awaiting clinic approval.");
     } catch (error) {
       console.error("Error requesting reschedule:", error);
       alert("Failed to request reschedule.");
@@ -1350,6 +1355,150 @@ const handleSignOut = () => {
       fetchVetSchedule(selectedAppointment.veterinarianId);
     }
   }, [selectedAppointment]);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+  
+    const q = query(
+      collection(db, "notifications"),
+      where("ownerId", "==", `users/${auth.currentUser.uid}`),
+      where("type", "in", [
+        "appointment_accepted",
+        "appointment_reminder",
+        "appointment_day_of",
+        "cancellation_approved",
+        "cancellation_declined",
+        "reschedule_approved",
+        "reschedule_declined",
+      ]),
+      where("removeViewPetOwner", "==", false)
+    );
+  
+    const unsubscribe = onSnapshot(
+      q,
+      async (snapshot) => {
+        const notificationsList = await Promise.all(
+          snapshot.docs.map(async (docSnap) => {
+            const data = docSnap.data();
+            try {
+              const clinicDoc = await getDoc(doc(db, "clinics", data.clinicId));
+              const appointmentDoc = await getDoc(doc(db, "appointments", data.appointmentId));
+              return {
+                id: docSnap.id,
+                clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+                clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+                dateofAppointment: appointmentDoc.exists() ? appointmentDoc.data().dateofAppointment.toDate() : null,
+                hasPetOwnerOpened: data.hasPetOwnerOpened || false,
+                message: data.message,
+                dateCreated: data.dateCreated ? data.dateCreated.toDate() : new Date(),
+                type: data.type,
+              };
+            } catch (error) {
+              console.error(`Error processing notification ${docSnap.id}:`, error);
+              return null;
+            }
+          })
+        );
+  
+        const filteredNotifications = notificationsList
+          .filter((n) => n !== null)
+          .sort((a, b) => b.dateCreated - a.dateCreated);
+  
+        setNotifications(filteredNotifications);
+        setUnreadNotifications(filteredNotifications.some((n) => !n.hasPetOwnerOpened));
+      },
+      (error) => {
+        console.error("Error listening to notifications:", error);
+        setNotifications([]);
+        setUnreadNotifications(false);
+      }
+    );
+  
+    return () => unsubscribe();
+  }, [auth.currentUser]);
+
+  // Real-time notification listener
+  /*useEffect(() => {
+    if (!auth.currentUser) return;
+  
+    const q = query(
+      collection(db, "notifications"),
+      where("ownerId", "==", `users/${auth.currentUser.uid}`),
+      where("type", "in", [
+        "cancellation_approved",
+        "cancellation_declined",
+        "reschedule_approved",
+        "reschedule_declined",
+        "appointment_accepted",
+        "appointment_reminder",
+        "appointment_day_of",
+      ]),
+      where("removeViewPetOwner", "==", false)
+    );
+  
+    const unsubscribe = onSnapshot(
+      q,
+      async (snapshot) => {
+        try {
+          const notificationsList = await Promise.all(
+            snapshot.docs.map(async (docSnap) => {
+              const data = docSnap.data();
+              try {
+                const clinicDoc = await getDoc(doc(db, "clinics", data.clinicId));
+                const appointmentDoc = await getDoc(doc(db, "appointments", data.appointmentId));
+                return {
+                  id: docSnap.id,
+                  clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+                  clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+                  dateofAppointment: appointmentDoc.exists() ? appointmentDoc.data().dateofAppointment.toDate() : null,
+                  hasPetOwnerOpened: data.hasPetOwnerOpened || false,
+                  message: data.message,
+                  dateCreated: data.dateCreated ? data.dateCreated.toDate() : new Date(),
+                  type: data.type,
+                  status: data.status || "unread",
+                };
+              } catch (error) {
+                console.error(`Error processing notification ${docSnap.id}:`, error);
+                return null;
+              }
+            })
+          );
+  
+          const filteredNotifications = notificationsList
+            .filter((n) => n !== null)
+            .sort((a, b) => b.dateCreated - a.dateCreated);
+  
+          setNotifications(filteredNotifications);
+          setUnreadNotifications(filteredNotifications.some((n) => !n.hasPetOwnerOpened));
+        } catch (error) {
+          console.error("Error fetching notifications:", error);
+          setNotifications([]);
+          setUnreadNotifications(false);
+        }
+      },
+      (error) => {
+        console.error("Error listening to notifications:", error);
+        setNotifications([]);
+        setUnreadNotifications(false);
+      }
+    );
+  
+    return () => unsubscribe();
+  }, [auth.currentUser, DEFAULT_OWNER_IMAGE]);*/
+
+  // Mark notification as read
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      const notificationRef = doc(db, "notifications", notificationId);
+      await updateDoc(notificationRef, {
+        hasPetOwnerOpened: true,
+        status: "read",
+      });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
 
   const handlePetClick = (pet) => {
     setSelectedPet(pet);
@@ -1552,19 +1701,19 @@ const handleSignOut = () => {
                     <p>Loading appointments...</p>
                   ) : (
                     <ScheduleComponent
-                      width="100%"
-                      height="650px"
-                      currentView={currentView}
-                      eventSettings={{ dataSource: appointments }}
-                      eventClick={handleEventClick}
-                      popupOpen={(args) => args.cancel = true}
-                    >
-                      <ViewsDirective>
-                        <ViewDirective option="Month" />
-                        <ViewDirective option="Agenda" />
-                      </ViewsDirective>
-                      <Inject services={[Month, Agenda]} />
-                    </ScheduleComponent>
+                width="100%"
+                height="650px"
+                currentView={currentView}
+                eventSettings={{ dataSource: appointments }}
+                eventClick={handleEventClick}
+                popupOpen={(args) => (args.cancel = true)}
+              >
+                <ViewsDirective>
+                  <ViewDirective option="Month" />
+                  <ViewDirective option="Agenda" />
+                </ViewsDirective>
+                <Inject services={[Month, Agenda]} />
+              </ScheduleComponent>
                   )}
                 </div>
               )}
@@ -1919,47 +2068,79 @@ const handleSignOut = () => {
         </div>
   )}
 
-      {showNotificationsModal && (
-        <div className="modal-overlay-p">
-          <div className="modal-content-p notifications-modal-p">
-            <span className="close-button-p" onClick={() => setShowNotificationsModal(false)}>×</span>
-            <h2>Notifications</h2>
-            {notifications.length > 0 ? (
-              <div className="notifications-list-p">
-                {notifications.map((notification) => (
-                  <div key={notification.id} className="notification-item-p">
-                    <img
-                      src={notification.clinicProfileImageURL}
-                      alt="Clinic"
-                      className="notification-clinic-img-p"
-                    />
-                    <div className="notification-details-p">
-                      <p>{notification.message}</p>
-                      <span className="notification-timestamp-p">
-                      Notified on: {notification.dateCreated ? formatDate(notification.dateCreated) : "N/A"}                      </span>
-                    </div>
-                    <FaTimes
-                      className="delete-notification-icon-p"
-                      onClick={() => handleDeleteNotificationClick(notification.id)}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p>No notifications available.</p>
-            )}
-            <div className="modal-actions-p">
-              <button
-                className="modal-close-btn-p"
-                onClick={() => setShowNotificationsModal(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
+{showNotificationsModal && (
+  <div className="modal-overlay-p">
+    <div className="modal-content-p notifications-modal-p">
+      <span className="close-button-p" onClick={() => setShowNotificationsModal(false)}>
+        ×
+      </span>
+      <h2>Notifications</h2>
+      {notifications.length > 0 ? (
+        <div className="notifications-list-p">
+         {notifications.map((notification) => (
+  <div
+    key={notification.id}
+    className={`notification-item-p ${notification.hasPetOwnerOpened ? "read" : "unread"}`}
+    onClick={() => !notification.hasPetOwnerOpened && markNotificationAsRead(notification.id)}
+  >
+    <img
+      src={notification.clinicProfileImageURL || DEFAULT_OWNER_IMAGE}
+      alt="Clinic"
+      className="notification-clinic-img-p"
+    />
+    <div className="notification-details-p">
+      <p>
+        {notification.type === "appointment_accepted" && (
+          <strong>Appointment Accepted: </strong>
+        )}
+        {notification.type === "appointment_reminder" && (
+          <strong>Appointment Reminder: </strong>
+        )}
+        {notification.type === "appointment_day_of" && (
+          <strong>Day of Appointment: </strong>
+        )}
+        {notification.type === "cancellation_approved" && (
+          <strong>Cancellation Approved: </strong>
+        )}
+        {notification.type === "cancellation_declined" && (
+          <strong>Cancellation Declined: </strong>
+        )}
+        {notification.type === "reschedule_approved" && (
+          <strong>Reschedule Approved: </strong>
+        )}
+        {notification.type === "reschedule_declined" && (
+          <strong>Reschedule Declined: </strong>
+        )}
+        {notification.message}
+      </p>
+      <span className="notification-timestamp-p">
+        Notified on: {formatDate(notification.dateCreated)}
+      </span>
+    </div>
+    <FaTimes
+      className="delete-notification-icon-p"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleDeleteNotificationClick(notification.id);
+      }}
+    />
+  </div>
+))}
         </div>
+      ) : (
+        <p>No notifications available.</p>
       )}
-
+      <div className="modal-actions-p">
+        <button
+          className="modal-close-btn-p"
+          onClick={() => setShowNotificationsModal(false)}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {showDeleteConfirmModal && (
         <div className="modal-overlay-p">
           <div className="modal-content-p delete-confirm-modal-p">
@@ -2272,150 +2453,171 @@ const handleSignOut = () => {
         </div>
       )}
 
-      {showAppointmentModal && selectedAppointment && (
-        <div className="modal-overlay-p">
-          <div className="modal-content-p">
-            <span
-              className="close-button-p"
-              onClick={() => setShowAppointmentModal(false)}
-            >
-              ×
-            </span>
-            <h2>Appointment Details</h2>
-            <div className="pet-info-grid-p">
-              <div className="info-item-p">
-                <strong>Pet Name:</strong> {selectedAppointment.petName}
-              </div>
-              <div className="info-item-p">
-                <strong>Clinic:</strong> {selectedAppointment.clinicName}
-              </div>
-              <div className="info-item-p">
-                <strong>Service:</strong> {selectedAppointment.serviceType}
-              </div>
-              <div className="info-item-p">
-                <strong>Veterinarian:</strong> {selectedAppointment.veterinarian}
-              </div>
-              <div className="info-item-p">
-                <strong>Date:</strong> {formatDate(selectedAppointment.StartTime)}
-              </div>
-              <div className="info-item-p">
-                <strong>Remarks:</strong> {selectedAppointment.remarks}
-              </div>
-            </div>
-            <div className="info-item-p">
-              <strong>Notes:</strong> {selectedAppointment.notes}
-            </div>
-
-            {!showReschedule ? (
-              <div className="modal-actions-p">
-                <button
-                  className="submit-btn-p"
-                  onClick={() => handleCancelAppointment(selectedAppointment.Id)}
-                  disabled={isRescheduling}
-                >
-                  Cancel Appointment
-                </button>
-                <button
-                  className="submit-btn-p"
-                  onClick={() => setShowReschedule(!showReschedule)}
-                  disabled={isRescheduling}
-                >
-                  Reschedule
-                </button>
-                <button
-                  className="modal-close-btn-p"
-                  onClick={() => setShowAppointmentModal(false)}
-                  disabled={isRescheduling}
-                >
-                  Close
-                </button>
-              </div>
-            ) : (
-              <>
-                <h3>Reschedule Appointment</h3>
-                <div className="reschedule-container-p">
-                  <div className="calendar-container-p">
-                    <Calendar
-                      onClickDay={handleCalendarDateClick}
-                      value={rescheduleDateTime || new Date()}
-                      minDate={new Date()} // Restrict to today onward
-                      maxDate={(() => {
-                        const max = new Date();
-                        max.setMonth(max.getMonth() + 1);
-                        return max;
-                      })()} // One month from today
-                      tileClassName={tileClassName}
-                      locale="en-US"
-                    />
-                  </div>
-                  <div className="time-picker-container-p">
-                    <label htmlFor="rescheduleTime">Select Time</label>
-                    <select
-                      id="rescheduleTime"
-                      value={
-                        selectedRescheduleSlot ? selectedRescheduleSlot.time.toISOString() : ""
-                      }
-                      onChange={(e) => {
-                        const selectedTime = availableSlots.find(
-                          (slot) => slot.time.toISOString() === e.target.value
-                        );
-                        if (selectedTime) {
-                          setSelectedRescheduleSlot(selectedTime);
-                        }
-                      }}
-                      disabled={!rescheduleDateTime || isRescheduling || availableSlots.length === 0}
-                    >
-                      <option value="">Select a time</option>
-                      {availableSlots.map((slot, index) => (
-                        <option key={index} value={slot.time.toISOString()}>
-                          {slot.display}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="modal-actions-p">
-                  <button
-                    className="submit-btn-p"
-                    onClick={() => handleCancelAppointment(selectedAppointment.Id)}
-                    disabled={isRescheduling}
-                  >
-                    Cancel Appointment
-                  </button>
-                  <button
-                    className="submit-btn-p"
-                    onClick={() => handleRescheduleAppointment(selectedAppointment.Id)}
-                    disabled={isRescheduling || !selectedRescheduleSlot}
-                  >
-                    {isRescheduling ? "Rescheduling..." : "Save Reschedule"}
-                  </button>
-                  <button
-                    className="submit-btn-p"
-                    onClick={() => setShowReschedule(!showReschedule)}
-                    disabled={isRescheduling}
-                  >
-                    Cancel Reschedule
-                  </button>
-                  <button
-                    className="modal-close-btn-p"
-                    onClick={() => setShowAppointmentModal(false)}
-                    disabled={isRescheduling}
-                  >
-                    Close
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+  {showAppointmentModal && selectedAppointment && (
+  <div className="modal-overlay-p">
+    <div className="modal-content-p">
+      <span
+        className="close-button-p"
+        onClick={() => setShowAppointmentModal(false)}
+      >
+        ×
+      </span>
+      <h2>Appointment Details</h2>
+      <div className="pet-info-grid-p">
+        <div className="info-item-p">
+          <strong>Pet Name:</strong> {selectedAppointment.petName}
         </div>
+        <div className="info-item-p">
+          <strong>Clinic:</strong> {selectedAppointment.clinicName}
+        </div>
+        <div className="info-item-p">
+          <strong>Service:</strong> {selectedAppointment.serviceType}
+        </div>
+        <div className="info-item-p">
+          <strong>Veterinarian:</strong> {selectedAppointment.veterinarian}
+        </div>
+        <div className="info-item-p">
+          <strong>Date:</strong> {formatDate(selectedAppointment.StartTime)}
+        </div>
+        <div className="info-item-p">
+          <strong>Status:</strong> {selectedAppointment.status}
+          </div>
+        {selectedAppointment.status === "Pending Reschedule" && selectedAppointment.rescheduleDate && (
+          <div className="info-item-p">
+            <strong>Requested Reschedule Date:</strong> {formatDate(selectedAppointment.rescheduleDate)}
+          </div>
+        )}
+        <div className="info-item-p">
+          <strong>Remarks:</strong> {selectedAppointment.remarks}
+        </div>
+      </div>
+      <div className="info-item-p">
+        <strong>Notes:</strong> {selectedAppointment.notes}
+      </div>
+
+      {!showReschedule ? (
+        <div className="modal-actions-p">
+          <button
+            className="submit-btn-p"
+            onClick={() => handleCancelAppointment(selectedAppointment.Id)}
+            disabled={
+              isRescheduling ||
+              selectedAppointment.status === "Pending Cancellation" ||
+              selectedAppointment.status === "Pending Reschedule" ||
+              selectedAppointment.status === "Cancelled"
+            }
+          >
+            Cancel Appointment
+          </button>
+          <button
+            className="submit-btn-p"
+            onClick={() => setShowReschedule(!showReschedule)}
+            disabled={
+              isRescheduling ||
+              selectedAppointment.status === "Pending Cancellation" ||
+              selectedAppointment.status === "Pending Reschedule" ||
+              selectedAppointment.status === "Cancelled"
+            }
+          >
+            Reschedule
+          </button>
+          <button
+            className="modal-close-btn-p"
+            onClick={() => setShowAppointmentModal(false)}
+            disabled={isRescheduling}
+          >
+            Close
+          </button>
+        </div>
+      ) : (
+        <>
+          <h3>Reschedule Appointment</h3>
+          <div className="reschedule-container-p">
+            <div className="calendar-container-p">
+              <Calendar
+                onClickDay={handleCalendarDateClick}
+                value={rescheduleDateTime || new Date()}
+                minDate={new Date()}
+                maxDate={(() => {
+                  const max = new Date();
+                  max.setMonth(max.getMonth() + 1);
+                  return max;
+                })()}  // Immediately invoke the function to return the date
+                tileClassName={tileClassName}
+                locale="en-US"
+              />
+            </div>
+            <div className="time-picker-container-p">
+              <label htmlFor="rescheduleTime">Select Time</label>
+              <select
+                id="rescheduleTime"
+                value={
+                  selectedRescheduleSlot ? selectedRescheduleSlot.time.toISOString() : ""
+                }
+                onChange={(e) => {
+                  const selectedTime = availableSlots.find(
+                    (slot) => slot.time.toISOString() === e.target.value
+                  );
+                  if (selectedTime) {
+                    setSelectedRescheduleSlot(selectedTime);
+                  }
+                }}
+                disabled={!rescheduleDateTime || isRescheduling || availableSlots.length === 0}
+              >
+                <option value="">Select a time</option>
+                {availableSlots.map((slot, index) => (
+                  <option key={index} value={slot.time.toISOString()}>
+                    {slot.display}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="modal-actions-p">
+            <button
+              className="submit-btn-p"
+              onClick={() => handleCancelAppointment(selectedAppointment.Id)}
+              disabled={
+                isRescheduling ||
+                selectedAppointment.status === "Pending Cancellation" ||
+                selectedAppointment.status === "Pending Reschedule" ||
+                selectedAppointment.status === "Cancelled"
+              }
+            >
+              Cancel Appointment
+            </button>
+            <button
+              className="submit-btn-p"
+              onClick={() => handleRescheduleAppointment(selectedAppointment.Id)}
+              disabled={isRescheduling || !selectedRescheduleSlot}
+            >
+              {isRescheduling ? "Rescheduling..." : "Save Reschedule"}
+            </button>
+            <button
+              className="submit-btn-p"
+              onClick={() => setShowReschedule(!showReschedule)}
+              disabled={isRescheduling}
+            >
+              Cancel Reschedule
+            </button>
+            <button
+              className="modal-close-btn-p"
+              onClick={() => setShowAppointmentModal(false)}
+              disabled={isRescheduling}
+            >
+              Close
+            </button>
+          </div>
+        </>
       )}
+    </div>
+  </div>
+  )}
       <Mobile_Footer
         onNotificationClick={handleNotificationClick}
         onAccountClick={handleAccountClick}
         activePanel={activePanel} 
         unreadNotifications={unreadNotifications}
-        isVeterinarian={false}
-        setActivePanel={setActivePanel}
       />
     </div>
   );
