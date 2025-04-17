@@ -1192,6 +1192,7 @@ tbody tr:hover .pet-name-link-c {
 
 .panel-container-c {
   height: 100%;
+  width: auto;
 }
 
 .analytics-panel-c {
@@ -1491,8 +1492,11 @@ tbody tr:hover .pet-name-link-c {
 
   .panel-container-c {
     min-height: auto; 
+    width: 93%;
     padding: 10px; 
   }
+
+  
 }
 
 @media (max-width: 768px) {
@@ -1640,6 +1644,12 @@ tbody tr:hover .pet-name-link-c {
   .modal-pet-detail-item-c {
     font-size: 0.9rem;
   }
+
+  .panel-container-c {
+    min-height: auto; 
+    width: 90%;
+    padding: 10px; 
+  }
 }
 
 @media (max-width: 768px) {
@@ -1650,7 +1660,7 @@ tbody tr:hover .pet-name-link-c {
   }
 
   .csearch-bar-container input[type="text"] {
-    width: 100%;
+    width: auto;
     padding: 10px;
   }
 
@@ -1705,6 +1715,9 @@ tbody tr:hover .pet-name-link-c {
 
 @media (max-width: 768px) {
   .mobile-header-c {
+    width: 100%;
+    height: auto;
+    min-height: 100%;
     display: block;
     padding: 10px;
     background-color: #EDBFC6;
@@ -1727,6 +1740,8 @@ tbody tr:hover .pet-name-link-c {
     top: 40px;
     left: 0;
     width: 45%;
+    height: auto;
+    min-height: 100%;
     z-index: 1000;
     background-color: #EDBFC6;
     border-radius: 2px;;
@@ -1893,4 +1908,84 @@ tbody tr:hover .pet-name-link-c {
     width: 100%;
     padding: 12px;
   }
+}
+
+/* Delete/Add Vet Sched Modal before save chnages */
+#vetSchedModal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 123, 255, 0.15); /* Light blue with opacity */
+  justify-content: center;
+  align-items: center;
+}
+
+.vetSchedModal-content {
+  background-color: #f8f9fa; /* Light gray background */
+  padding: 25px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 80%; /* Adjust as needed */
+  max-width: 400px; /* Maximum width */
+}
+
+.vetSchedModal-title {
+  color: #e83e8c; /* Pink color */
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.vetSchedModal-message {
+  color: #495057; /* Dark gray text */
+  margin-bottom: 20px;
+}
+
+.vetSchedModal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.vetSchedModal-buttons button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.vetSchedModal-buttons button.delete-button {
+  background-color: #dc3545; 
+  color: white;
+}
+
+.vetSchedModal-buttons button.delete-button:hover {
+  background-color: #c82333;
+}
+
+.vetSchedModal-buttons button.cancel-button {
+  background-color: #6c757d; 
+  color: white;
+}
+
+.vetSchedModal-buttons button.cancel-button:hover {
+  background-color: #5a6268;
+}
+
+.vetSchedModal-buttons button:not(.delete-button):not(.cancel-button) {
+  background-color: #007bff; 
+  color: white;
+}
+
+.vetSchedModal-buttons button:not(.delete-button):not(.cancel-button):hover {
+  background-color: #0056b3;
 }
