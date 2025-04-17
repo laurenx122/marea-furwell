@@ -173,7 +173,7 @@ const [serviceData, setServiceData] = useState([]);
 const [dayData, setDayData] = useState([]);
 
   // Combined useEffect for authentication and data initialization
-  useEffect(() => {
+  /*useEffect(() => {
     const initializeComponent = async () => {
       const unsubscribe = auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -201,10 +201,9 @@ const [dayData, setDayData] = useState([]);
     };
 
     initializeComponent();
-  }, [navigate]);
+  }, [navigate]);*/
 
   useEffect(() => {
-    // Initialize EmailJS
     emailjs.init(EMAILJS_PUBLIC_KEY);
   
     const initializeComponent = async () => {
@@ -309,7 +308,8 @@ const [dayData, setDayData] = useState([]);
   };
 
   
-  const formatDate = (dateValue) => {
+   // Format date function
+   const formatDate = (dateValue) => {
     if (!dateValue) return "N/A";
     let date;
     if (dateValue && typeof dateValue.toDate === "function") {
@@ -319,9 +319,7 @@ const [dayData, setDayData] = useState([]);
     } else {
       date = dateValue;
     }
-
     if (!(date instanceof Date) || isNaN(date)) return "N/A";
-
     return date.toLocaleString("en-US", {
       month: "long",
       day: "numeric",
@@ -497,6 +495,16 @@ const [dayData, setDayData] = useState([]);
     }
   };
 
+  const NOTIFICATION_TYPES = {
+    APPOINTMENT_ACCEPTED: "appointment_accepted",
+    APPOINTMENT_REMINDER: "appointment_reminder",
+    APPOINTMENT_DAY_OF: "appointment_day_of",
+    CANCELLATION_APPROVED: "cancellation_approved",
+    CANCELLATION_DECLINED: "cancellation_declined",
+    RESCHEDULE_APPROVED: "reschedule_approved",
+    RESCHEDULE_DECLINED: "reschedule_declined",
+  };
+
   // Fetch pending appointments
   const fetchPendingAppointments = async () => {
     try {
@@ -598,6 +606,7 @@ const [dayData, setDayData] = useState([]);
           hasPetOwnerOpened: false,
           status: "unread",
           type: "appointment_accepted",
+          removeViewPetOwner: false,
         });
   
         // Send email to pet owner
@@ -922,17 +931,17 @@ const [dayData, setDayData] = useState([]);
         const clinicRef = doc(db, "clinics", currentUser.uid);
         const appointmentsQuery = query(
           collection(db, "appointments"),
-          where("status", "==", "Accepted"),
-          where("clinic", "==", clinicRef)
+          where("clinic", "==", clinicRef),
+          where("status", "in", ["Accepted", "Request Cancel", "Request Reschedule"])
         );
         const querySnapshot = await getDocs(appointmentsQuery);
         const currentAppointmentsList = [];
         const pastAppointmentsList = [];
-        // const today = new Date("2025-03-25"); // Current date as per system info
-        const today = new Date(); // Dynamically fetch current date
+        const today = new Date();
 
         for (const appointmentDoc of querySnapshot.docs) {
           const appointmentData = appointmentDoc.data();
+          console.log("Appointment Status:", appointmentData.status, "Reschedule Date:", appointmentData.rescheduleDate); // Add this
           let ownerName = "Unknown Owner";
           let petName = appointmentData.petName || "Unknown Pet";
           const vetName = appointmentData.veterinarian || "N/A";
@@ -953,7 +962,7 @@ const [dayData, setDayData] = useState([]);
           }
 
           const startTime = appointmentData.dateofAppointment.toDate();
-          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Assuming 1-hour duration
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
 
           const appointmentDetails = {
             Id: appointmentDoc.id,
@@ -963,13 +972,15 @@ const [dayData, setDayData] = useState([]);
             petName,
             ownerName,
             serviceType: appointmentData.serviceType || "N/A",
-            veterinarian: vetName, // Directly use the string
+            veterinarian: vetName,
             remarks: appointmentData.remarks || "No remarks",
             notes: appointmentData.notes || "No Notes",
             dateofAppointment: startTime,
+            status: appointmentData.status || "Accepted",
+            rescheduleDate: appointmentData.rescheduleDate || null,
           };
 
-          if (startTime < today) {
+          if (startTime < today && appointmentData.status === "Accepted") {
             pastAppointmentsList.push(appointmentDetails);
           } else {
             currentAppointmentsList.push(appointmentDetails);
@@ -978,18 +989,293 @@ const [dayData, setDayData] = useState([]);
 
         setAppointments(currentAppointmentsList);
         setPastAppointments(pastAppointmentsList);
-        setRecords(pastAppointmentsList); // Set past appointments as records
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
       setAppointments([]);
       setPastAppointments([]);
-      setRecords([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleAcceptRequest = async (appointmentId, requestType) => {
+    try {
+      console.log(`Accepting ${requestType} for appointment:`, appointmentId);
+      const appointmentRef = doc(db, "appointments", appointmentId);
+      const appointmentDoc = await getDoc(appointmentRef);
+      if (!appointmentDoc.exists()) throw new Error("Appointment not found");
+  
+      const appointmentData = appointmentDoc.data();
+      console.log("Appointment Data:", appointmentData);
+  
+      const ownerDoc = appointmentData.owner ? await getDoc(appointmentData.owner) : null;
+      const petDoc = appointmentData.petRef ? await getDoc(appointmentData.petRef) : null;
+      const clinicDoc = await getDoc(doc(db, "clinics", auth.currentUser.uid));
+  
+      if (!ownerDoc?.exists() || !petDoc?.exists() || !clinicDoc.exists()) {
+        throw new Error("Missing required data for notification");
+      }
+  
+      const ownerData = ownerDoc.data();
+      const petData = petDoc.data();
+      const clinicData = clinicDoc.data();
+  
+      const apptDate = appointmentData.dateofAppointment.toDate();
+      const date = apptDate.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+      const time = apptDate.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+  
+      const ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "Pet Owner";
+      const ownerEmail = ownerData.email || "default@email.com";
+  
+      if (requestType === "cancel") {
+        // Accept cancellation
+        await updateDoc(appointmentRef, {
+          status: "Cancelled",
+          updatedAt: serverTimestamp(),
+        });
+  
+        // Create notification
+        await setDoc(doc(collection(db, "notifications")), {
+          appointmentId,
+          clinicId: auth.currentUser.uid,
+          ownerId: appointmentData.owner?.path || `users/${ownerData.uid}`,
+          petId: appointmentData.petRef?.path || null,
+          message: `Your cancellation request for ${petData.petName}'s appointment on ${date} at ${time} has been approved by ${clinicData.clinicName}.`,
+          dateCreated: serverTimestamp(),
+          hasPetOwnerOpened: false,
+          status: "unread",
+          type: "cancellation_approved",
+          removeViewPetOwner: false
+        });
+  
+        // Send email
+        const emailKey = `cancel-approved-${appointmentId}`;
+        if (!sentEmails[emailKey]) {
+          const emailParams = {
+            name: ownerName,
+            pet_name: petData.petName,
+            clinic: clinicData.clinicName,
+            service: appointmentData.serviceType || "N/A",
+            date,
+            time,
+            email: ownerEmail,
+            logo: LOGO_URL,
+            message: `Your cancellation request for ${petData.petName}'s appointment on ${date} at ${time} has been approved.`,
+          };
+          try {
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, emailParams);
+            setSentEmails((prev) => ({ ...prev, [emailKey]: true }));
+          } catch (emailError) {
+            console.error("Failed to send cancellation email:", emailError);
+            setEmailError("Cancellation approved, but failed to send email notification.");
+          }
+        }
+      } else if (requestType === "reschedule") {
+        // Accept reschedule
+        if (!appointmentData.rescheduleDate) {
+          throw new Error("Reschedule date is missing");
+        }
+        const rescheduleDate = appointmentData.rescheduleDate.toDate
+          ? appointmentData.rescheduleDate.toDate()
+          : new Date(appointmentData.rescheduleDate);
+        if (isNaN(rescheduleDate.getTime())) {
+          throw new Error("Invalid reschedule date");
+        }
+  
+        await updateDoc(appointmentRef, {
+          dateofAppointment: appointmentData.rescheduleDate,
+          status: "Accepted",
+          updatedAt: serverTimestamp(),
+          rescheduleDate: null,
+        });
+        // Create notification
+        await setDoc(doc(collection(db, "notifications")), {
+          appointmentId,
+          clinicId: auth.currentUser.uid,
+          ownerId: appointmentData.owner?.path || `users/${ownerData.uid}`,
+          petId: appointmentData.petRef?.path || null,
+          message: `Your ${requestType} request for ${petData.petName}'s appointment on ${date} at ${time} was declined by ${clinicData.clinicName}.`,
+          dateCreated: serverTimestamp(),
+          hasPetOwnerOpened: false,
+          status: "unread",
+          type: `${requestType}_declined`,
+        });
+  
+        // Create notification
+        const newDate = rescheduleDate.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+        const newTime = rescheduleDate.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+  
+        await setDoc(doc(collection(db, "notifications")), {
+          appointmentId,
+          clinicId: auth.currentUser.uid,
+          ownerId: appointmentData.owner?.path || `users/${ownerData.uid}`,
+          petId: appointmentData.petRef?.path || null,
+          message: `Your reschedule request for ${petData.petName}'s appointment has been approved by ${clinicData.clinicName}. New time: ${newDate} at ${newTime}.`,
+          dateCreated: serverTimestamp(),
+          hasPetOwnerOpened: false,
+          status: "unread",
+          type: "reschedule_approved",
+          removeViewPetOwner: false,
+        });
+
+        await updateDoc(appointmentRef, {
+          dateofAppointment: appointmentData.rescheduleDate,
+          status: "Accepted",
+          updatedAt: serverTimestamp(),
+          rescheduleDate: null,
+        }).catch((error) => {
+          console.error("Update Error:", error);
+          throw error;
+        });
+  
+        // Send email
+        const emailKey = `reschedule-approved-${appointmentId}`;
+        if (!sentEmails[emailKey]) {
+          const emailParams = {
+            name: ownerName,
+            pet_name: petData.petName,
+            clinic: clinicData.clinicName,
+            service: appointmentData.serviceType || "N/A",
+            date: newDate,
+            time: newTime,
+            email: ownerEmail,
+            logo: LOGO_URL,
+            message: `Your reschedule request for ${petData.petName}'s appointment has been approved. New time: ${newDate} at ${newTime}.`,
+          };
+          try {
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, emailParams);
+            setSentEmails((prev) => ({ ...prev, [emailKey]: true }));
+          } catch (emailError) {
+            console.error("Failed to send reschedule email:", emailError);
+            setEmailError("Reschedule approved, but failed to send email notification.");
+          }
+        }
+      }
+  
+      // Refresh appointments
+      await fetchAppointments();
+      setShowAppointmentModal(false);
+      setSelectedAppointment(null);
+    } catch (error) {
+      console.error(`Error accepting ${requestType} request:`, error);
+      setEmailError(`Failed to accept ${requestType} request: ${error.message}`);
+    }
+  };
+
+  // Handle decline request
+  const handleDeclineRequest = async (appointmentId, requestType) => {
+    try {
+      console.log(`Declining ${requestType} for appointment:`, appointmentId);
+      const appointmentRef = doc(db, "appointments", appointmentId);
+      const appointmentDoc = await getDoc(appointmentRef);
+      if (!appointmentDoc.exists()) throw new Error("Appointment not found");
+  
+      const appointmentData = appointmentDoc.data();
+      console.log("Appointment Data:", appointmentData);
+  
+      const ownerDoc = appointmentData.owner ? await getDoc(appointmentData.owner) : null;
+      const petDoc = appointmentData.petRef ? await getDoc(appointmentData.petRef) : null;
+      const clinicDoc = await getDoc(doc(db, "clinics", auth.currentUser.uid));
+  
+      if (!ownerDoc?.exists() || !petDoc?.exists() || !clinicDoc.exists()) {
+        throw new Error("Missing required data for notification");
+      }
+  
+      const ownerData = ownerDoc.data();
+      const petData = petDoc.data();
+      const clinicData = clinicDoc.data();
+  
+      const apptDate = appointmentData.dateofAppointment.toDate();
+      const date = apptDate.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+      const time = apptDate.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+  
+      const ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "Pet Owner";
+      const ownerEmail = ownerData.email || "default@email.com";
+  
+      // Revert to "Accepted" status
+      await updateDoc(appointmentRef, {
+        status: "Accepted",
+        updatedAt: serverTimestamp(),
+        rescheduleDate: null,
+      }).catch((error) => {
+        console.error("Update Error:", error);
+        throw error;
+      });
+  
+      // Create notification
+      await setDoc(doc(collection(db, "notifications")), {
+        appointmentId,
+        clinicId: auth.currentUser.uid,
+        ownerId: appointmentData.owner?.path || `users/${ownerData.uid}`,
+        petId: appointmentData.petRef?.path || null,
+        message: `Your ${requestType} request for ${petData.petName}'s appointment on ${date} at ${time} was declined by ${clinicData.clinicName}.`,
+        dateCreated: serverTimestamp(),
+        hasPetOwnerOpened: false,
+        status: "unread",
+        type: `${requestType}_declined`,
+        removeViewPetOwner: false,
+      }).catch((error) => {
+        console.error("Notification Creation Error:", error);
+        throw error;
+      });
+  
+      // Send email
+      const emailKey = `${requestType}-declined-${appointmentId}`;
+      if (!sentEmails[emailKey]) {
+        const emailParams = {
+          name: ownerName,
+          pet_name: petData.petName,
+          clinic: clinicData.clinicName,
+          service: appointmentData.serviceType || "N/A",
+          date,
+          time,
+          email: ownerEmail,
+          logo: LOGO_URL,
+          message: `Your ${requestType} request for ${petData.petName}'s appointment on ${date} at ${time} was declined.`,
+        };
+        try {
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, emailParams);
+          setSentEmails((prev) => ({ ...prev, [emailKey]: true }));
+        } catch (emailError) {
+          console.error("Failed to send decline email:", emailError);
+          setEmailError(`Decline completed, but failed to send email notification.`);
+        }
+      }
+  
+      // Refresh appointments
+      await fetchAppointments();
+      setShowAppointmentModal(false);
+      setSelectedAppointment(null);
+    } catch (error) {
+      console.error(`Error declining ${requestType} request:`, error);
+      setEmailError(`Failed to decline ${requestType} request: ${error.message}`);
+    }
+  };
 
 
   const fetchVeterinarians = async () => {
@@ -2325,41 +2611,99 @@ const [dayData, setDayData] = useState([]);
         </div>
       )}
       {showAppointmentModal && selectedAppointment && (
-        <div className="modal-overlay-c">
-          <div className="modal-content-c">
-            <span className="close-button-c" onClick={closeAppointmentModal}>×</span>
-            <h2>Appointment Details</h2>
-            <div className="appointment-info-grid-c">
-              <div className="info-item-c">
-                <strong>Patient Name:</strong> {selectedAppointment.petName}
-              </div>
-              <div className="info-item-c">
-                <strong>Owner:</strong> {selectedAppointment.ownerName}
-              </div>
-              <div className="info-item-c">
-                <strong>Date & Time:</strong> {formatDate(selectedAppointment.StartTime)}
-              </div>
-              <div className="info-item-c">
-                <strong>Service:</strong> {selectedAppointment.serviceType}
-              </div>
-              <div className="info-item-c">
-                <strong>Veterinarian:</strong> {selectedAppointment.veterinarian}
-              </div>
-              <div className="info-item-c">
-                <strong>Remarks:</strong> {selectedAppointment.remarks}
-              </div>
-            </div>
-            <div className="appointment-notes-c">
-                <strong>Notes:</strong> {selectedAppointment.notes}
-              </div>
-            <div className="modal-actions-c">
-              <button className="modal-close-btn-c" onClick={closeAppointmentModal}>
-                Close
-              </button>
-            </div>
+  <div className="modal-overlay-c">
+    <div className="modal-content-c">
+      <span className="close-button-c" onClick={() => setShowAppointmentModal(false)}>
+        ×
+      </span>
+      <h2>Appointment Details</h2>
+      <div className="appointment-info-grid-c">
+        <div className="info-item-c">
+          <strong>Patient Name:</strong> {selectedAppointment.petName}
+        </div>
+        <div className="info-item-c">
+          <strong>Owner:</strong> {selectedAppointment.ownerName}
+        </div>
+        <div className="info-item-c">
+          <strong>Date & Time:</strong> {formatDate(selectedAppointment.StartTime)}
+        </div>
+        <div className="info-item-c">
+          <strong>Service:</strong> {selectedAppointment.serviceType}
+        </div>
+        <div className="info-item-c">
+          <strong>Veterinarian:</strong> {selectedAppointment.veterinarian}
+        </div>
+        <div className="info-item-c">
+          <strong>Remarks:</strong> {selectedAppointment.remarks}
+        </div>
+        <div className="info-item-c">
+          <strong>Status:</strong> {selectedAppointment.status}
+        </div>
+        {selectedAppointment.status === "Request Reschedule" && selectedAppointment.rescheduleDate && (
+          <div className="info-item-c">
+            <strong>Requested Reschedule Date:</strong>{" "}
+            {formatDate(selectedAppointment.rescheduleDate.toDate())}
+          </div>
+        )}
+      </div>
+      <div className="appointment-notes-c">
+        <strong>Notes:</strong> {selectedAppointment.notes}
+      </div>
+      <div className="modal-actions-c">
+        {selectedAppointment.status === "Request Cancel" && (
+          <>
+            <button
+              className="submit-btn-c"
+              onClick={() => {
+                console.log("Accept Cancel Clicked for ID:", selectedAppointment.Id);
+                handleAcceptRequest(selectedAppointment.Id, "cancel");
+              }}
+            >
+              Accept Cancellation
+            </button>
+            <button
+              className="cancel-btn-c"
+              onClick={() => {
+                console.log("Decline Cancel Clicked for ID:", selectedAppointment.Id);
+                handleDeclineRequest(selectedAppointment.Id, "cancel");
+              }}
+            >
+              Decline Cancellation
+            </button>
+          </>
+        )}
+        {selectedAppointment.status === "Request Reschedule" && (
+          <>
+            <button
+              className="submit-btn-c"
+              onClick={() => {
+                console.log("Accept Reschedule Clicked for ID:", selectedAppointment.Id);
+                handleAcceptRequest(selectedAppointment.Id, "reschedule");
+              }}
+            >
+              Accept Reschedule
+            </button>
+            <button
+              className="cancel-btn-c"
+              onClick={() => {
+                console.log("Decline Reschedule Clicked for ID:", selectedAppointment.Id);
+                handleDeclineRequest(selectedAppointment.Id, "reschedule");
+              }}
+            >
+              Decline Reschedule
+            </button>
+          </>
+        )}
+        <button
+          className="modal-close-btn-c"
+          onClick={() => setShowAppointmentModal(false)}
+        >
+          Close
+        </button>
           </div>
         </div>
-      )}
+      </div>
+    )}
     </div>
   );
 };

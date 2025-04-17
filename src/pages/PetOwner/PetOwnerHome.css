@@ -1316,3 +1316,24 @@ form {
     border-radius: 2px;;
   }
 }
+
+
+/* PetOwnerHome.css */
+.e-schedule .e-appointment.request-cancel {
+  background-color: #ffcc00 !important; /* Yellow for pending cancellation */
+  opacity: 0.8;
+}
+
+.e-schedule .e-appointment.request-reschedule {
+  background-color: #ff9900 !important; /* Orange for pending reschedule */
+  opacity: 0.8;
+}
+
+.notification-item-p.cancellation_approved,
+.notification-item-p.reschedule_approved {
+  background-color: #e6ffed;
+}
+.notification-item-p.cancellation_declined,
+.notification-item-p.reschedule_declined {
+  background-color: #ffe6e6;
+}
