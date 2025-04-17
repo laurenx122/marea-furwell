@@ -1302,6 +1302,110 @@ const [dayData, setDayData] = useState([]);
     }
   };
 
+   // edit vet schedule
+   const handleEditScheduleClick = (vet) => {
+    setEditingVet(vet);
+    setEditingVetSchedules(vet.schedule || []);
+    setNewSchedule({ day: "", startTime: "", endTime: "" });
+
+    // Fetch upcoming appointments for this veterinarian
+    const fetchVetAppointments = async () => {
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          const clinicRef = doc(db, "clinics", currentUser.uid);
+          const appointmentsQuery = query(
+            collection(db, "appointments"),
+            where("status", "==", "Accepted"),
+            where("clinic", "==", clinicRef),
+            where("veterinarian", "==", `${vet.FirstName} ${vet.LastName}`)
+          );
+          const querySnapshot = await getDocs(appointmentsQuery);
+          const today = new Date();
+          const upcomingAppointments = [];
+
+          for (const appointmentDoc of querySnapshot.docs) {
+            const appointmentData = appointmentDoc.data();
+            const startTime = appointmentData.dateofAppointment.toDate();
+
+            if (startTime >= today) {
+              upcomingAppointments.push({
+                Id: appointmentDoc.id,
+                StartTime: startTime,
+                EndTime: new Date(startTime.getTime() + 60 * 60 * 1000),
+                ...appointmentData,
+              });
+            }
+          }
+
+          setVetAppointments(upcomingAppointments);
+        }
+      } catch (error) {
+        console.error("Error fetching vet appointments:", error);
+        setVetAppointments([]);
+      }
+    };
+
+    fetchVetAppointments();
+    setShowEditScheduleModal(true);
+  };
+
+  const hasOverlappingAppointments = (schedule, appointments) => {
+    const { day, startTime, endTime } = schedule;
+
+    // Convert startTime and endTime to minutes for easier comparison
+    const startMinutes = parseInt(startTime.split(":")[0]) * 60 + parseInt(startTime.split(":")[1]);
+    const endMinutes = parseInt(endTime.split(":")[0]) * 60 + parseInt(endTime.split(":")[1]);
+
+    return appointments.some((appointment) => {
+      const apptDate = appointment.StartTime;
+      const apptDay = apptDate.toLocaleString("en-US", { weekday: "long" });
+
+      if (apptDay !== day) return false;
+
+      const apptStartMinutes = apptDate.getHours() * 60 + apptDate.getMinutes();
+      const apptEndMinutes = apptStartMinutes + 60; // Assuming appointments are 1 hour long
+
+      // Check for overlap: if appointment starts before schedule ends and ends after schedule starts
+      return apptStartMinutes < endMinutes && apptEndMinutes > startMinutes;
+    });
+  };
+
+  // Add a new schedule to the editing vet schedules
+  const addEditingSchedule = () => {
+    if (newSchedule.day && newSchedule.startTime && newSchedule.endTime) {
+      setEditingVetSchedules((prev) => [...prev, newSchedule]);
+      setNewSchedule({ day: "", startTime: "", endTime: "" });
+    }
+  };
+
+  // Remove a schedule from the editing vet schedules
+  const removeEditingSchedule = (index) => {
+    setEditingVetSchedules((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Save the updated schedules to Firestore
+  const handleSaveSchedule = async () => {
+    try {
+      const vetRef = doc(db, "users", editingVet.id);
+      await updateDoc(vetRef, { schedule: editingVetSchedules });
+
+      setVeterinarians((prev) =>
+        prev.map((vet) =>
+          vet.id === editingVet.id ? { ...vet, schedule: editingVetSchedules } : vet
+        )
+      );
+
+      setShowEditScheduleModal(false);
+      setEditingVet(null);
+      setEditingVetSchedules([]);
+      setNewSchedule({ day: "", startTime: "", endTime: "" });
+      setVetAppointments([]); // Clear appointments when saving
+    } catch (error) {
+      console.error("Error updating schedule:", error);
+    }
+  };
+
   const handleVetNameClick = (vet) => {
     setSelectedVet(vet);
     setShowVetInfoModal(true);
