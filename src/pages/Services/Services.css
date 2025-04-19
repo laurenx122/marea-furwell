@@ -1,28 +1,39 @@
-/* Overall container for the services section */
+/* Services.css */
+
 .services-container {
-    background-color: #B2D4D8;
+    background-color: #B2D4D8; 
     padding: 20px;
-    text-align: left;  
+    text-align: center;
     padding-top: 80px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start; 
+    align-items: center;
+    width: 100%;
+    margin: 0; 
+    box-sizing: border-box; 
+    overflow-y: auto;
+   overflow-x: hidden;
+    min-height: 100vh; 
 }
 
-/* Title container */
+
 .services-container .services-title {
     margin-bottom: 30px;
+    text-align: center;
+    width: 100%;
+    opacity: 0; 
+    animation: fadeInDown 0.8s ease-out forwards; 
+    animation-delay: 0.2s; 
 }
 
 
-/* Title style */
 .services-container h1 {
     padding: 30px;
-    font-size: 3rem; /* Adjust font size */
+    font-size: 3rem;
     font-family: 'Arial', sans-serif;
     margin: 0;
 }
-
 
 .services-container h1 span.our {
     color: #113B57; 
@@ -37,34 +48,64 @@
 }
 
 
-/* Grid container for the service icons */
 .services-container .services-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); 
+    grid-template-columns: repeat(3, 1fr);
     gap: 30px;  
     justify-items: center;
-    align-items: start;
+    align-items: center;
     width: 100%; 
+    max-width: 1200px; 
+    margin: 0 auto;
+    padding: 0 20px; 
 }
 
-/* Individual service item styles */
+
 .services-container .service-item {
     display: flex;
     align-items: center;
     justify-content: flex-start;
     padding: 20px;
-    background-color:#B2D4D8;
+    background-color: #B2D4D8; 
     border-radius: 15px; 
-    width: 220px; 
+    width: 100%;
+    max-width: 220px;
     height: 120px;
-    min-width: 220px; 
     opacity: 0;
     animation: fadeInUp 0.8s ease-out forwards; 
     animation-delay: 0.6s;
     transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease; 
 }
 
-/* Keyframe animation for each service item */
+.services-container .service-item:nth-child(1) {
+    animation-delay: 0.4s; 
+}
+
+.services-container .service-item:nth-child(2) {
+    animation-delay: 0.6s;
+}
+
+.services-container .service-item:nth-child(3) {
+    animation-delay: 0.8s;
+}
+
+.services-container .service-item:nth-child(4) {
+    animation-delay: 1.0s;
+}
+
+.services-container .service-item:nth-child(5) {
+    animation-delay: 1.2s;
+}
+
+.services-container .service-item:nth-child(6) {
+    animation-delay: 1.4s;
+}
+
+.services-container .service-item:nth-child(n+7) {
+    animation-delay: 1.6s; 
+}
+
+
 @keyframes fadeInUp {
     0% {
         opacity: 0;
@@ -76,14 +117,26 @@
     }
 }
 
-/* Hover effect: Scale and add shadow */
+
+@keyframes fadeInDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
 .services-container .service-item:hover {
     transform: scale(1.05); 
     box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1); 
     background-color: #EDBFC6;
 }
 
-/* Service icon circle */
+
 .services-container .service-item .icon {
     width: 70px;
     height: 70px;
@@ -97,18 +150,88 @@
     flex-shrink: 0; 
 }
 
-/* Ensures the image fits within the circle */
+
 .services-container .service-item .icon img {
     width: 50px;
     height: 50px;
     object-fit: cover;
 }
-
-/* Service item text */
 .services-container .service-item p {
     font-size: 1rem;
     color: #4D6C73;
     font-weight: bold;
     margin: 0;
     word-wrap: break-word; 
+}
+
+
+@media (max-width: 790px) {
+    .services-container .services-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    .services-container h1 {
+        font-size: 2.5rem;
+    }
+
+    .services-container .service-item {
+        height: 100px;
+        max-width: 100%;
+    }
+
+    .services-container .service-item .icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .services-container .service-item .icon img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .services-container .service-item p {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 560px) {
+    .services-container {
+        padding: 10px;
+        padding-top: 60px;
+    }
+
+    .services-container .services-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 0 10px;
+        width: 90%;
+        max-width: 300px;
+    }
+
+    .services-container h1 {
+        font-size: 2rem;
+        padding: 15px;
+    }
+
+    .services-container .service-item {
+        height: 80px;
+        padding: 15px;
+        max-width: 100%;
+    }
+
+    .services-container .service-item .icon {
+        width: 50px;
+        height: 50px;
+        margin-right: 10px;
+    }
+
+    .services-container .service-item .icon img {
+        width: 35px;
+        height: 35px;
+    }
+
+    .services-container .service-item p {
+        font-size: 0.85rem;
+    }
 }
