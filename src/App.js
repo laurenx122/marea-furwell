@@ -65,8 +65,7 @@ function App() {
           <Route path="/AdminSubscription" element={<AdminSubscription />} />
           {/* Find Clinic & Details */}
           <Route path="/FindClinic" element={<FindClinic />} />
-          <Route path="/FindClinic/:clinicName" element={<ClinicDetails />} />
-          <Route path="/clinic/:clinicId" element={<ClinicDetails />} />
+          <Route path="/ClinicDetails" element={<ClinicDetails />} />
         </Routes>
       </Layout>
     </Router>

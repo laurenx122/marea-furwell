@@ -21,7 +21,8 @@
   padding: 12px 20px;
   border-radius: 30px;
   cursor: pointer;
-  margin: 25px 0;
+  margin: 20px 0;
+  margin-top: 65px;
   font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.3s ease;
@@ -507,13 +508,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
   backdrop-filter: blur(3px);
 }
+
 
 .appointment-modal, .login-modal {
   background-color: white;

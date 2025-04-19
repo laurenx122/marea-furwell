@@ -13,6 +13,7 @@ const FindClinic = () => {
   const [selectedPrice, setSelectedPrice] = useState('');
   const [selectedSort, setSelectedSort] = useState('Relevance');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [clinicDetails, setClinicDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -145,7 +146,7 @@ const FindClinic = () => {
   };
 
   const viewClinicDetails = (clinic) => {
-    navigate(`/clinic/${clinic.id}`, { state: { clinicData: clinic } });
+    navigate(`/ClinicDetails`, { state: { clinicId: clinic.id, clinicData: clinic } });
   };
 
   const handleBookNow = (clinic) => {
@@ -154,8 +155,9 @@ const FindClinic = () => {
       setShowLoginPrompt(true);
       setClinicDetails(clinic); // Store clinic details for redirect after login
     } else {
-      navigate(`/clinic/${clinic.id}`, { 
+      navigate('/ClinicDetails', { 
         state: { 
+          clinicId:  clinic.id,
           clinicData: clinic,
           openAppointmentModal: true // Flag to open modal
         } 
@@ -171,6 +173,14 @@ const FindClinic = () => {
         openAppointmentModal: true // Pass flag through login
       } 
     });
+  };
+
+  const openFilterModal = () => {
+    setIsFilterModalOpen(true);
+  };
+
+  const closeFilterModal = () => {
+    setIsFilterModalOpen(false);
   };
 
   const filteredClinics = clinics.filter(clinic => {
@@ -201,14 +211,22 @@ const FindClinic = () => {
 
   return (
     <div className="find-clinic-container">
-      <form className="fsearch-bar-container" onSubmit={handleSearchSubmit}>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          placeholder="Search "
-        />
-      </form>
+      <div className="fsearch-bar-container">
+        <button className="filter-button" onClick={openFilterModal}>
+          <svg className="filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 4h16v2.586l-7 7V20l-2 2-2-2v-6.414l-7-7V4z" />
+          </svg>
+          Filters
+        </button>
+        <form onSubmit={handleSearchSubmit}>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            placeholder="Search"
+          />
+        </form>
+      </div>
 
       <div className="clinic-content-area">
         <div className="filters-container">
@@ -386,6 +404,107 @@ const FindClinic = () => {
                   Book Now
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+{isFilterModalOpen && (
+        <div className="modal-overlay" onClick={closeFilterModal}>
+          <div className="filter-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Filters</h2>
+              <button className="close-button" onClick={closeFilterModal}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="filter">
+                <p>Sort by:</p>
+                <label>
+                  <input
+                    type="radio"
+                    name="sort"
+                    value="Relevance"
+                    checked={selectedSort === 'Relevance'}
+                    onChange={handleSortChange}
+                  />
+                  Relevance
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="sort"
+                    value="PriceAsc"
+                    checked={selectedSort === 'PriceAsc'}
+                    onChange={handleSortChange}
+                  />
+                  Price: Low to High
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="sort"
+                    value="PriceDesc"
+                    checked={selectedSort === 'PriceDesc'}
+                    onChange={handleSortChange}
+                  />
+                  Price: High to Low
+                </label>
+              </div>
+              <div className="quick-filter">
+                <button type="button">Nearby Clinics</button>
+              </div>
+              <div className="filter">
+                <p>Services:</p>
+                {services.map((service) => (
+                  <label key={service}>
+                    <input
+                      type="checkbox"
+                      value={service}
+                      checked={selectedService.includes(service)}
+                      onChange={handleServiceChange}
+                    />
+                    {service}
+                  </label>
+                ))}
+              </div>
+              <div className="filter">
+                <p>Price:</p>
+                <div className="price-buttons">
+                  <button 
+                    type="button" 
+                    className={selectedPrice === '₱' ? 'selected' : ''} 
+                    onClick={() => handlePriceChange('₱')}
+                  >
+                    ₱
+                  </button>
+                  <button 
+                    type="button" 
+                    className={selectedPrice === '₱₱' ? 'selected' : ''} 
+                    onClick={() => handlePriceChange('₱₱')}
+                  >
+                    ₱₱
+                  </button>
+                  <button 
+                    type="button" 
+                    className={selectedPrice === '₱₱₱' ? 'selected' : ''} 
+                    onClick={() => handlePriceChange('₱₱₱')}
+                  >
+                    ₱₱₱
+                  </button>
+                </div>
+              </div>
+              <button 
+                className="reset-filters"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedService([]);
+                  setSelectedPrice('');
+                  setSelectedSort('Relevance');
+                  closeFilterModal();
+                }}
+              >
+                Reset Filters
+              </button>
             </div>
           </div>
         </div>
