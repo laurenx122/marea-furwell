@@ -9,6 +9,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import Login from '../Login/Login';
+import Signup from '../Signup/Signup';
 
 const ClinicDetails = () => {
   const [clinic, setClinic] = useState(null);
@@ -27,13 +29,14 @@ const ClinicDetails = () => {
     timeSlot: "",
   });
   const [bookingStatus, setBookingStatus] = useState({ loading: false, success: false, error: null });
-  const { clinicId } = useParams();
+  //const { clinicId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const auth = getAuth();
   const mapRef = useRef(null);
   const markerRef = useRef(null);
-  const clinicData = location.state?.clinicData;
+  //const clinicData = location.state?.clinicData;
+  const { clinicId, clinicData, openAppointmentModal } = location.state || {}
   const [veterinarians, setVeterinarians] = useState([]);
   const [loadingVeterinarians, setLoadingVeterinarians] = useState(false);
   const [vetServices, setVetServices] = useState({});
@@ -41,6 +44,8 @@ const ClinicDetails = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [takenAppointments, setTakenAppointments] = useState([]);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
 
   const categorizePrice = (price) => {
     if (price < 800) return '₱';
@@ -193,57 +198,61 @@ const ClinicDetails = () => {
         setClinic(initialClinicInfo);
       }
 
-      try {
-        const clinicDoc = await getDoc(doc(db, "clinics", clinicId));
-        if (clinicDoc.exists()) {
-          const data = clinicDoc.data();
-          const formattedServices = [];
-          if (data.servicePrices) {
-            Object.entries(data.servicePrices).forEach(([serviceName, price]) => {
-              formattedServices.push({ name: serviceName, price });
-            });
+      if (clinicId) {
+        try {
+          const clinicDoc = await getDoc(doc(db, "clinics", clinicId));
+          if (clinicDoc.exists()) {
+            const data = clinicDoc.data();
+            const formattedServices = [];
+            if (data.servicePrices) {
+              Object.entries(data.servicePrices).forEach(([serviceName, price]) => {
+                formattedServices.push({ name: serviceName, price });
+              });
+            }
+
+            const clinicInfo = {
+              id: clinicDoc.id,
+              clinicName: data.clinicName || 'Unnamed Clinic',
+              streetAddress: data.streetAddress || '',
+              city: data.city || '',
+              province: data.province || '',
+              postalCode: data.postalCode || '',
+              priceCategory: categorizePrice(data.price || 0),
+              price: data.price || 0,
+              services: formattedServices.length > 0
+                ? formattedServices
+                : (data.services || []).map(s => typeof s === 'object' ? s : { name: s }),
+              clinicDescription: data.clinicDescription || 'No description available',
+              image: data.imgURL || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
+              phone: data.phone || 'Not available',
+              email: data.email || 'Not available',
+              hours: data.operatingHours || 'Not available',
+              lat: data.lat,
+              lng: data.lng,
+              ...(initialClinicInfo || {})
+            };
+
+            setClinic(clinicInfo);
+          } else if (!initialClinicInfo) {
+            navigate('/FindClinic');
           }
-
-          const clinicInfo = {
-            id: clinicDoc.id,
-            clinicName: data.clinicName || 'Unnamed Clinic',
-            streetAddress: data.streetAddress || '',
-            city: data.city || '',
-            province: data.province || '',
-            postalCode: data.postalCode || '',
-            priceCategory: categorizePrice(data.price || 0),
-            price: data.price || 0,
-            services: formattedServices.length > 0
-              ? formattedServices
-              : (data.services || []).map(s => typeof s === 'object' ? s : { name: s }),
-            clinicDescription: data.clinicDescription || 'No description available',
-            image: data.imgURL || 'https://sharpsheets.io/wp-content/uploads/2023/11/veterinary-clinic.jpg.webp',
-            phone: data.phone || 'Not available',
-            email: data.email || 'Not available',
-            hours: data.operatingHours || 'Not available',
-            lat: data.lat,
-            lng: data.lng,
-            ...(initialClinicInfo || {})
-          };
-
-          setClinic(clinicInfo);
-        } else if (!initialClinicInfo) {
-          navigate('/FindClinic');
+        } catch (error) {
+          console.error("Error fetching clinic data:", error);
         }
-      } catch (error) {
-        console.error("Error fetching clinic data:", error);
-      } finally {
-        setLoading(false);
+      } else {
+        navigate('/FindClinic');
       }
+
+      setLoading(false);
     }
 
     fetchClinicData();
     fetchVeterinarians();
 
-    if (location.state?.openAppointmentModal && auth.currentUser) {
+    if (openAppointmentModal && auth.currentUser) {
       setShowModal(true);
     }
-  }, [clinicId, clinicData, navigate, location.state, auth]);
+  }, [clinicId, clinicData, navigate, openAppointmentModal, auth]);
 
   useEffect(() => {
     if (clinic && clinic.lat && clinic.lng) {
@@ -363,6 +372,48 @@ const ClinicDetails = () => {
     }
   };
 
+  const handleLoginClick = () => {
+    setIsLoginModalOpen(true);
+    setShowLoginModal(false); // Close the login-required modal
+  };
+  
+  const handleSignUpClick = () => {
+    setIsSignUpModalOpen(true);
+    setShowLoginModal(false); // Close the login-required modal
+  };
+  
+  const handleLoginModalClose = () => {
+    setIsLoginModalOpen(false);
+  };
+  
+  const handleSignUpModalClose = () => {
+    setIsSignUpModalOpen(false);
+  };
+  
+  const switchToLoginModal = () => {
+    setIsSignUpModalOpen(false);
+    setIsLoginModalOpen(true);
+  };
+  
+  const switchToSignUpModal = () => {
+    setIsLoginModalOpen(false);
+    setIsSignUpModalOpen(true);
+  };
+  
+  const handleOutsideClick = (e) => {
+    if (e.target.className.includes('modal-overlay')) {
+      handleSignUpModalClose();
+      handleLoginModalClose();
+    }
+  };
+  
+  const handleLoginSuccess = () => {
+    setTimeout(() => {
+      setIsLoginModalOpen(false);
+      setShowModal(true); // Open appointment modal after login
+    }, 2000);
+  };
+
   const handleBookAppointment = () => {
     if (!user) {
       setShowLoginModal(true);
@@ -474,10 +525,10 @@ const ClinicDetails = () => {
     }
   };
 
-  const handleLoginRedirect = () => {
-    setShowLoginModal(false);
-    navigate('/login', { state: { from: `/clinic/${clinicId}`, openAppointmentModal: true } });
-  };
+  // const handleLoginRedirect = () => {
+  //   setShowLoginModal(false);
+  //   navigate('/Login', { state: { from: `/clinic/${clinicId}`, openAppointmentModal: true } });
+  // };
 
   const handleVetClick = (vet) => {
     setSelectedVet(vet);
@@ -502,12 +553,13 @@ const ClinicDetails = () => {
   return (
     <div className="clinic-details-container">
       <div className="main-content">
-        <button className="back-button" onClick={() => navigate('/FindClinic')}>
-          ← Back to Clinics
-        </button>
+
 
         <div className="clinic-details-content">
           <div className="clinic-header">
+              <button className="back-button" onClick={() => navigate('/FindClinic')}>
+              ← Back to Clinics
+            </button>
             <h1>{clinic.clinicName}</h1>
             <p className="clinic-address">{fullAddress}</p>
             <p className="price-category">Price Range: {clinic.priceCategory}</p>
@@ -638,14 +690,38 @@ const ClinicDetails = () => {
             <div className="modal-body login-modal-body">
               <p>You need to be logged in to book an appointment.</p>
               <div className="login-actions">
-                <button className="submit-btn" onClick={handleLoginRedirect}>
+                <button className="submit-btn" onClick={handleLoginClick}>
                   Log In
                 </button>
-                <Link to="/register" className="submit-btn" style={{ textDecoration: 'none' }}>
-                  Register
-                </Link>
+                <button className="submit-btn" onClick={handleSignUpClick}>
+                  Sign Up
+                </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isLoginModalOpen && (
+        <div className="modal-overlay" onClick={handleOutsideClick}>
+          <div className="login-modal-content">
+            <Login
+              onClose={handleLoginModalClose}
+              onSwitchToSignUp={switchToSignUpModal}
+              onLoginSuccess={handleLoginSuccess}
+            />
+          </div>
+        </div>
+      )}
+
+      {isSignUpModalOpen && (
+        <div className="modal-overlay" onClick={handleOutsideClick}>
+          <div className="login-modal-content">
+            <Signup
+              onClose={handleSignUpModalClose}
+              onSwitchToLogin={switchToLoginModal}
+              onLoginSuccess={handleLoginSuccess}
+            />
           </div>
         </div>
       )}

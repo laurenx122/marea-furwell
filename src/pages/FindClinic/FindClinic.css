@@ -1,29 +1,48 @@
-/* FindClinic.css */
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 .find-clinic-container {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  padding-top: 100px; 
+  padding-top: 100px;
   font-family: 'Arial', sans-serif;
   background-color: #CDEDF6;
   min-height: 100vh;
 }
 
 /* Search Bar Styling */
-.fsearch-bar-container {
+.fsearch-bar-container  {
   display: flex;
   justify-content: center;
-  margin-top: 10px; 
+  align-items: center;
+  margin-top: 10px;
   margin-bottom: 40px;
   width: 100%;
   max-width: 1200px;
-  margin-left: 290px;
-  /* margin-right: auto; */
-  flex-direction: row;
+  margin-left: auto;
+  margin-right: auto;
 }
+
+.fsearch-bar-container form{
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 .fsearch-bar-container input[type="text"] {
   width: 70%;
+  max-width: 800px;
   padding: 12px 20px;
   border-radius: 30px;
   border: 1px solid #ccc;
@@ -31,30 +50,38 @@
   outline: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
-.no-results p{
-  background-color: #cfe9ed;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(2, 93, 105, 0.875);
-  font-weight:bold;
-  color: #113B57;
-}
-.search-bar-container button {
-  padding: 12px 25px;
+
+.filter-button {
+  display: none;
+  padding: 12px 15px;
   background-color: #3E6680;
   color: white;
   border: none;
   border-radius: 30px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
+  margin-right: 10px;
   transition: background-color 0.3s;
-  margin-left: 10px;
-  width: auto;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.search-bar-container button:hover {
+.filter-button:hover {
   background-color: #113B57;
+}
+
+.filter-icon {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+.no-results p {
+  background-color: #cfe9ed;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(2, 93, 105, 0.875);
+  font-weight: bold;
+  color: #113B57;
 }
 
 /* Main Content Layout */
@@ -162,7 +189,7 @@
   width: 100%;
   padding: 10px;
   background-color: #b5eaf9;
-  border: #113B57;
+  border: none;
   border-radius: 5px;
   font-size: 0.9rem;
   color: #555;
@@ -187,7 +214,7 @@ input[type="checkbox"], input[type="radio"] {
   width: 78%;
 }
 
-.loading-container, .error-container{
+.loading-container, .error-container {
   padding: 30px;
   text-align: center;
   background-color: white;
@@ -297,7 +324,7 @@ input[type="checkbox"], input[type="radio"] {
   z-index: 2000;
 }
 
-.modal {
+.modal, .filter-modal, .login-modal {
   background-color: #CDEDF6;
   border-radius: 10px;
   width: 90%;
@@ -314,7 +341,7 @@ input[type="checkbox"], input[type="radio"] {
   margin-bottom: 10px;
 }
 
-.close-modal {
+.close-modal, .close-button {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -402,7 +429,7 @@ input[type="checkbox"], input[type="radio"] {
   justify-content: center;
 }
 
-.see-more-button, .book-now-button {
+.see-more-button, .book-now-button, .login-button {
   padding: 10px 20px;
   border-radius: 25px;
   font-size: 1rem;
@@ -422,20 +449,38 @@ input[type="checkbox"], input[type="radio"] {
   background-color: #e1f0ff;
 }
 
-.book-now-button {
+.book-now-button, .login-button {
   background-color: #3E6680;
   color: white;
   border: none;
 }
 
-.book-now-button:hover {
+.book-now-button:hover, .login-button:hover {
   background-color: #113B57;
+}
+
+.filter-modal .modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+.filter-modal .modal-header h2 {
+  margin: 0;
+  color: #113B57;
+  font-size: 1.5rem;
+}
+
+.filter-modal .modal-body {
+  padding: 20px;
 }
 
 /* Responsive Design */
 @media (max-width: 1024px) {
   .clinics-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .searchfield{
+    justify-content: center;
   }
 }
 
@@ -445,9 +490,7 @@ input[type="checkbox"], input[type="radio"] {
   }
   
   .filters-container {
-    width: 100%;
-    margin-right: 0;
-    margin-bottom: 20px;
+    display: none;
   }
   
   .clinic-list {
@@ -458,87 +501,63 @@ input[type="checkbox"], input[type="radio"] {
     grid-template-columns: repeat(2, 1fr);
   }
   
-  .search-bar-container input[type="text"] {
-    width: 65%;
+  .fsearch-bar-container {
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
+  
+  .filter-button {
+    display: flex;
+    align-items: center;
+  }
+  
+  .fsearch-bar-container input[type="text"] {
+    width: 100%;
+    max-width: 500px;
   }
 }
 
 @media (max-width: 576px) {
-  .search-bar-container {
-    flex-direction: row; 
-    flex-wrap: nowrap; 
+  .clinics-grid {
+    grid-template-columns: 1fr;
   }
   
-  .search-bar-container input[type="text"] {
-    width: 70%; 
-    margin-bottom: 0;
+  .fsearch-bar-container {
+    flex-direction: row;
+    align-items: center;
   }
   
-  .search-bar-container button {
-    width: 30%; 
-    margin-left: 10px; 
+  .fsearch-bar-container input[type="text"] {
+    max-width: 400px;
+  }
+  
+  .filter-button {
+    padding: 10px;
   }
 }
 
 @media (max-width: 400px) {
-  .search-bar-container {
+  .fsearch-bar-container {
     flex-direction: column;
+    gap: 10px;
   }
   
-  .search-bar-container input[type="text"] {
+  .filter-button {
     width: 100%;
-    margin-bottom: 10px;
+    max-width: 150px;
+    margin-right: 0;
   }
   
-  .search-bar-container button {
+  .fsearch-bar-container input[type="text"] {
     width: 100%;
-    margin-left: 0;
-  }
-}
-  
-  .search-bar-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 40px;
-    width: 100%;
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
-    flex-direction: row; 
-  }
-  
-  .search-bar-container input[type="text"] {
-    width: 70%;
-    padding: 12px 20px;
-    border-radius: 30px;
-    border: 1px solid #ccc;
-    font-size: 1rem;
-    outline: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    flex: 1; 
-    max-width: 800px;
-  }
-  
-  .search-bar-container button {
-    padding: 12px 25px;
-    background-color: #3E6680;
-    color: white;
-    border: none;
-    border-radius: 30px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    margin-left: 10px;
-    width: auto; 
-    min-width: 100px; 
-    max-width: 150px; 
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    max-width: none;
   }
   
   .modal-actions {
     flex-direction: column;
   }
   
-  .see-more-button, .book-now-button {
+  .see-more-button, .book-now-button, .login-button {
     max-width: 100%;
   }
+}

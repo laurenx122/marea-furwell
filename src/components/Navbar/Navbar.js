@@ -411,7 +411,7 @@ const Navbar = () => {
                                 </>
                             ) : isLoggedIn ? (
                                 <>
-                                    {location.pathname === '/Home' && (
+                                    {(location.pathname === '/Home' || location.pathname === '/FindClinic' || location.pathname === '/ClinicDetails')  && (
                                         <li className={styles.mobileMenuItem}>
                                             <Link to={getUserHomeRoute()} className={styles.mobileMenuLink} onClick={() => setIsMenuOpen(false)}>
                                                 <div style={{ display: 'flex', alignItems: 'center' }}>
