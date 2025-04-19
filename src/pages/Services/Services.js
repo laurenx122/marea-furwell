@@ -1,101 +1,60 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './Services.css'; 
 import Footer from '../../components/Footer/Footer'; 
+import { db } from '../../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 const Services = () => {
+    const [services, setServices] = useState([]);
+
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                const servicesCollection = collection(db, 'services');
+                const servicesSnapshot = await getDocs(servicesCollection);
+                const servicesList = servicesSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    name: doc.id
+                }));
+                setServices(servicesList);
+            } catch (error) {
+                console.error("Error fetching services: ", error);
+            }
+        };
+
+        fetchServices();
+    }, []);
+
     return (
-        <div>
+        <div style={{
+            width: '100%',
+            minHeight: '100vh',
+            margin: 0,
+            padding: 0,
+            overflowX: 'hidden'
+        }}>
             <div className="services-container animate__animated animate__fadeInUpBig">
                 <div className="services-title">
-               <h1><span className="our">Our</span> <span className="services">Services</span></h1>
+                    <h1><span className="our">Our</span> <span className="services">Services</span></h1>
                 </div>
                 <div className="services-grid">
-                    {/* Service Items */}
-                    <div className="service-item">
-                        <div className="icon">
-                            <img 
-                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdth6s8wfllNAHbXJ3oFo_xFT7b_6s2cajw&s"
-                                alt="Wellness & Prevention Icon" 
-                            />
-                        </div>
-                        <p>Wellness & Prevention</p>
-                    </div>
-                    <div className="service-item">
-                        <div className="icon">
-                            <img 
-                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdth6s8wfllNAHbXJ3oFo_xFT7b_6s2cajw&s"
-                                alt="Testing & Diagnostics Icon" 
-                            />
-                        </div>
-                        <p>Testing & Diagnostics</p>
-                    </div>
-                    <div className="service-item">
-                        <div className="icon">
-                            <img 
-                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdth6s8wfllNAHbXJ3oFo_xFT7b_6s2cajw&s"
-                                alt="Advanced Care Icon" 
-                            />
-                        </div>
-                        <p>Advanced Care</p>
-                    </div>
-                    <div className="service-item">
-                        <div className="icon">
-                            <img 
-                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdth6s8wfllNAHbXJ3oFo_xFT7b_6s2cajw&s"
-                                alt="Pet Anaesthesia Icon" 
-                            />
-                        </div>
-                        <p>Pet Anaesthesia</p>
-                    </div>
-                    <div className="service-item">
-                        <div className="icon">
-                            <img 
-                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdth6s8wfllNAHbXJ3oFo_xFT7b_6s2cajw&s"
-                                alt="Pet Surgery Icon" 
-                            />
-                        </div>
-                        <p>Pet Surgery</p>
-                    </div>
-                    <div className="service-item">
-                        <div className="icon">
-                            <img 
-                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdth6s8wfllNAHbXJ3oFo_xFT7b_6s2cajw&s"
-                                alt="Urgent Care Icon" 
-                            />
-                        </div>
-                        <p>Urgent Care</p>
-                    </div>
-                    <div className="service-item">
-                        <div className="icon">
-                            <img 
-                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdth6s8wfllNAHbXJ3oFo_xFT7b_6s2cajw&s"
-                                alt="Pet Dental Surgery Icon" 
-                            />
-                        </div>
-                        <p>Pet Dental Surgery</p>
-                    </div>
-                    <div className="service-item">
-                        <div className="icon">
-                            <img 
-                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdth6s8wfllNAHbXJ3oFo_xFT7b_6s2cajw&s"
-                                alt="Orthopedic Pet Surgery Icon" 
-                            />
-                        </div>
-                        <p>Orthopedic Pet Surgery</p>
-                    </div>
-                    <div className="service-item">
-                        <div className="icon">
-                            <img 
-                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdth6s8wfllNAHbXJ3oFo_xFT7b_6s2cajw&s"
-                                alt="Others Icon" 
-                            />
-                        </div>
-                        <p>Others</p>
-                    </div>
+                    {services.length > 0 ? (
+                        services.map((service) => (
+                            <div key={service.id} className="service-item">
+                                <div className="icon">
+                                    <img
+                                        src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdth6s8wfllNAHbXJ3oFo_xFT7b_6s2cajw&s"
+                                        alt={`${service.name} Icon`}
+                                    />
+                                </div>
+                                <p>{service.name}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p>Loading services...</p>
+                    )}
                 </div>
             </div>
-
-            {/* Footer outside of the services container */}
             <Footer />
         </div>
     );
