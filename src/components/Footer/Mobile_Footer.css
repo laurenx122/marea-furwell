@@ -21,6 +21,7 @@
   }
   
   .footer-btn-p {
+    color: #43575c;
     display: flex;
     flex-direction: column;
     align-items: center;
