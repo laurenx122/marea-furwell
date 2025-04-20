@@ -99,6 +99,7 @@ const PetOwnerHome = () => {
     dateofBirth: "",
   });
 
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
   const [isSignOutSuccessOpen, setIsSignOutSuccessOpen] = useState(false);
@@ -202,6 +203,39 @@ const PetOwnerHome = () => {
     };
   }, [navigate]);
 
+  //outside click
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      const sidebar = document.querySelector(".sidebar-p");
+      const hamburgerButton = e.target.closest('.mobile-header-p button');
+      
+      if (
+        isSidebarOpen &&
+        sidebar &&
+        !sidebar.contains(e.target) &&
+        !hamburgerButton 
+      ) {
+        setIsSidebarOpen(false);
+      }
+  
+      const profileModal = document.querySelector(".profile-modal-p");
+      const headerProfileImg = e.target.closest(".mobile-header-profile-img-p");
+  
+      if (
+        isProfileModalOpen &&
+        profileModal &&
+        !profileModal.contains(e.target) &&
+        !headerProfileImg 
+      ) {
+        setIsProfileModalOpen(false);
+      }
+    };
+  
+    document.addEventListener('click', handleOutsideClick);
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [isSidebarOpen, isProfileModalOpen]);
 
   // React calendar
   // Handle calendar date click
@@ -1569,9 +1603,37 @@ const handleSignOut = () => {
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
           ☰ {/* Hamburger icon */}
         </button>
+        {ownerInfo && (
+          <img
+            src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
+            alt="Owner Profile"
+            className="mobile-header-profile-img-p"
+            onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
+          />
+        )}
       </div>
+      {isProfileModalOpen && ownerInfo && (
+        <div className="profile-modal-p">
+          <div className="profile-modal-content-p">
+            <img
+              src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
+              alt="Owner Profile"
+              className="profile-modal-img-p"
+            />
+            <div className="profile-modal-info-p">
+              <p className="profile-modal-name-p" onClick={handleAccountClick} style={{ cursor: "pointer" }}>
+                {ownerInfo.FirstName} {ownerInfo.LastName}
+              </p>
+              <button className="signout-btn-modal-p" onClick={handleSignOut}>
+                <FaSignOutAlt className="sidebar-icon-p" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className={`sidebar-p ${isSidebarOpen ? "open" : ""}`}>
-            {ownerInfo && (
+      {ownerInfo && (
               <div className="owner-sidebar-panel-p">
                 <div className="owner-img-container-p">
                   <img
@@ -1624,7 +1686,7 @@ const handleSignOut = () => {
               <FaSignOutAlt className="sidebar-icon-p" />
               Sign Out
             </button>
-        </div>
+      </div>
 
           <div className="content-p">
             <div className="panel-container-p">
@@ -2618,6 +2680,7 @@ const handleSignOut = () => {
         onAccountClick={handleAccountClick}
         activePanel={activePanel} 
         unreadNotifications={unreadNotifications}
+        setActivePanel={setActivePanel}
       />
     </div>
   );
