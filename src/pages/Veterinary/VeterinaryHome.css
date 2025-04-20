@@ -801,35 +801,6 @@ th {
     font-size: 0.9rem; /* Smaller font size for mobile */
   }
 
-  .footer-p {
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    background-color: #EDBFC6;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    z-index: 10;
-  }
-
-  .footer-btn-p {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    color: #ff4081;
-    cursor: pointer;
-    transition: color 0.3s;
-  }
-
-  .footer-btn-p:hover {
-    color: #f50057;
-  }
-
-  .footer-btn-p.active {
-    color: #fff;
-    background-color: #ff8c94;
-    border-radius: 50%;
-  }
 }
 
 @media (max-width: 768px) {

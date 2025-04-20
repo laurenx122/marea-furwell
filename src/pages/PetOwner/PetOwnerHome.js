@@ -1704,7 +1704,7 @@ const handleSignOut = () => {
                     <p><strong>Last Name:</strong> {ownerInfo.LastName}</p>
                     <p><strong>Contact Number:</strong> {ownerInfo.contactNumber || "N/A"}</p>
                     <p><strong>Email:</strong> {ownerInfo.email}</p>
-                    <button className="edit-owner-btn-p" onClick={() => setShowEditOwnerModal(true)}>
+                    <button className="edit-owner-btn-p" onClick={openEditOwnerModal}>
                       Edit Profile
                     </button>
                   </div>

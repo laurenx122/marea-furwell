@@ -848,6 +848,10 @@ form {
   padding: 10px;
 }
 
+.owner-details-p p {
+  margin-bottom: 10px;
+}
+
 .owner-info-img-p {
   width: 120px;
   height: 120px;
@@ -1108,9 +1112,9 @@ form {
     flex: 1;
     padding: 10px 10px 60px 10px;
     overflow-y: auto;
-    position: static; /* Ensure it’s in the normal flow */
-    width: 100%; /* Full width */
-    box-sizing: border-box; /* Include padding in width */
+    position: static; 
+    width: 100%;
+    box-sizing: border-box; 
     margin: 0;  
   }
 
@@ -1119,107 +1123,26 @@ form {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    position: static; /* Remove any absolute positioning */
-    width: 100%; /* Full width */
+    position: static;
+    width: 100%;
     box-sizing: border-box;
-    margin: 0; /* Remove any margins that might offset it */
+    margin: 0; 
   }
 
   .panel-container-p table {
-    width: 100%; /* Table takes full width of container */
-    table-layout: auto; /* Allow columns to adjust */
-    border-collapse: collapse; /* Remove gaps between cells */
+    width: 100%; 
+    table-layout: auto;
+    border-collapse: collapse;
   }
 
   .panel-container-p th,
   .panel-container-p td {
     padding: 10px;
     font-size: 0.8rem;
-    white-space: nowrap; /* Keep text on one line to avoid wrapping */
+    white-space: nowrap; 
     border: 1px solid #FF7B7B;
-  }
-
-  .footer-p {
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    background-color: #EDBFC6;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    z-index: 10;
-  }
-
-  .footer-btn-p {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    color: #ff4081;
-    cursor: pointer;
-    transition: color 0.3s;
-  }
-
-  .footer-btn-p:hover {
-    color: #f50057;
-  }
-
-  .footer-btn-p.active {
-    color: #fff;
-    background-color: #ff8c94;
-    border-radius: 50%;
   }
 }
-
-/* @media (max-width: 500px) {
-  .health-records-panel-p {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    position: relative;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .health-records-panel-p table {
-    min-width: 650px;
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .health-records-panel-p th,
-  .health-records-panel-p td {
-    padding: 6px;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 120px;
-    border: 1px solid #FF7B7B;
-  }
-
-  .health-records-panel-p::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 10px;
-    height: 100%;
-    background: linear-gradient(to left, rgba(0, 0, 0, 0.2), transparent);
-    pointer-events: none;
-  }
-
-  .pet-details-panel-p td {
-    white-space: nowrap;
-    max-width: unset;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .content-p {
-    padding: 10px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-} */
 
 @media (max-width: 1500px) {
 
@@ -1366,6 +1289,7 @@ form {
   width: 40px;
   height: 40px;
   border-radius: 50%;
+  margin-right: 10px;
   object-fit: cover;
   border: 2px solid #ffb6c1;
   cursor: pointer;
