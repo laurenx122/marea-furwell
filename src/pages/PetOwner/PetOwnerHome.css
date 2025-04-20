@@ -18,16 +18,15 @@
 }
 
 .sidebar-p {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
   width: 250px;
   background-color: #EDBFC6;
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  align-items: flex-start;
-  justify-content: space-between;
-  height: auto;
-  max-height: 100vh;
+  z-index: 500;
+  transition: transform 0.3s ease-in-out;
 }
 
 .sidebar-icon-p {
@@ -216,6 +215,28 @@
 
 .signout-btn-p:hover .sidebar-icon-p {
   color: #fff; 
+}
+
+/* Signout modal button */
+.signout-btn-modal-p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: transparent;
+  color: rgb(105, 102, 102);
+  border: none;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.signout-btn-modal-p:hover {
+  background-color: #EDBFC6;
+  color: black;
+}
+
+.sidebar-icon-p {
+  font-size: 16px;
 }
 
 /* Signout Modals */
@@ -1003,6 +1024,9 @@ form {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .bookapptbutt-p {
+    display: none;
+  }
   .pet-owner-container-p {
     flex-direction: column;
   }
@@ -1082,7 +1106,7 @@ form {
 
   .content-p {
     flex: 1;
-    padding: 10px;
+    padding: 10px 10px 60px 10px;
     overflow-y: auto;
     position: static; /* Ensure it’s in the normal flow */
     width: 100%; /* Full width */
@@ -1109,33 +1133,10 @@ form {
 
   .panel-container-p th,
   .panel-container-p td {
-    padding: 8px;
-    text-align: left;
-    word-wrap: break-word; /* Allow text to wrap */
-    overflow-wrap: break-word; /* Ensure long text wraps */
-    max-width: 100%; /* Prevent overflow */
-  }
-
-  /* Specific styles for health-records-panel-p (mobile) */
-  .health-records-panel-p {
-    overflow-x: auto; /* Allow horizontal scrolling if needed */
-  }
-
-  .health-records-panel-p table {
-    width: 100%;
-    min-width: 600px; /* Ensure table is wide enough for all columns */
-    border: 1px solid #ddd;
-  }
-
-  .health-records-panel-p th,
-  .health-records-panel-p td {
-    border: 1px solid #ddd;
-    padding: 6px; /* Smaller padding for mobile */
-    text-align: left;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    max-width: 100px; /* Smaller max-width for mobile */
-    font-size: 0.9rem; /* Smaller font size for mobile */
+    padding: 10px;
+    font-size: 0.8rem;
+    white-space: nowrap; /* Keep text on one line to avoid wrapping */
+    border: 1px solid #FF7B7B;
   }
 
   .footer-p {
@@ -1169,7 +1170,90 @@ form {
   }
 }
 
-@media (max-width: 768px) {
+/* @media (max-width: 500px) {
+  .health-records-panel-p {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .health-records-panel-p table {
+    min-width: 650px;
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .health-records-panel-p th,
+  .health-records-panel-p td {
+    padding: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    border: 1px solid #FF7B7B;
+  }
+
+  .health-records-panel-p::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 100%;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.2), transparent);
+    pointer-events: none;
+  }
+
+  .pet-details-panel-p td {
+    white-space: nowrap;
+    max-width: unset;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .content-p {
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+} */
+
+@media (max-width: 1500px) {
+
+  .health-records-panel-p {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .health-records-panel-p table {
+    min-width: 650px;
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .health-records-panel-p th,
+  .health-records-panel-p td {
+    padding: 10px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    border: 1px solid #FF7B7B;
+  }
+
+  .health-records-panel-p::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 100%;
+    pointer-events: none;
+  }
   .clinic-container-c {
     flex-direction: column;
     height: auto; 
@@ -1264,33 +1348,120 @@ form {
   th, td {
     padding: 8px; 
   }
-
-  @media (max-width: 500px) {
-    thead th:nth-child(n+3),
-    tbody td:nth-child(n+3) { 
-    }
-
-    table {
-      display: block;
-      overflow-x: auto; 
-      white-space: nowrap;
-    }
-  }
 }
 .mobile-header-p {
-  display: none;
+  display: none; 
+  padding: 10px;
+  background-color: #EDBFC6;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+}
+
+.mobile-header-profile-img-p {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffb6c1;
+  cursor: pointer;
+}
+
+.profile-modal-p {
+  position: absolute;
+  top: 60px;
+  right: 10px;
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  padding: 15px;
+}
+
+.profile-modal-content-p {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.profile-modal-img-p {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-modal-info-p {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.profile-modal-name-p {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 500;
+  color: #333;
+}
+
+@media (min-width: 769px) {
+  .sidebar-p {
+    transform: translateX(0); /* Always visible */
+  }
+
+  .mobile-header-p {
+    display: none; /* Hide mobile header in desktop view */
+  }
+
+  .owner-sidebar-panel-p {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .owner-sidebar-img-p {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #ffb6c1;
+  }
+
+  .notification-btn-p,
+  .signout-btn-p {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .sidebar-buttons-p {
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
-  .mobile-header-p {
-    display: block;
-    padding: 10px;
-    background-color: #EDBFC6;
-    z-index: 1000;
-    top: 0;
-    left: 0;
-    width: 100%;
+  .sidebar-p {
+    transform: translateX(-100%); 
+    width: 60%;
+    top: 60px;
+    height: calc(100vh - 60px);
+  }
 
+  .sidebar-p.open {
+    display: flex;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 60%;
+    z-index: 600;
+    padding-top: 45px;
+    height: calc(100vh - 50px);
+    background-color: #EDBFC6;
+    border-radius: 2px;;
+    transform: translateX(0); 
   }
 
   .mobile-header-p button {
@@ -1298,21 +1469,20 @@ form {
     background: none;
     border: none;
     cursor: pointer;
+    margin-left: 15px;
   }
 
-  .sidebar-p {
-    display: none;
+  .owner-sidebar-panel-p,
+  .notification-btn-p,
+  .signout-btn-p {
+    display: none; 
   }
 
-  .sidebar-p.open {
-    display: flex;
-    position: fixed;
-    top: 40px;
-    left: 0;
-    width: 45%;
-    z-index: 600;
-    height: calc(100vh - 50px);
-    background-color: #EDBFC6;
-    border-radius: 2px;;
+  .sidebar-buttons-p {
+    width: 100%;
+  }
+
+  .mobile-header-p {
+    display: flex; 
   }
 }
