@@ -1,108 +1,102 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Jua&display=swap');
+
 /* Background Styling */
-.Login{
+.Login {
   cursor: url('../../images/pawCursorPoint.png'), auto;
 }
-.login-container {
-    background-image: url('/public/images/loginBG.png');
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    position: relative;
-    z-index: 1000;
-  }
 
-  /* Login Box */
-  .login-box {
-    background-color: #d3f0f7;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    width: 350px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    font-family: 'Jua';
-  }
-  
-  /* Dog Image */
-.dog-img {
-    width: 150px;
-    position: absolute;
-    top: 120px; 
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: -1; 
-    opacity: 0.8; 
+.login-container {
+  background-image: url('/public/images/loginBG.png');
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  position: relative;
+  z-index: 1000;
 }
 
-  
-  /* Logo */
-  .logo-furwell {
-    height: 250px; 
-    width: auto;
-    margin-top: -50px;
-    margin-bottom: -40px;
-  }
-  
-  /* Input Fields */
-  .input-container {
-    margin: 0px 0 !important;
-  }
-  
-  /* .input-container .input-icon {
-    position: absolute;
-    left: 10px;
-    font-size: 20px;
-    color: #00708c;
-  }  */
+/* Login Box */
+.login-box {
+  background-color: #d3f0f7;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  width: 350px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  font-family: 'Jua';
+  position: relative; 
+}
 
-  .input-container input {
-    width: 100%;
-    padding: 10px 10px 10px 35px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  /* Sign-In Button */
-  .sign-in-btn {
-    width: 100%;
-    padding: 10px;
-    background: #61e065;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
-  
-  .sign-in-btn:hover {
-    background: #45a049;
-  }
-  
-  /* Google Sign-In */
-  .google-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
-    margin-top: -10px;
-    border: 1px solid #ccc;
-    padding: 8px;
-    width: 100%;
-    cursor: pointer;
-    gap: 8px;
-  }
-  
-  /* Sign Up Text */
-  .signup-text {
-    margin-top: 20px;
-    font-size: 14px;
-    text-align: center !important;
-  }
+/* Dog Image */
+.dog-img {
+  width: 180px;
+  height: 150px;
+  position: absolute;
+  top: -123px; 
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
 
-/* Previous Login.css content remains unchanged up to this point */
+/* Logo */
+.logo-furwell {
+  height: 250px;
+  width: auto;
+  margin-top: -50px;
+  margin-bottom: -40px;
+}
 
+/* Input Fields */
+.input-container {
+  margin: 0px 0 !important;
+  position: relative;
+}
+
+.input-container input {
+  width: 100%;
+  padding: 10px 10px 10px 35px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Sign-In Button */
+.sign-in-btn {
+  width: 100%;
+  padding: 10px;
+  background: #61e065;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 10px 0px;
+}
+
+.sign-in-btn:hover {
+  background: #45a049;
+}
+
+/* Google Sign-In */
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  margin: 10px;
+  border: 1px solid #ccc;
+  padding: 8px;
+  width: 100%;
+  cursor: pointer;
+  gap: 8px;
+}
+
+/* Sign Up Text */
+.signup-text {
+  font-size: 14px;
+  text-align: center !important;
+}
+
+/* Success Modal */
 .success-modal-overlay {
   position: fixed;
   top: 0;
@@ -113,7 +107,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1005; /* Increased from 1000 to 1005 to appear above Navbar's loginModalOverlay */
+  z-index: 1005;
 }
 
 .success-modal {
@@ -125,8 +119,6 @@
   max-width: 320px;
   width: 100%;
 }
-
-/* Rest of Login.css remains unchanged */
 
 .success-content {
   display: flex;
@@ -146,10 +138,7 @@
   font-size: 18px;
 }
 
-.input-container {
-  position: relative;
-}
-
+/* Password Toggle */
 .password-toggle {
   position: absolute;
   right: 10px;
@@ -163,6 +152,7 @@
   height: 20px;
 }
 
+/* Sign Up Link */
 .signup-link {
   color: #45a049;
   text-decoration: none;

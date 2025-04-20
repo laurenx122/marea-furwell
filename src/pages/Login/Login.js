@@ -201,7 +201,7 @@ const Login = ({ onClose, onSwitchToSignUp, onLoginSuccess }) => {
   return (
       <div className="login-container-modal"> {/* Update class name for modal styling */}
         <div className="login-box">
-          <img src='/images/baby_doggy.png' alt="Dog" className="dog-img" />
+          <img src='/images/baby-doggy.gif' alt="Dog" className="dog-img" />
           <img src='/images/furwell_logo.png' alt="FurWell Logo" className="logo-furwell" />
           <form onSubmit={handleSubmit}>
             <div className="input-container">
