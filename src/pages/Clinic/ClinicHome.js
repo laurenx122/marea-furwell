@@ -1724,7 +1724,7 @@ const ClinicHome = () => {
       </div>
 
       {/* Sidebar with Conditional Class */}
-      <div className={`sidebar-c ${isSidebarOpen ? "open" : ""}`}>
+      <div className={`sidebar-cc ${isSidebarOpen ? "open" : ""}`}>
         {clinicInfo && (
           <div className="clinic-sidebar-panel-c">
             <div className="clinic-img-container-c">
@@ -1966,11 +1966,13 @@ const ClinicHome = () => {
             </div>
           )}
           {activePanel === "pendingAppointments" && (
-            <div className="panel-v health-records-panel-v">
-              <h3>Pending Appointments</h3>
-              {loading ? (
-                <p>Loading pending appointments...</p>
-              ) : pendingAppointments.length > 0 ? (
+          <div className="panel-v health-records-panel-v">
+            <h3>Pending Appointments</h3>
+           
+            {loading ? (
+              <p>Loading pending appointments...</p>
+            ) : filteredPendingAppointments.length > 0 ? (
+              <div className="table-container">
                 <table>
                   <thead>
                     <tr>
@@ -1985,7 +1987,7 @@ const ClinicHome = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {pendingAppointments.map((appointment) => (
+                    {filteredPendingAppointments.map((appointment) => (
                       <tr key={appointment.id}>
                         <td>{formatDate(appointment.dateofAppointment)}</td>
                         <td>{appointment.veterinarian || "N/A"}</td>
@@ -2014,11 +2016,13 @@ const ClinicHome = () => {
                     ))}
                   </tbody>
                 </table>
-              ) : (
-                <p>No pending appointments found.</p>
-              )}
-            </div>
-          )}
+              </div>
+            ) : (
+              <p>No pending appointments found.</p>
+            )}
+          </div>
+        )}
+          
           {activePanel === "records" && (
             <div className="panel-c records-panel-c">
               <h3>Records</h3>
@@ -2038,8 +2042,8 @@ const ClinicHome = () => {
                   </thead>
                   <tbody>
                     {pastAppointments.length > 0 ? (
-                      [...pastAppointments] // Create a shallow copy to avoid mutating the original array
-                        .sort((a, b) => b.dateofAppointment - a.dateofAppointment) // Sort by date descending
+                      [...pastAppointments]
+                        .sort((a, b) => b.dateofAppointment - a.dateofAppointment)
                         .map((record) => (
                           <tr key={record.Id}>
                             <td>{formatDate(record.dateofAppointment)}</td>

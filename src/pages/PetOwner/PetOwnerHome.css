@@ -1178,7 +1178,7 @@ form {
     pointer-events: none;
   }
   .clinic-container-c {
-    flex-direction: column;
+    /*flex-direction: column;*/
     height: auto; 
   }
 
