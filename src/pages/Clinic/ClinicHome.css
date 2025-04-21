@@ -6,10 +6,11 @@
   height: 100vh;
   background-color: #d3f0f7;
   font-family: 'Albert Sans', sans-serif;
+  flex-direction: row; /* Explicitly set to row for clarity */
 }
 
 /* Sidebar Styling */
-.sidebar-c {
+.sidebar-cc {
   width: 250px;
   background-color: #EDBFC6;
   padding: 20px;
@@ -29,11 +30,11 @@
   /* margin-right: 10px; */
 }
 
-.sidebar-c button:hover .sidebar-icon-c {
+.sidebar-cc button:hover .sidebar-icon-c {
   color: #f50057; 
 }
 
-.sidebar-c button.active .sidebar-icon-c {
+.sidebar-cc button.active .sidebar-icon-c {
   color: #fff; 
 }
 
@@ -41,7 +42,7 @@
     color: #fff; 
 }
 
-.sidebar-c button {
+.sidebar-cc button {
   width: 100%;
   padding: 12px;
   font-size: 16px;
@@ -59,12 +60,12 @@
   gap: 12px;   
 }
 
-.sidebar-c button:hover {
+.sidebar-cc button:hover {
   background-color: #f1a6ae;
   transform: translateY(-2px);
 }
 
-.sidebar-c button.active {
+.sidebar-cc button.active {
   background-color: #ff8c94;
   color: #fff;
   font-weight: bold;
@@ -76,7 +77,7 @@
   padding: 20px;
   overflow-y: auto;
   display: flex;
-  flex-direction: column;
+  /*flex-direction: column;*/
 }
 
 /* Panel Container */
@@ -89,7 +90,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 120vh;
+  min-height: auto;
 }
 
 /* Table Styling */
@@ -98,6 +99,8 @@ table {
   border-collapse: collapse;
   margin-top: 10px;
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+  overflow-x: scroll;
+  box-sizing: content-box;
 }
 
 th, td {
@@ -139,7 +142,7 @@ tr:hover {
 
 /* Clinic Sidebar Panel */
 .clinic-sidebar-panel-c {
-  width: 100%;
+  /*width: 100%;*/
 }
 
 .panel-c.clinic-panel-c {
@@ -341,6 +344,7 @@ tr:hover {
 
 /* Modal Styling */
 
+
 @keyframes modalFadeInScaleUp {
   from {
     opacity: 0;
@@ -378,7 +382,7 @@ tr:hover {
   max-width: 1200px;
   margin-left: 25px;
   flex-direction: row;
-  gap: 10px; /* Add spacing between input and button */
+  gap: 10px; 
 }
 
 .csearch-bar-container input[type="text"] {
@@ -996,11 +1000,11 @@ tbody tr:hover .pet-name-link-c {
 .schedule-list-c li {
   padding: 10px;
   border-bottom: 1px solid #ddd;
-  width: 100%; /* Allow items to take full width of the flex container */
-  box-sizing: border-box; /* Ensure padding and border are within the width */
-  display: flex; /* To potentially center content within each li if needed */
-  justify-content: space-between; /* Keep delete button on the right */
-  align-items: center; /* Vertically align text and button */
+  width: 100%;
+  box-sizing: border-box; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
 }
 
 .schedule-list-c li:last-child {
@@ -1116,22 +1120,22 @@ tbody tr:hover .pet-name-link-c {
   background-color: #fff5f6;
   border-radius: 4px;
   text-align: left;
-  width: 100%; /* Explicitly set to full width */
-  box-sizing: border-box; /* Ensures padding doesn’t increase width beyond container */
+  width: 100%;
+  box-sizing: border-box; 
 }
 
 .appointment-notes-c strong {
   color: #555;
   display: block;
   margin-bottom: 5px;
-  font-weight: bold; /* Optional: Emphasize the "Notes" label */
+  font-weight: bold;
 }
 
 .appointment-notes-c p {
   margin: 0;
-  word-wrap: break-word; /* Ensures long text wraps within the container */
+  word-wrap: break-word; 
   color: #333;
-  width: 100%; /* Ensures the paragraph takes full width */
+  width: 100%; 
 }
 
 .info-item-c {
@@ -1186,8 +1190,8 @@ tbody tr:hover .pet-name-link-c {
 }
 
 .analytics-ll-c {
-  height: 600px; /* Adjust based on your needs */
-  overflow: hidden; /* Prevent scrolling unless explicitly needed */
+  height: 600px; 
+  overflow: hidden; 
 }
 
 .panel-container-c {
@@ -1441,7 +1445,7 @@ tbody tr:hover .pet-name-link-c {
 }
 
 
-/* Responsive Adjustments */
+
 @media (max-width: 500px) {
   .service-modal-c {
     padding: 20px;
@@ -1478,7 +1482,7 @@ tbody tr:hover .pet-name-link-c {
     height: auto; 
   }
 
-  .sidebar-c {
+  .sidebar-cc {
     width: 100%;
     max-height: none; 
     padding: 10px;
@@ -1500,7 +1504,7 @@ tbody tr:hover .pet-name-link-c {
 }
 
 @media (max-width: 768px) {
-  .sidebar-c button {
+  .sidebar-cc button {
     width: 90%; 
     font-size: 14px; 
     padding: 10px; 
@@ -1577,7 +1581,7 @@ tbody tr:hover .pet-name-link-c {
     }
 
     table {
-      display: block;
+      /*display: block;*/
       overflow-x: auto; 
       white-space: nowrap;
     }
@@ -1730,11 +1734,11 @@ tbody tr:hover .pet-name-link-c {
     cursor: pointer;
   }
 
-  .sidebar-c {
+  .sidebar-cc {
     display: none;
   }
 
-  .sidebar-c.open {
+  .sidebar-cc.open {
     display: flex;
     position: absolute;
     top: 40px;
@@ -1851,7 +1855,7 @@ tbody tr:hover .pet-name-link-c {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: #d3d3d3; /* Gray background as in the image */
+  background: #d3d3d3; 
   color: #333;
   border: none;
   border-radius: 5px;
@@ -1989,3 +1993,161 @@ tbody tr:hover .pet-name-link-c {
 .vetSchedModal-buttons button:not(.delete-button):not(.cancel-button):hover {
   background-color: #0056b3;
 }
+
+
+/* Health Records Panel Styling */
+.panel-v.health-records-panel-v {
+  background: #ffffff; 
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+  font-family: 'Albert Sans', sans-serif;
+}
+
+/* Scrollable Table Container */
+/*.panel-v.health-records-panel-v .table-container {
+  overflow-x: auto;
+  width: 100%;
+  margin-top: 10px;
+}*/
+
+/* Table Styling */
+.panel-v.health-records-panel-v table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px; 
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Table Headers and Cells */
+.panel-v.health-records-panel-v th,
+.panel-v.health-records-panel-v td {
+  padding: 12px;
+  border: 1px solid #FF7B7B;
+  text-align: left;
+  font-size: 16px;
+  color: #333;
+}
+
+.panel-v.health-records-panel-v th {
+  background-color: #ffb6c1;
+  font-weight: bold;
+}
+
+.panel-v.health-records-panel-v tr:nth-child(even) {
+  background-color: #fff5f6;
+}
+
+.panel-v.health-records-panel-v tr:hover {
+  background-color: #fce4ec;
+}
+
+/* Action Buttons */
+.panel-v.health-records-panel-v .v-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.panel-v.health-records-panel-v .vicon-buttoncheck,
+.panel-v.health-records-panel-v .vicon-buttondecline {
+  background-color: #ff4081;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s, transform 0.2s;
+  min-width: 80px;
+}
+
+.panel-v.health-records-panel-v .vicon-buttoncheck:hover,
+.panel-v.health-records-panel-v .vicon-buttondecline:hover {
+  background-color: #f50057;
+  transform: translateY(-1px);
+}
+
+/* Panel Header */
+.panel-v.health-records-panel-v h3 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #ff4081;
+  border-bottom: 2px solid #ffb6c1;
+  padding-bottom: 10px;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .panel-v.health-records-panel-v {
+    margin: 10px;
+    padding: 15px;
+  }
+
+  .panel-v.health-records-panel-v h3 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .panel-v.health-records-panel-v th,
+  .panel-v.health-records-panel-v td {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  /* Stack Action Buttons Vertically */
+  .panel-v.health-records-panel-v .v-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .panel-v.health-records-panel-v .vicon-buttoncheck,
+  .panel-v.health-records-panel-v .vicon-buttondecline {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+}
+
+@media (max-width: 500px) {
+  .panel-v.health-records-panel-v {
+    margin: 5px;
+    padding: px;
+  }
+
+  .panel-v.health-records-panel-v h3 {
+    font-size: 18px;
+  }
+
+  .panel-v.health-records-panel-v th,
+  .panel-v.health-records-panel-v td {
+    padding: 6px;
+    font-size: 12px;
+  }
+
+
+
+  .panel-v.health-records-panel-v th:nth-child(5),
+  .panel-v.health-records-panel-v td:nth-child(5),
+  .panel-v.health-records-panel-v th:nth-child(6),
+  .panel-v.health-records-panel-v td:nth-child(6),
+  .panel-v.health-records-panel-v th:nth-child(7),
+  .panel-v.health-records-panel-v td:nth-child(7) {
+    display: none; /* Hides Breed, Age, Service columns */
+  }
+
+   /* Ensure Actions Column is Optimized */
+   .panel-v.health-records-panel-v th:nth-child(8),
+   .panel-v.health-records-panel-v td:nth-child(8) {
+     min-width: 120px; 
+   }
+
+  .panel-v.health-records-panel-v .vicon-buttoncheck,
+  .panel-v.health-records-panel-v .vicon-buttondecline {
+    padding: 8px;
+    font-size: 12px;
+  }
+}
+
