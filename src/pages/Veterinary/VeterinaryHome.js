@@ -77,6 +77,7 @@ const VeterinaryHome = () => {
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState(null);
 
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(""); 
 
@@ -112,6 +113,40 @@ const VeterinaryHome = () => {
     };
   }, [navigate]);
   
+  //useEffect for OutsideClicks
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      const sidebar = document.querySelector(".sidebar-v");
+      const hamburgerButton = e.target.closest('.mobile-header-v button');
+      
+      if (
+        isSidebarOpen &&
+        sidebar &&
+        !sidebar.contains(e.target) &&
+        !hamburgerButton 
+      ) {
+        setIsSidebarOpen(false);
+      }
+  
+      const profileModal = document.querySelector(".profile-modal-v");
+      const headerProfileImg = e.target.closest(".profile-navbar-v");
+  
+      if (
+        isProfileModalOpen &&
+        profileModal &&
+        !profileModal.contains(e.target) &&
+        !headerProfileImg 
+      ) {
+        setIsProfileModalOpen(false);
+      }
+    };
+  
+    document.addEventListener('click', handleOutsideClick);
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [isSidebarOpen, isProfileModalOpen]);
+
   // useEffect to fetch appointments, notifications, and set up interval after vetInfo is set
   useEffect(() => {
     if (vetInfo?.clinicId) {
@@ -511,92 +546,102 @@ const VeterinaryHome = () => {
   // }, [vetInfo?.clinicId]);
 
   return (
-    <div className="vet-container-v">
-      <div className="mobile-header-v">
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-          ☰ {/* Hamburger icon */}
-        </button>
-      </div>
-      <div className={`sidebar-v ${isSidebarOpen ? "open" : ""}`}>
-        {vetInfo && (
-          <div className="vet-sidebar-panel-v">
-            <div className="vet-img-container-v">
+      <div className="vet-container-v">
+        <div className="mobile-header-v">
+          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+            ☰ {/* Hamburger icon */}
+          </button>
+          {vetInfo && (
+            <div
+              className="profile-navbar-v"
+              onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
+            >
               <img
-                src={vetInfo.profileImageURL}
+                src={vetInfo.profileImageURL || DEFAULT_VET_IMAGE}
                 alt="Vet Profile"
-                className="veterinarian-profile-image-v"
-              />
-              <label htmlFor="vet-image-upload-v" className="edit-icon-v">
-                <FaCamera />
-              </label>
-              <input
-                type="file"
-                id="vet-image-upload-v"
-                accept="image/jpeg, image/jpg, image/png"
-                onChange={handleVetImageChange}
-                style={{ display: "none" }}
+                className="navbar-profile-img-v"
               />
             </div>
-            <div className="vet-notification-wrapper">
-              <button
-                className={`vet-button ${activePanel === "vetInfo" ? "active" : ""}`}
-                onClick={() => {
-                  setActivePanel("vetInfo");
-                  setIsSidebarOpen(false);
-                }}
-              >
-                <FaUser className="sidebar-icon-v" />
-                {vetInfo.FirstName} {vetInfo.LastName}
-              </button>
-              <button className="notification-btn-v" onClick={handleNotificationClick}>
-                <div className="notification-icon-container-v">
-                  <FaBell className="bell-notif" />
-                  {unreadNotifications && <span className="notification-dot-v"></span>}
-                </div>
-              </button>
-            </div>
-          </div>
-        )}
-        <div className="sidebar-buttons-v">
-          <button
-            className={`sidebar-btn-v ${activePanel === "appointments" ? "active" : ""}`}
-            onClick={() => {
-              setActivePanel("appointments");
-              setIsSidebarOpen(false);
-            }}
-            
-          >
-            <FaCalendarAlt className="sidebar-icon-v" />
-            Upcoming Appointments
-          </button>
-          <button
-            className={`sidebar-btn-v ${activePanel === "schedule" ? "active" : ""}`}
-            onClick={() => {
-              setActivePanel("schedule");
-              setIsSidebarOpen(false);
-            }}
-          >
-            <FaClock className="sidebar-icon-v" />
-            Schedule
-          </button>
-          <button
-            className={`sidebar-btn-v ${activePanel === "healthRecords" ? "active" : ""}`}
-            onClick={() => {
-              setActivePanel("healthRecords");
-              setIsSidebarOpen(false);
-            }}
-          >
-            <FaFileMedical className="sidebar-icon-v" />
-            Health Records
-          </button>
+          )}
         </div>
-        <button className="signout-btn-v" onClick={handleSignOut}>
-          <FaSignOutAlt className="sidebar-icon-v" />
-          Sign Out
-        </button>
-      </div>
-
-      <div className="content-v">
+        <div className={`sidebar-v ${isSidebarOpen ? "open" : ""}`}>
+          {vetInfo && (
+            <div className="vet-sidebar-panel-v">
+              <div className="vet-img-container-v">
+                <img
+                  src={vetInfo.profileImageURL || DEFAULT_VET_IMAGE}
+                  alt="Vet Profile"
+                  className="veterinarian-profile-image-v"
+                />
+                <label htmlFor="vet-image-upload-v" className="edit-icon-v">
+                  <FaCamera />
+                </label>
+                <input
+                  type="file"
+                  id="vet-image-upload-v"
+                  accept="image/jpeg, image/jpg, image/png"
+                  onChange={handleVetImageChange}
+                  style={{ display: "none" }}
+                />
+              </div>
+              <div className="vet-notification-wrapper">
+                <button
+                  className={`vet-button ${activePanel === "vetInfo" ? "active" : ""}`}
+                  onClick={() => {
+                    setActivePanel("vetInfo");
+                    setIsSidebarOpen(false);
+                  }}
+                >
+                  <FaUser className="sidebar-icon-v" />
+                  {vetInfo.FirstName} {vetInfo.LastName}
+                </button>
+                <button className="notification-btn-v" onClick={handleNotificationClick}>
+                  <div className="notification-icon-container-v">
+                    <FaBell className="bell-notif" />
+                    {unreadNotifications && <span className="notification-dot-v"></span>}
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="sidebar-buttons-v">
+            <button
+              className={`sidebar-btn-v ${activePanel === "appointments" ? "active" : ""}`}
+              onClick={() => {
+                setActivePanel("appointments");
+                setIsSidebarOpen(false);
+              }}
+            >
+              <FaCalendarAlt className="sidebar-icon-v" />
+              Upcoming Appointments
+            </button>
+            <button
+              className={`sidebar-btn-v ${activePanel === "schedule" ? "active" : ""}`}
+              onClick={() => {
+                setActivePanel("schedule");
+                setIsSidebarOpen(false);
+              }}
+            >
+              <FaClock className="sidebar-icon-v" />
+              Schedule
+            </button>
+            <button
+              className={`sidebar-btn-v ${activePanel === "healthRecords" ? "active" : ""}`}
+              onClick={() => {
+                setActivePanel("healthRecords");
+                setIsSidebarOpen(false);
+              }}
+            >
+              <FaFileMedical className="sidebar-icon-v" />
+              Health Records
+            </button>
+          </div>
+          <button className="signout-btn-v" onClick={handleSignOut}>
+              <FaSignOutAlt className="sidebar-icon-v" />
+              Sign Out
+            </button>
+        </div>
+    <div className="content-v">
         <div className="panel-container-v">
           {activePanel === "vetInfo" && vetInfo && (
             <div className="panel-v vet-info-panel-v">
@@ -961,6 +1006,36 @@ const VeterinaryHome = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {isProfileModalOpen && vetInfo && (
+        <div
+          className="profile-modal-v"
+          onClick={() => setIsProfileModalOpen(false)} 
+        >
+            <img
+              src={vetInfo.profileImageURL || DEFAULT_VET_IMAGE}
+              alt="Vet Profile"
+              className="profile-modal-img-v"
+            />
+            <div className="profile-modal-info-v">
+              <p
+                className="profile-modal-name-v"
+                onClick={() => {
+                  setActivePanel("vetInfo"); 
+                  setIsProfileModalOpen(false); 
+                  setIsSidebarOpen(false); 
+                }}
+                style={{ cursor: "pointer" }} 
+              >
+                {vetInfo.FirstName} {vetInfo.LastName}
+              </p>
+              <button className="signout-btn-modal-v" onClick={handleSignOut}>
+                <FaSignOutAlt className="sidebar-icon-v" />
+                Sign Out
+              </button>
+            </div>
+          </div>
       )}
 
       {showDetailsModal && appointmentDetails && (

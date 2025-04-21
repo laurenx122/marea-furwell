@@ -2,10 +2,13 @@
 import './Mobile_Footer.css';
 import { FaUser, FaHome, FaEnvelope, FaPlus, FaBell } from "react-icons/fa";
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unreadNotifications, isVeterinarian, setActivePanel }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isFindClinicOrClinicDetails = location.pathname === '/FindClinic' || location.pathname === '/ClinicDetails';
 
   console.log("Mobile_Footer rendered with props:", {
     onNotificationClick: typeof onNotificationClick,
@@ -13,15 +16,22 @@ const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unrea
     activePanel,
     unreadNotifications,
     setActivePanel: typeof setActivePanel,
+    isFindClinicOrClinicDetails,
   });
 
   const handleHomeClick = () => navigate("/Home");
   
   const handleDashboardClick = () => {
-    if (isVeterinarian) {
-      setActivePanel("appointments"); // Switch to "Upcoming Appointments" panel
+    if (typeof setActivePanel === 'function') {
+      if (isVeterinarian) {
+        setActivePanel('appointments');
+        navigate('/VeterinaryHome'); 
+      } else {
+        setActivePanel('petDetails');
+        navigate('/PetOwnerHome');
+      }
     } else {
-      setActivePanel("petDetails"); 
+      console.warn('setActivePanel is not a function');
     }
   };
 
@@ -42,27 +52,43 @@ const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unrea
           <FaHome />
           <p>Home</p>
         </button>
-        <button className="footer-btn-p" onClick={handleDashboardClick}>
-          <FaEnvelope />
-          <p>Dashboard</p>
-        </button>
-        {!isVeterinarian &&
-          <button className="footer-btn-p" onClick={handleBookNowClick}>
-            <FaPlus />
-          </button>
-        }
-        <button className="footer-btn-p" onClick={handleNotificationClickWrapper}>
-          <FaBell />
-          <p>Notifications</p>
-          {unreadNotifications && <span className="notification-dot-p"></span>}
-        </button>
-        <button
-          className={`footer-btn-p ${activePanel === 'profile' ? 'active' : ''}`}
-          onClick={handleAccountClickWrapper}
-        >
-          <FaUser />
-          <p>Account</p>
-        </button>
+        {isFindClinicOrClinicDetails ? (
+          <>
+            {!isVeterinarian && (
+              <button className="footer-btn-p" onClick={handleBookNowClick}>
+                <FaPlus />
+              </button>
+            )}
+            <button className="footer-btn-p" onClick={handleDashboardClick}>
+              <FaEnvelope />
+              <p>Dashboard</p>
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="footer-btn-p" onClick={handleDashboardClick}>
+              <FaEnvelope />
+              <p>Dashboard</p>
+            </button>
+            {!isVeterinarian && (
+              <button className="footer-btn-p" onClick={handleBookNowClick}>
+                <FaPlus />
+              </button>
+            )}
+            <button className="footer-btn-p" onClick={handleNotificationClickWrapper}>
+              <FaBell />
+              <p>Notifications</p>
+              {unreadNotifications && <span className="notification-dot-p"></span>}
+            </button>
+            <button
+              className={`footer-btn-p ${activePanel === 'profile' ? 'active' : ''}`}
+              onClick={handleAccountClickWrapper}
+            >
+              <FaUser />
+              <p>Account</p>
+            </button>
+          </>
+        )}
       </div>
     </footer>
   );
