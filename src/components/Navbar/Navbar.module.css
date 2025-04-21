@@ -518,6 +518,7 @@
   .mobileMenu.active {
     top: 60px;
     height: calc(100vh - 40px);
+    width:130px;
   }
 
   .scrollProgressBar {
@@ -530,4 +531,11 @@
     transition: width 0.2s ease-in-out;
     z-index: 100;
   }
+  .mobileMenuLink,
+  .mobileLogoutButton {
+    padding: 10px 12px; /* Even more compact */
+    font-size: 0.95rem; /* Smaller font for tiny screens */
+    min-height: 40px; /* Still touch-friendly */
+  }
+ 
 }

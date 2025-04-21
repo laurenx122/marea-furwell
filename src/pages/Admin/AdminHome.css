@@ -371,46 +371,121 @@ body {
   object-fit: cover;
   border-radius: 8px;
 }
+.modal-section-contact {
+  margin-top: 20px;
+  padding: 15px;
+}
 
+.modal-section-contact h3 {
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.contact-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.contact-item strong {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  min-width: 80px;
+}
+
+.contact-item p {
+  font-size: 1rem;
+  color: #555;
+  margin: 0;
+  word-break: break-word;
+}
+
+.contact-item.email-item p {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contact-item.email-item p.email-expanded {
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+}
 /* Responsive Adjustments */
 @media (max-width: 1200px) {
   .clinics-grid-admin {
-    overflow-x: auto; /* Ensure horizontal scrolling */
+    overflow-x: auto; 
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (max-width: 1024px) {
   .clinics-grid-admin {
-    overflow-x: auto; /* Ensure horizontal scrolling */
+    overflow-x: auto; 
     grid-template-columns: repeat(1, 1fr);
   }
   .search-input {
-    width: 50%; /* Wider search input on smaller screens */
+    width: 50%;
   }
   .search-icon {
-    right: calc(10% + 5px); /* Adjust icon position for smaller screens */
+    right: calc(10% + 5px); 
   }
 }
 
 @media (max-width: 768px) {
   .clinics-grid-admin {
-    flex-direction: column; /* Switch to vertical layout */
-    overflow-x: hidden; /* Disable horizontal scrolling */
-    align-items: center; /* Center the cards */
+    flex-direction: column; 
+    overflow-x: hidden; 
+    align-items: center; 
   }
   .clinics-card-con {
-    width: 90%; /* Take up most of the screen width */
-    max-width: 300px; /* Slightly wider for better readability */
+    width: 90%; 
+    max-width: 300px; 
   }
   .search-input {
-    width: 50%; /* Even wider search input for very small screens */
-    margin-left: 0; /* Reset margin-left */
+    width: 50%; 
+    margin-left: 0; 
   }
   .search-icon {
-    right: 5%; /* Further adjust icon position */
+    right: 5%; 
   }
   .admin-home-container {
     margin-top: -40px;
+  }
+  .modal-section-contact {
+    padding: 10px; 
+  }
+
+  .modal-section-contact h3 {
+    font-size: 1.1rem; 
+  }
+
+  .contact-info {
+    gap: 12px;
+  }
+
+  .contact-item {
+    flex-direction: column; 
+    align-items: flex-start; 
+    gap: 5px;
+  }
+
+  .contact-item strong {
+    font-size: 0.95rem;
+    min-width: auto; 
+  }
+
+  .contact-item p {
+    font-size: 0.95rem;
   }
 }
