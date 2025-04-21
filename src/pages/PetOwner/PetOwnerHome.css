@@ -1282,6 +1282,7 @@ form {
   width: 100%;
   display: flex;
   justify-content: space-between; 
+  box-shadow: 0 2px 4px 0 #ff8c94;
   align-items: center;
 }
 

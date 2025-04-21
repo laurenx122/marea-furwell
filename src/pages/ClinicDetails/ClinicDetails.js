@@ -11,6 +11,7 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Login from '../Login/Login';
 import Signup from '../Signup/Signup';
+import Mobile_Footer from '../../components/Footer/Mobile_Footer';
 
 const ClinicDetails = () => {
   const [clinic, setClinic] = useState(null);
@@ -46,6 +47,44 @@ const ClinicDetails = () => {
   const [takenAppointments, setTakenAppointments] = useState([]);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState("clinicDetails");
+  const [unreadNotifications, setUnreadNotifications] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [isVeterinarian, setIsVeterinarian] = useState(false);
+
+  const handleNotificationClick = () => {
+    setActivePanel("notifications");
+    setShowNotificationsModal(true); // Show notifications modal
+  };
+
+  const handleAccountClick = () => {
+    setActivePanel("profile");
+    navigate("/PetOwnerHome"); // Redirect to PetOwnerHome
+  };
+
+  const handleDashboardClick = () => {
+    setActivePanel("petDetails");
+    navigate("/PetOwnerHome"); // Redirect to PetOwnerHome's dashboard
+  };
+
+  useEffect(() => {
+    const fetchUserType = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setIsVeterinarian(userData.Type === 'Veterinarian');
+          }
+        } catch (error) {
+          console.error('Error fetching user type:', error);
+        }
+      }
+    };
+
+    fetchUserType();
+  }, [auth]);
 
   const categorizePrice = (price) => {
     if (price < 800) return '₱';
@@ -912,6 +951,24 @@ const ClinicDetails = () => {
           </div>
         </div>
       )}
+
+      {showNotificationsModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Notifications</h2>
+            <button onClick={() => setShowNotificationsModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      <Mobile_Footer
+        onNotificationClick={handleNotificationClick}
+        onAccountClick={handleAccountClick}
+        activePanel={activePanel}
+        unreadNotifications={unreadNotifications}
+        setActivePanel={setActivePanel}
+        isVeterinarian={isVeterinarian}
+      />
 
       <Footer />
     </div>

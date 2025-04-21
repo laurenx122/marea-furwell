@@ -9,14 +9,15 @@
 
 /* Sidebar */
 .sidebar-v {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
   width: 250px;
   background-color: #EDBFC6;
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  align-items: flex-start;
-  justify-content: space-between;
+  z-index: 1000;
+  transition: transform 0.3s ease-in-out;
   height: auto;
   max-height: 100vh;
 }
@@ -664,6 +665,73 @@ th {
   display: none;
 }
 
+.navbar-profile-img-v {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffb6c1;
+  cursor: pointer;
+  margin-right: 10px;
+  z-index: 1500;
+}
+
+.profile-modal-v {
+  position: absolute;
+  top: 60px;
+  right: 10px;
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1500;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.profile-modal-content-v {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.profile-modal-img-v {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+
+.profile-modal-info-v {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.profile-modal-name-v {
+  margin: 0;
+  font-size: 19px; 
+  font-weight: 500;
+  color: #333;
+}
+
+.profile-modal-name-v:hover {
+  color: #505050; 
+}
+
+.signout-btn-modal-v {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: transparent;
+  color: rgb(105, 102, 102); 
+  border: none;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.signout-btn-modal-v:hover {
+  background-color: #EDBFC6; 
+  color: black;
+}
 
 @media (max-width: 768px) {
   .vet-container-v {
@@ -684,17 +752,15 @@ th {
   }
 
   .vet-img-container-v {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
+    display: none;
   }
 
-  .veterinarian-profile-image-v {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid #ffb6c1;
+  .vet-notification-wrapper {
+    display: none;
+  }
+
+  .notification-btn-v{
+    display: none;
   }
 
   .owner-name-p {
@@ -840,38 +906,50 @@ th {
 
 @media (max-width: 768px) {
   .mobile-header-v {
-    display: block;
-    padding: 10px;
-    background-color: #EDBFC6;
-    z-index: 1001;
-    top: 0;
+    align-items: center;
+    background-color: #edbfc6;
+    display: none;
+    display: flex;
+    justify-content: space-between;
     left: 0;
+    padding: 10px;
+    top: 0;
     width: 100%;
     box-shadow: 0 2px 4px 0 #ff8c94;
+    z-index: 1500;
   }
 
   .mobile-header-v button {
     font-size: 20px;
     background: none;
-    margin-left: 15px;
     border: none;
     cursor: pointer;
+    margin-left: 15px;
   }
-
-  .sidebar-v {
+  
+  .vet-img-container-v{
     display: none;
   }
 
-  .sidebar-v.open {
+  .sidebar-v {
     display: flex;
     position: fixed;
-    top: 40px;
+    flex-direction: column;
+    justify-content: flex-start;
+    transform: translateX(-100%);
+    width: 60%;
     left: 0;
-    width: 45%;
-    z-index: 1000;
-    height: calc(100vh - 50px);
+    top: 60px;
+    height: 100vh;
+    z-index: 600;
     background-color: #EDBFC6;
     border-radius: 2px;
+    padding-top: 45px;
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .sidebar-v.open {
+    transform: translateX(0);
   }
 
   .signout-confirm-modal-v {
@@ -882,5 +960,9 @@ th {
     max-width: 90%;
     text-align: center;
     position: relative;
+  }
+
+  .signout-btn-v{
+    display:none;
   }
 }

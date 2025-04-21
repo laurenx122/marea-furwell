@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { db } from '../../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth'; // Import getAuth to check user login status
 import './FindClinic.css';
 import Footer from '../../components/Footer/Footer';
+import Mobile_Footer from '../../components/Footer/Mobile_Footer';
 
 const FindClinic = () => {
   const [clinics, setClinics] = useState([]);
@@ -19,9 +20,48 @@ const FindClinic = () => {
   const [error, setError] = useState(null);
   const [services, setServices] = useState([]);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false); // New state for login prompt
+  const [unreadNotifications, setUnreadNotifications] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [activePanel, setActivePanel] = useState("findClinic");
+  const [isVeterinarian, setIsVeterinarian] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
   const auth = getAuth(); // Initialize auth
+
+  const handleNotificationClick = () => {
+    setActivePanel('notifications');
+    setShowNotificationsModal(true);
+  };
+
+  const handleAccountClick = () => {
+    setActivePanel('profile');
+    navigate('/PetOwnerHome');
+  };
+
+  const handleDashboardClick = () => {
+    setActivePanel('petDetails');
+    navigate('/PetOwnerHome');
+  };
+
+  useEffect(() => {
+    const fetchUserType = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setIsVeterinarian(userData.Type === 'Veterinarian');
+          }
+        } catch (error) {
+          console.error('Error fetching user type:', error);
+        }
+      }
+    };
+
+    fetchUserType();
+  }, [auth]);
 
   useEffect(() => {
     if (location.state?.selectedClinicId) {
@@ -524,6 +564,19 @@ const FindClinic = () => {
           </div>
         </div>
       )}
+
+
+
+
+      <Mobile_Footer
+        onNotificationClick={handleNotificationClick}
+        onAccountClick={handleAccountClick}
+        activePanel={activePanel}
+        unreadNotifications={unreadNotifications}
+        setActivePanel={setActivePanel}
+        isVeterinarian={isVeterinarian}
+      />
+
     </div>
   );
 };
