@@ -31,6 +31,7 @@ import {
   Inject,
 } from "@syncfusion/ej2-react-schedule";
 import { registerLicense } from "@syncfusion/ej2-base";
+import emailjs from "emailjs-com";
 
 // Import Syncfusion CSS
 import "@syncfusion/ej2-base/styles/material.css";
@@ -80,6 +81,8 @@ const PetOwnerHome = () => {
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState([]);
   const [pastAppointments, setPastAppointments] = useState([]);
+  const [diagnosis, setDiagnosis] = useState("");
+  const [treatment, setTreatment] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showAddPetModal, setShowAddPetModal] = useState(false);
   const [showEditOwnerModal, setShowEditOwnerModal] = useState(false);
@@ -591,7 +594,19 @@ const PetOwnerHome = () => {
   const filteredAppointments = pastAppointments.filter(record => {
     const monthName = new Date(record.dateofAppointment).toLocaleString('en-US', { month: 'long' });
 
-    return Object.values(record).some(value =>
+    return Object.values({
+      petName: record.petName,
+      clinicName: record.clinicName,
+      serviceType: record.serviceType,
+      veterinarian: record.veterinarian,
+      diagnosis: record.diagnosis,
+      treatment: record.treatment,
+      completionRemark: record.completionRemark,
+      notes: record.notes,
+      status: record.status,
+      monthName: monthName,
+    }).some(value =>
+
       typeof value === "string" && value.toLowerCase().includes(searchQuery.toLowerCase())
     ) || monthName.toLowerCase().includes(searchQuery.toLowerCase());
   });
@@ -897,9 +912,11 @@ const PetOwnerHome = () => {
             serviceType: data.serviceType || "N/A",
             veterinarian: data.veterinarian || "N/A",
             veterinarianId: data.veterinarianId,
-            remarks: data.remarks || "No remarks",
+            completionRemark: data.completionRemark || "No remarks",
             notes: data.notes || "No notes",
             status: data.status || "N/A",
+            diagnosis: data.diagnosis || "N/A",
+            treatment: data.treatment || "N/A",
             dateofAppointment: startTime,
             rescheduleDate: data.rescheduleDate ? data.rescheduleDate.toDate() : null,
           };
@@ -1054,7 +1071,87 @@ const PetOwnerHome = () => {
     }
   };
 
-
+//UNSURE
+  const sendReminderEmails = async (notificationsList) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+  
+      for (const notification of notificationsList) {
+        if (notification.type !== "appointment_reminder" || notification.hasEmailSent) continue;
+  
+        const appointmentRef = doc(db, "appointments", notification.appointmentId);
+        const appointmentDoc = await getDoc(appointmentRef);
+        if (!appointmentDoc.exists()) continue;
+  
+        const appointmentData = appointmentDoc.data();
+        const apptDate = appointmentData.dateofAppointment?.toDate();
+        if (!apptDate) continue;
+  
+        const apptDay = new Date(apptDate);
+        apptDay.setHours(0, 0, 0, 0);
+  
+        if (apptDay.toDateString() !== today.toDateString() && apptDay.toDateString() !== tomorrow.toDateString()) continue;
+  
+        const ownerRef = appointmentData.owner;
+        if (!ownerRef) continue;
+  
+        const ownerDoc = await getDoc(ownerRef);
+        if (!ownerDoc.exists()) continue;
+        const ownerData = ownerDoc.data();
+        const email = ownerData.email;
+        if (!email || typeof email !== "string" || !email.includes("@")) continue;
+  
+        const clinicRef = doc(db, "clinics", appointmentData.clinicId);
+        const clinicDoc = await getDoc(clinicRef);
+        const clinicData = clinicDoc.exists() ? clinicDoc.data() : {};
+  
+        // Construct location from streetAddress, province, and city
+        const location = [
+          clinicData.streetAddress || "",
+          clinicData.province || "",
+          clinicData.city || ""
+        ].filter(Boolean).join(", ") || "N/A";
+  
+        const emailParams = {
+          email: email,
+          message: notification.message || "Reminder: Your appointment is coming up!",
+          clinic: appointmentData.clinicName || clinicData.clinicName || "Unknown Clinic",
+          service: appointmentData.serviceType || "N/A",
+          date: apptDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) || "N/A",
+          time: apptDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) || "N/A",
+          location: location,
+          veterinarian: appointmentData.veterinarian || "N/A",
+        };
+  
+        // Validate emailParams
+        const invalidFields = Object.entries(emailParams).filter(
+          ([key, value]) => value === undefined || value === null || typeof value !== "string"
+        );
+        if (invalidFields.length > 0) {
+          console.error("Invalid emailParams fields for appointment", notification.appointmentId, invalidFields);
+          continue;
+        }
+  
+        // Debug log to inspect emailParams
+        console.log("emailParams for appointment", notification.appointmentId, emailParams);
+  
+        await emailjs.send(
+          "service_Furwell",
+          "template_pel70fc",
+          emailParams,
+          "qaihwjIbl1RK4Aj5R"
+        );
+  
+        // Mark notification as sent
+        await updateDoc(doc(db, "notifications", notification.id), { hasEmailSent: true });
+      }
+    } catch (error) {
+      console.error("Error sending reminder emails:", error);
+    }
+  };
 
   const handleEventClick = (args) => {
     args.cancel = true; // Prevent default edit popup
@@ -1693,7 +1790,10 @@ const handleSignOut = () => {
                           <th>Pet</th>
                           <th>Clinic</th>
                           <th>Service</th>
-                          <th>Vet</th>
+                          <th>Notes</th>
+                          <th>Veterinarian</th>
+                          <th>Diagnosis</th>
+                          <th>Treatment</th>
                           <th>Remarks</th>
                           <th>Status</th>
                         </tr>
@@ -1706,8 +1806,11 @@ const handleSignOut = () => {
                               <td>{record.petName}</td>
                               <td>{record.clinicName}</td>
                               <td>{record.serviceType}</td>
+                              <td>{record.notes}</td>
                               <td>{record.veterinarian}</td>
-                              <td>{record.remarks}</td>
+                              <td>{record.diagnosis}</td>
+                              <td>{record.treatment}</td>
+                              <td>{record.completionRemark}</td>
                               <td>{record.status}</td>
                             </tr>
                           ))
@@ -2425,9 +2528,6 @@ const handleSignOut = () => {
             <strong>Requested Reschedule Date:</strong> {formatDate(selectedAppointment.rescheduleDate)}
           </div>
         )}
-        <div className="info-item-p">
-          <strong>Remarks:</strong> {selectedAppointment.remarks}
-        </div>
       </div>
       <div className="info-item-p">
         <strong>Notes:</strong> {selectedAppointment.notes}
