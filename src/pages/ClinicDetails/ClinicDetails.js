@@ -502,7 +502,7 @@ const ClinicDetails = () => {
   const handleSubmitAppointment = async (e) => {
     e.preventDefault();
 
-    const { petId, veterinarianId, serviceType, dateofAppointment, timeSlot } = appointmentData;
+    const { petId, veterinarianId, serviceType, dateofAppointment, timeSlot, notes } = appointmentData;
     if (!petId || !veterinarianId || !serviceType || !dateofAppointment || !timeSlot) {
       setBookingStatus({
         loading: false,
@@ -546,6 +546,7 @@ const ClinicDetails = () => {
         dateofAppointment: appointmentDateTime,
         status: "pending",
         createdAt: serverTimestamp(),
+        notes: notes || "",
       });
 
       setBookingStatus({ loading: false, success: true, error: null });

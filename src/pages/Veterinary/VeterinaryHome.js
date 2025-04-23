@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./VeterinaryHome.css";
 import Mobile_Footer from '../../components/Footer/Mobile_Footer';
-import { db, auth } from "../../firebase";
+import { db, auth, app } from "../../firebase";
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 import { FaCamera, FaTrash, FaCheck, FaBell, FaTimes, FaUser, FaCalendarAlt, FaFileMedical, FaHome, FaEnvelope, FaPlus, FaClock, FaSignOutAlt } from "react-icons/fa";
@@ -68,6 +68,8 @@ const VeterinaryHome = () => {
   const [showRemarksModal, setShowRemarksModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [completionRemark, setCompletionRemark] = useState("");
+  const [diagnosis, setDiagnosis] = useState("");
+  const [treatment, setTreatment] = useState("");
   const [appointmentDetails, setAppointmentDetails] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
@@ -462,6 +464,8 @@ const VeterinaryHome = () => {
             service: data.serviceType || "N/A",
             notes: data.notes || "No Notes",
             dateofAppointment: startTime,
+            diagnosis: data.diagnosis || "",
+            treatment: data.treatment || "",
             status: data.status || "Accepted",
             completionRemark: data.completionRemark || "",
           };
@@ -503,6 +507,8 @@ const VeterinaryHome = () => {
   
         await updateDoc(appointmentRef, {
           status: "Completed",
+          diagnosis: diagnosis || "No diagnosis",
+          treatment: treatment || "No treatment",
           completionRemark: completionRemark || "No completion remark",
         });
   
@@ -755,7 +761,9 @@ const VeterinaryHome = () => {
                       <th>Patient Name</th>
                       <th>Owner</th>
                       <th>Service</th>
-                      <th>Completion Remark</th>
+                      <th>Diagnosis</th>
+                      <th>Treatment</th>
+                      <th>Remarks</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -767,6 +775,8 @@ const VeterinaryHome = () => {
                           appt.petName.toLowerCase().includes(searchLower) ||
                           appt.owner.toLowerCase().includes(searchLower) ||
                           appt.service.toLowerCase().includes(searchLower) ||
+                          appt.diagnosis.toLowerCase().includes(searchLower) ||
+                          appt.treatment.toLowerCase().includes(searchLower) ||
                           appt.completionRemark.toLowerCase().includes(searchLower)
                         );
                       }) // Apply search query to completed appointments
@@ -776,6 +786,8 @@ const VeterinaryHome = () => {
                           <td>{record.petName}</td>
                           <td>{record.owner}</td>
                           <td>{record.service}</td>
+                          <td>{record.diagnosis || "N/A"}</td>
+                          <td>{record.treatment || "N/A"}</td>
                           <td>{record.completionRemark || "N/A"}</td>
                         </tr>
                       ))
@@ -1101,6 +1113,26 @@ const VeterinaryHome = () => {
                   </span>
                   <h3>Complete Appointment for {selectedAppointment.petName}</h3>
                   <div className="form-group-v">
+                    <label htmlFor="diagnosis">Diagnosis</label>
+                    <textarea
+                      id="diagnosis"
+                      value={diagnosis}
+                      onChange={(e) => setDiagnosis(e.target.value)}
+                      rows="4"
+                      className="remarks-textarea-v"
+                      placeholder="Enter diagnosis..."
+                    />
+                  </div>
+                  <div className="form-group-v">
+                    <label htmlFor="treatment">Treatment</label>
+                    <textarea
+                      id="treatment"
+                      value={treatment}
+                      onChange={(e) => setTreatment(e.target.value)}
+                      rows="4"
+                      className="remarks-textarea-v"
+                      placeholder="Enter treatment..."
+                    />
                     <label htmlFor="completionRemark">Completion Remark</label>
                     <textarea
                       id="completionRemark"
