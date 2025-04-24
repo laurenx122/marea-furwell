@@ -50,6 +50,7 @@ import {
 //npm install @syncfusion/ej2-grids --save
 import { registerLicense } from "@syncfusion/ej2-base";
 import emailjs from "emailjs-com";
+import Mobile_Footer from '../../components/Footer/Mobile_Footer';
 
 // Import Syncfusion CSS
 import "@syncfusion/ej2-base/styles/material.css";
@@ -1526,6 +1527,9 @@ const ClinicHome = () => {
         alert("Failed to delete service. Please try again.");
       }
     }
+  };
+  const handleAccountClick = () => {
+    setActivePanel("clinic");
   };
 
   // edit vet schedule
@@ -3081,6 +3085,12 @@ const ClinicHome = () => {
           </div>
         </div>
       )}
+
+      <Mobile_Footer
+          onAccountClick={handleAccountClick}
+          setActivePanel={setActivePanel}
+          isVetClinic={true}
+      />
     </div>
   );
 };
