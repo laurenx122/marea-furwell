@@ -1,10 +1,9 @@
-// src/components/Footer/Mobile_Footer.jsx
 import './Mobile_Footer.css';
 import { FaUser, FaHome, FaEnvelope, FaPlus, FaBell } from "react-icons/fa";
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unreadNotifications, isVeterinarian, setActivePanel }) => {
+const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unreadNotifications, isVeterinarian, setActivePanel, isVetClinic }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,6 +25,9 @@ const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unrea
       if (isVeterinarian) {
         setActivePanel('appointments');
         navigate('/VeterinaryHome'); 
+      } else if (isVetClinic) {
+        setActivePanel('patients');
+        navigate('/ClinicHome');
       } else {
         setActivePanel('petDetails');
         navigate('/PetOwnerHome');
@@ -54,7 +56,7 @@ const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unrea
         </button>
         {isFindClinicOrClinicDetails ? (
           <>
-            {!isVeterinarian && (
+            {!isVeterinarian && !isVetClinic && (
               <button className="footer-btn-p" onClick={handleBookNowClick}>
                 <FaPlus />
               </button>
@@ -70,16 +72,18 @@ const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unrea
               <FaEnvelope />
               <p>Dashboard</p>
             </button>
-            {!isVeterinarian && (
+            {!isVeterinarian && !isVetClinic && (
               <button className="footer-btn-p" onClick={handleBookNowClick}>
                 <FaPlus />
               </button>
             )}
-            <button className="footer-btn-p" onClick={handleNotificationClickWrapper}>
-              <FaBell />
-              <p>Notifications</p>
-              {unreadNotifications && <span className="notification-dot-p"></span>}
-            </button>
+            {!isVetClinic && (
+              <button className="footer-btn-p" onClick={handleNotificationClickWrapper}>
+                <FaBell />
+                <p>Notifications</p>
+                {unreadNotifications && <span className="notification-dot-p"></span>}
+              </button>
+            )}
             <button
               className={`footer-btn-p ${activePanel === 'profile' ? 'active' : ''}`}
               onClick={handleAccountClickWrapper}
