@@ -105,6 +105,7 @@ const ClinicHome = () => {
   // const [genderData, setGenderData] = useState([]);
   // const [speciesData, setSpeciesData] = useState([]);
   // const [ageData, setAgeData] = useState([]);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [activePanel, setActivePanel] = useState("patients");
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -245,6 +246,39 @@ const ClinicHome = () => {
 
     initializeComponent();
   }, [navigate]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      const sidebar = document.querySelector(".sidebar-c");
+      const hamburgerButton = e.target.closest('.mobile-header-c button');
+      
+      if (
+        isSidebarOpen &&
+        sidebar &&
+        !sidebar.contains(e.target) &&
+        !hamburgerButton 
+      ) {
+        setIsSidebarOpen(false);
+      }
+  
+      const profileModal = document.querySelector(".profile-modal-c");
+      const headerProfileImg = e.target.closest(".mobile-header-profile-img-c");
+  
+      if (
+        isProfileModalOpen &&
+        profileModal &&
+        !profileModal.contains(e.target) &&
+        !headerProfileImg 
+      ) {
+        setIsProfileModalOpen(false);
+      }
+    };
+  
+    document.addEventListener('click', handleOutsideClick);
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [isSidebarOpen, isProfileModalOpen]);
 
   //Analytics data
   const handlePanelChange = (panel) => {
@@ -1718,17 +1752,42 @@ const ClinicHome = () => {
   }
 
   return (
-
     <div className="clinic-container-c">
       {/* Mobile Header with Hamburger Menu */}
       <div className="mobile-header-c">
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
           ☰ {/* Hamburger icon */}
         </button>
+        {clinicInfo && (
+          <img
+            src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
+            alt="Clinic Profile"
+            className="mobile-header-profile-img-c"
+            onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
+          />
+        )}
       </div>
-
-      {/* Sidebar with Conditional Class */}
-      <div className={`sidebar-cc ${isSidebarOpen ? "open" : ""}`}>
+      {isProfileModalOpen && clinicInfo && (
+        <div className="profile-modal-c">
+          <div className="profile-modal-content-c">
+            <img
+              src={clinicInfo.profileImageURL || DEFAULT_CLINIC_IMAGE}
+              alt="Clinic Profile"
+              className="profile-modal-img-c"
+            />
+            <div className="profile-modal-info-c">
+              <p className="profile-modal-name-c" onClick={handleAccountClick} style={{ cursor: "pointer" }}>
+                {clinicInfo.clinicName}
+              </p>
+              <button className="signout-btn-modal-c" onClick={handleSignOut}>
+                <FaSignOutAlt className="sidebar-icon-c" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className={`sidebar-c ${isSidebarOpen ? "open" : ""}`}>
         {clinicInfo && (
           <div className="clinic-sidebar-panel-c">
             <div className="clinic-img-container-c">
@@ -1737,19 +1796,9 @@ const ClinicHome = () => {
                 alt="Clinic Profile"
                 className="clinic-profile-image-c"
               />
-              <label htmlFor="clinic-image-upload" className="edit-icon-c">
-                <FaCamera />
-              </label>
-              <input
-                type="file"
-                id="clinic-image-upload"
-                accept="image/jpeg, image/jpg, image/png"
-                onChange={handleClinicImageChange}
-                style={{ display: "none" }}
-              />
             </div>
             <button
-              className={activePanel === "clinic" ? "active" : ""}
+              className={`clinic-button-c ${activePanel === "clinic" ? "active" : ""}`}
               onClick={() => handlePanelChange("clinic")}
             >
               <FaClinicMedical className="sidebar-icon-c" />
@@ -1759,49 +1808,49 @@ const ClinicHome = () => {
         )}
         <div className="sidebar-buttons-c">
           <button
-            className={activePanel === "patients" ? "active" : ""}
+            className={`sidebar-btn-c ${activePanel === "patients" ? "active" : ""}`}
             onClick={() => handlePanelChange("patients")}
           >
             <FaUsers className="sidebar-icon-c" />
             Patients
           </button>
           <button
-            className={activePanel === "appointments" ? "active" : ""}
+            className={`sidebar-btn-c ${activePanel === "appointments" ? "active" : ""}`}
             onClick={() => handlePanelChange("appointments")}
           >
             <FaCalendarAlt className="sidebar-icon-c" />
             Appointments
           </button>
           <button
-            className={activePanel === "pendingAppointments" ? "active" : ""}
+            className={`sidebar-btn-c ${activePanel === "pendingAppointments" ? "active" : ""}`}
             onClick={() => handlePanelChange("pendingAppointments")}
           >
             <FaClock className="sidebar-icon-c" />
             Pending Appointments
           </button>
           <button
-            className={activePanel === "records" ? "active" : ""}
+            className={`sidebar-btn-c ${activePanel === "records" ? "active" : ""}`}
             onClick={() => handlePanelChange("records")}
           >
             <FaFileMedicalAlt className="sidebar-icon-c" />
             Records
           </button>
           <button
-            className={activePanel === "services" ? "active" : ""}
+            className={`sidebar-btn-c ${activePanel === "services" ? "active" : ""}`}
             onClick={() => handlePanelChange("services")}
           >
             <FaBriefcaseMedical className="sidebar-icon-c" />
             Services
           </button>
           <button
-            className={activePanel === "veterinarians" ? "active" : ""}
+            className={`sidebar-btn-c ${activePanel === "veterinarians" ? "active" : ""}`}
             onClick={() => handlePanelChange("veterinarians")}
           >
             <FaUserMd className="sidebar-icon-c" />
             Veterinarians
           </button>
           <button
-            className={activePanel === "analytics" ? "active" : ""}
+            className={`sidebar-btn-c ${activePanel === "analytics" ? "active" : ""}`}
             onClick={() => handlePanelChange("analytics")}
           >
             <FaChartBar className="sidebar-icon-c" />
@@ -1970,7 +2019,7 @@ const ClinicHome = () => {
             </div>
           )}
           {activePanel === "pendingAppointments" && (
-          <div className="panel-v health-records-panel-v">
+          <div className="panel-c pending-appointments-panel-c">
             <h3>Pending Appointments</h3>
            
             {loading ? (
