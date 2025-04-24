@@ -11,14 +11,23 @@
 
 /* Sidebar Styling */
 .sidebar-c {
-  display: flex;
+ /* display: flex;
   justify-content: space-between;
   flex-direction: column;
   align-items: center;
   width: 250px;
   background-color: #EDBFC6;
   padding: 20px;
-  z-index: 500;
+  z-index: 500;*/
+  background-color: rgb(237, 191, 198);
+  align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 250px;
+    z-index: 500;
+    transition: transform 0.3s ease-in-out;
+    padding: 20px;
 }
 
 .sidebar-icon-c {
@@ -1633,7 +1642,7 @@ tr:hover {
 @media (max-width: 768px) {
   .clinic-container-c {
     flex-direction: column;
-    height: auto;
+    height: calc(-50px + 100vh);
   }
 
   .content-c {
@@ -1656,7 +1665,7 @@ tr:hover {
   }
 
   .sidebar-c.open {
-    display: flex;
+   /* display: flex;
     position: fixed;
     top: 60px;
     left: 0;
@@ -1666,7 +1675,19 @@ tr:hover {
     height: calc(100vh - 50px);
     background-color: #EDBFC6;
     border-radius: 2px;;
-    transform: translateX(0); 
+    transform: translateX(0); */
+   
+      background-color: rgb(237, 191, 198);
+      display: flex;
+      height: calc(-50px + 100vh);
+      left: 0px;
+      padding-top: 45px;
+      position: fixed;
+      top: 60px;
+      transform: translateX(0px);
+      width: 60%;
+      z-index: 600;
+      border-radius: 2px;
   }
 
   .mobile-header-c {
