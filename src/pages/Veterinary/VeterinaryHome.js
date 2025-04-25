@@ -1025,27 +1025,29 @@ const VeterinaryHome = () => {
           className="profile-modal-v"
           onClick={() => setIsProfileModalOpen(false)} 
         >
-            <img
-              src={vetInfo.profileImageURL || DEFAULT_VET_IMAGE}
-              alt="Vet Profile"
-              className="profile-modal-img-v"
-            />
-            <div className="profile-modal-info-v">
-              <p
-                className="profile-modal-name-v"
-                onClick={() => {
-                  setActivePanel("vetInfo"); 
-                  setIsProfileModalOpen(false); 
-                  setIsSidebarOpen(false); 
-                }}
-                style={{ cursor: "pointer" }} 
-              >
-                {vetInfo.FirstName} {vetInfo.LastName}
-              </p>
-              <button className="signout-btn-modal-v" onClick={handleSignOut}>
-                <FaSignOutAlt className="sidebar-icon-v" />
-                Sign Out
-              </button>
+          <div className="profile-modal-content-v">
+              <img
+                src={vetInfo.profileImageURL || DEFAULT_VET_IMAGE}
+                alt="Vet Profile"
+                className="profile-modal-img-v"
+              />
+              <div className="profile-modal-info-v">
+                <p
+                  className="profile-modal-name-v"
+                  onClick={() => {
+                    setActivePanel("vetInfo"); 
+                    setIsProfileModalOpen(false); 
+                    setIsSidebarOpen(false); 
+                  }}
+                  style={{ cursor: "pointer" }} 
+                >
+                  {vetInfo.FirstName} {vetInfo.LastName}
+                </p>
+                <button className="signout-btn-modal-v" onClick={handleSignOut}>
+                  <FaSignOutAlt className="sidebar-icon-v" />
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
       )}
