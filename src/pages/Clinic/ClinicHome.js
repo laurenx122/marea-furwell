@@ -251,29 +251,29 @@ const ClinicHome = () => {
     const handleOutsideClick = (e) => {
       const sidebar = document.querySelector(".sidebar-c");
       const hamburgerButton = e.target.closest('.mobile-header-c button');
-      
+
       if (
         isSidebarOpen &&
         sidebar &&
         !sidebar.contains(e.target) &&
-        !hamburgerButton 
+        !hamburgerButton
       ) {
         setIsSidebarOpen(false);
       }
-  
+
       const profileModal = document.querySelector(".profile-modal-c");
       const headerProfileImg = e.target.closest(".mobile-header-profile-img-c");
-  
+
       if (
         isProfileModalOpen &&
         profileModal &&
         !profileModal.contains(e.target) &&
-        !headerProfileImg 
+        !headerProfileImg
       ) {
         setIsProfileModalOpen(false);
       }
     };
-  
+
     document.addEventListener('click', handleOutsideClick);
     return () => {
       document.removeEventListener('click', handleOutsideClick);
@@ -440,7 +440,18 @@ const ClinicHome = () => {
 
   const handleScheduleChange = (e) => {
     const { name, value } = e.target;
-    setNewSchedule((prev) => ({ ...prev, [name]: value }));
+    let updatedValue = value;
+
+    if (name === "startTime" || name === "endTime") {
+      //  Ensure minutes are always "00"
+      const [hours] = value.split(":");
+      updatedValue = `${hours}:00`;
+
+      //  **New:** Forcefully set the input value to our formatted value
+      e.target.value = updatedValue;
+    }
+
+    setNewSchedule((prev) => ({ ...prev, [name]: updatedValue }));
   };
 
   const addSchedule = () => {
@@ -1057,13 +1068,13 @@ const ClinicHome = () => {
         );
         const querySnapshot = await getDocs(completedAppointmentsQuery);
         const completedAppointmentsList = [];
-  
+
         for (const appointmentDoc of querySnapshot.docs) {
           const appointmentData = appointmentDoc.data();
           let ownerName = "Unknown Owner";
           let petName = appointmentData.petName || "Unknown Pet";
           const vetName = appointmentData.veterinarian || "N/A";
-  
+
           if (appointmentData.owner && typeof appointmentData.owner === "object") {
             const ownerDoc = await getDoc(appointmentData.owner);
             if (ownerDoc.exists()) {
@@ -1071,16 +1082,16 @@ const ClinicHome = () => {
               ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "Unknown Owner";
             }
           }
-  
+
           if (!appointmentData.petName && appointmentData.petRef) {
             const petDoc = await getDoc(appointmentData.petRef);
             if (petDoc.exists()) {
               petName = petDoc.data().petName || "Unknown Pet";
             }
           }
-  
+
           const startTime = appointmentData.dateofAppointment.toDate();
-  
+
           completedAppointmentsList.push({
             Id: appointmentDoc.id,
             petName,
@@ -1092,7 +1103,7 @@ const ClinicHome = () => {
             dateofAppointment: startTime,
           });
         }
-  
+
         setCompletedAppointments(completedAppointmentsList); // Update completedAppointments state
       }
     } catch (error) {
@@ -1803,7 +1814,7 @@ const ClinicHome = () => {
     }
   };
 
- 
+
 
   if (loading) {
     return;
@@ -2077,106 +2088,106 @@ const ClinicHome = () => {
             </div>
           )}
           {activePanel === "pendingAppointments" && (
-          <div className="panel-c pending-appointments-panel-c">
-            <h3>Pending Appointments</h3>
-           
-            {loading ? (
-              <p>Loading pending appointments...</p>
-            ) : filteredPendingAppointments.length > 0 ? (
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date of Appointment</th>
-                      <th>Veterinarian</th>
-                      <th>Patient Name</th>
-                      <th>Owner</th>
-                      <th>Breed</th>
-                      <th>Age</th>
-                      <th>Service</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPendingAppointments.map((appointment) => (
-                      <tr key={appointment.id}>
-                        <td>{formatDate(appointment.dateofAppointment)}</td>
-                        <td>{appointment.veterinarian || "N/A"}</td>
-                        <td>{appointment.petName || "N/A"}</td>
-                        <td>{`${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`}</td>
-                        <td>{appointment.petRef?.Breed || "N/A"}</td>
-                        <td>{calculateAge(appointment.petRef?.dateofBirth)}</td>
-                        <td>{appointment.serviceType || "N/A"}</td>
-                        <td>
-                          <div className="v-actions">
-                            <button
-                              className="vicon-buttoncheck"
-                              onClick={() => handleAction("accept", appointment.id)}
-                            >
-                              Approve
-                            </button>
-                            <button
-                              className="vicon-buttondecline"
-                              onClick={() => handleAction("decline", appointment.id)}
-                            >
-                              Decline
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p>No pending appointments found.</p>
-            )}
-          </div>
-        )}
-          
-          {activePanel === "records" && (
-              <div className="panel-c records-panel-c">
-                <h3>Records</h3>
-                {loading ? (
-                  <p>Loading records...</p>
-                ) : (
+            <div className="panel-c pending-appointments-panel-c">
+              <h3>Pending Appointments</h3>
+
+              {loading ? (
+                <p>Loading pending appointments...</p>
+              ) : filteredPendingAppointments.length > 0 ? (
+                <div className="table-container">
                   <table>
                     <thead>
                       <tr>
                         <th>Date of Appointment</th>
+                        <th>Veterinarian</th>
                         <th>Patient Name</th>
                         <th>Owner</th>
+                        <th>Breed</th>
+                        <th>Age</th>
                         <th>Service</th>
-                        <th>Veterinarian</th>
-                        <th>Remarks</th>
-                        <th>Diagnosis</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {completedAppointments.length > 0 ? (
-                        [...completedAppointments]
-                          .sort((a, b) => b.dateofAppointment - a.dateofAppointment) // Sort by date descending
-                          .map((record) => (
-                            <tr key={record.Id}>
-                              <td>{formatDate(record.dateofAppointment)}</td>
-                              <td>{record.petName}</td>
-                              <td>{record.ownerName}</td>
-                              <td>{record.serviceType}</td>
-                              <td>{record.veterinarian}</td>
-                              <td>{record.remarks}</td>
-                              <td>{record.diagnosis}</td>
-                            </tr>
-                          ))
-                      ) : (
-                        <tr>
-                          <td colSpan="7">No completed appointments found</td>
+                      {filteredPendingAppointments.map((appointment) => (
+                        <tr key={appointment.id}>
+                          <td>{formatDate(appointment.dateofAppointment)}</td>
+                          <td>{appointment.veterinarian || "N/A"}</td>
+                          <td>{appointment.petName || "N/A"}</td>
+                          <td>{`${appointment.owner?.FirstName || ""} ${appointment.owner?.LastName || ""}`}</td>
+                          <td>{appointment.petRef?.Breed || "N/A"}</td>
+                          <td>{calculateAge(appointment.petRef?.dateofBirth)}</td>
+                          <td>{appointment.serviceType || "N/A"}</td>
+                          <td>
+                            <div className="v-actions">
+                              <button
+                                className="vicon-buttoncheck"
+                                onClick={() => handleAction("accept", appointment.id)}
+                              >
+                                Approve
+                              </button>
+                              <button
+                                className="vicon-buttondecline"
+                                onClick={() => handleAction("decline", appointment.id)}
+                              >
+                                Decline
+                              </button>
+                            </div>
+                          </td>
                         </tr>
-                      )}
+                      ))}
                     </tbody>
                   </table>
-                )}
-              </div>
-            )}
+                </div>
+              ) : (
+                <p>No pending appointments found.</p>
+              )}
+            </div>
+          )}
+
+          {activePanel === "records" && (
+            <div className="panel-c records-panel-c">
+              <h3>Records</h3>
+              {loading ? (
+                <p>Loading records...</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date of Appointment</th>
+                      <th>Patient Name</th>
+                      <th>Owner</th>
+                      <th>Service</th>
+                      <th>Veterinarian</th>
+                      <th>Remarks</th>
+                      <th>Diagnosis</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {completedAppointments.length > 0 ? (
+                      [...completedAppointments]
+                        .sort((a, b) => b.dateofAppointment - a.dateofAppointment) // Sort by date descending
+                        .map((record) => (
+                          <tr key={record.Id}>
+                            <td>{formatDate(record.dateofAppointment)}</td>
+                            <td>{record.petName}</td>
+                            <td>{record.ownerName}</td>
+                            <td>{record.serviceType}</td>
+                            <td>{record.veterinarian}</td>
+                            <td>{record.remarks}</td>
+                            <td>{record.diagnosis}</td>
+                          </tr>
+                        ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7">No completed appointments found</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
 
           {activePanel === "services" && (
             <div className="panel-c services-panel-c">
@@ -3115,6 +3126,7 @@ const ClinicHome = () => {
                 <p className="no-schedules-c">No schedules set.</p>
               )}
             </div>
+
             <div className="add-schedule-section-c">
               <h3>Add New Schedule</h3>
               <div className="add-schedule-form-c">
@@ -3130,13 +3142,21 @@ const ClinicHome = () => {
                       aria-required="true"
                     >
                       <option value="">Select Day</option>
-                      <option value="Monday">Monday</option>
-                      <option value="Tuesday">Tuesday</option>
-                      <option value="Wednesday">Wednesday</option>
-                      <option value="Thursday">Thursday</option>
-                      <option value="Friday">Friday</option>
-                      <option value="Saturday">Saturday</option>
-                      <option value="Sunday">Sunday</option>
+                      {
+                        [
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                          "Saturday",
+                          "Sunday",
+                        ].map((day) => (
+                          !editingVetSchedules.some((s) => s.day === day) ? (
+                            <option key={day} value={day}>{day}</option>
+                          ) : null
+                        ))
+                      }
                     </select>
                   </div>
                   <div className="schedule-input-field-c">
@@ -3149,6 +3169,7 @@ const ClinicHome = () => {
                       onChange={handleScheduleChange}
                       required
                       aria-required="true"
+                      step="3600"
                     />
                   </div>
                   <div className="schedule-input-field-c">
@@ -3161,6 +3182,7 @@ const ClinicHome = () => {
                       onChange={handleScheduleChange}
                       required
                       aria-required="true"
+                      step="3600"
                     />
                   </div>
                   <button
@@ -3174,6 +3196,7 @@ const ClinicHome = () => {
                 </div>
               </div>
             </div>
+
             <div className="modal-actions-c">
               <button
                 className="cancel-btn-c"
@@ -3196,9 +3219,9 @@ const ClinicHome = () => {
       )}
 
       <Mobile_Footer
-          onAccountClick={handleAccountClick}
-          setActivePanel={setActivePanel}
-          isVetClinic={true}
+        onAccountClick={handleAccountClick}
+        setActivePanel={setActivePanel}
+        isVetClinic={true}
       />
     </div>
   );
