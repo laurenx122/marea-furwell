@@ -64,7 +64,17 @@
   align-items: center;
   gap: 12px;
 }
+.records-panel-c table {
+  table-layout: fixed; /* Ensures columns have fixed widths */
+  word-wrap: break-word; /* Allows text to wrap within cells */
+}
 
+.records-panel-c th,
+.records-panel-c td {
+  white-space: normal; /* Allows text to wrap */
+  word-wrap: break-word; /* Ensures long words break */
+  overflow-wrap: break-word; /* Ensures text wraps properly */
+}
 .sidebar-btn-c:hover {
   background-color: #f1a6ae;
   transform: translateY(-2px);

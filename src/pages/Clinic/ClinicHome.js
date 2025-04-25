@@ -157,7 +157,7 @@ const ClinicHome = () => {
   const [pastAppointments, setPastAppointments] = useState([]);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-
+  const [completedAppointments, setCompletedAppointments] = useState([]);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [newService, setNewService] = useState({ Type: "", Price: "" });
   const [editingServiceIndex, setEditingServiceIndex] = useState(null);
@@ -1019,7 +1019,7 @@ const ClinicHome = () => {
             ownerName,
             serviceType: appointmentData.serviceType || "N/A",
             veterinarian: vetName,
-            remarks: appointmentData.remarks || "No remarks",
+            remarks: appointmentData.completionRemark || "No remarks",
             notes: appointmentData.notes || "No Notes",
             dateofAppointment: startTime,
             status: appointmentData.status || "Accepted",
@@ -1044,7 +1044,64 @@ const ClinicHome = () => {
       setLoading(false);
     }
   };
-
+  const fetchCompletedAppointments = async () => {
+    try {
+      setLoading(true);
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const clinicRef = doc(db, "clinics", currentUser.uid);
+        const completedAppointmentsQuery = query(
+          collection(db, "appointments"),
+          where("clinic", "==", clinicRef),
+          where("status", "==", "Completed")
+        );
+        const querySnapshot = await getDocs(completedAppointmentsQuery);
+        const completedAppointmentsList = [];
+  
+        for (const appointmentDoc of querySnapshot.docs) {
+          const appointmentData = appointmentDoc.data();
+          let ownerName = "Unknown Owner";
+          let petName = appointmentData.petName || "Unknown Pet";
+          const vetName = appointmentData.veterinarian || "N/A";
+  
+          if (appointmentData.owner && typeof appointmentData.owner === "object") {
+            const ownerDoc = await getDoc(appointmentData.owner);
+            if (ownerDoc.exists()) {
+              const ownerData = ownerDoc.data();
+              ownerName = `${ownerData.FirstName || ""} ${ownerData.LastName || ""}`.trim() || "Unknown Owner";
+            }
+          }
+  
+          if (!appointmentData.petName && appointmentData.petRef) {
+            const petDoc = await getDoc(appointmentData.petRef);
+            if (petDoc.exists()) {
+              petName = petDoc.data().petName || "Unknown Pet";
+            }
+          }
+  
+          const startTime = appointmentData.dateofAppointment.toDate();
+  
+          completedAppointmentsList.push({
+            Id: appointmentDoc.id,
+            petName,
+            ownerName,
+            serviceType: appointmentData.serviceType || "N/A",
+            veterinarian: vetName,
+            remarks: appointmentData.completionRemark || "No remarks",
+            diagnosis: appointmentData.diagnosis || "No diagnosis",
+            dateofAppointment: startTime,
+          });
+        }
+  
+        setCompletedAppointments(completedAppointmentsList); // Update completedAppointments state
+      }
+    } catch (error) {
+      console.error("Error fetching completed appointments:", error);
+      setCompletedAppointments([]); // Clear state on error
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleAcceptRequest = async (appointmentId, requestType) => {
     try {
       console.log(`Accepting ${requestType} for appointment:`, appointmentId);
@@ -1478,6 +1535,7 @@ const ClinicHome = () => {
       fetchVeterinarians();
       fetchChartData();
       fetchPendingAppointments();
+      fetchCompletedAppointments();
     };
     initializeData();
   }, [userFirstName]);
@@ -2077,46 +2135,48 @@ const ClinicHome = () => {
         )}
           
           {activePanel === "records" && (
-            <div className="panel-c records-panel-c">
-              <h3>Records</h3>
-              {loading ? (
-                <p>Loading records...</p>
-              ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date of Appointment</th>
-                      <th>Patient Name</th>
-                      <th>Owner</th>
-                      <th>Service</th>
-                      <th>Veterinarian</th>
-                      <th>Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pastAppointments.length > 0 ? (
-                      [...pastAppointments]
-                        .sort((a, b) => b.dateofAppointment - a.dateofAppointment)
-                        .map((record) => (
-                          <tr key={record.Id}>
-                            <td>{formatDate(record.dateofAppointment)}</td>
-                            <td>{record.petName}</td>
-                            <td>{record.ownerName}</td>
-                            <td>{record.serviceType}</td>
-                            <td>{record.veterinarian}</td>
-                            <td>{record.remarks}</td>
-                          </tr>
-                        ))
-                    ) : (
+              <div className="panel-c records-panel-c">
+                <h3>Records</h3>
+                {loading ? (
+                  <p>Loading records...</p>
+                ) : (
+                  <table>
+                    <thead>
                       <tr>
-                        <td colSpan="6">No past appointments found</td>
+                        <th>Date of Appointment</th>
+                        <th>Patient Name</th>
+                        <th>Owner</th>
+                        <th>Service</th>
+                        <th>Veterinarian</th>
+                        <th>Remarks</th>
+                        <th>Diagnosis</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
+                    </thead>
+                    <tbody>
+                      {completedAppointments.length > 0 ? (
+                        [...completedAppointments]
+                          .sort((a, b) => b.dateofAppointment - a.dateofAppointment) // Sort by date descending
+                          .map((record) => (
+                            <tr key={record.Id}>
+                              <td>{formatDate(record.dateofAppointment)}</td>
+                              <td>{record.petName}</td>
+                              <td>{record.ownerName}</td>
+                              <td>{record.serviceType}</td>
+                              <td>{record.veterinarian}</td>
+                              <td>{record.remarks}</td>
+                              <td>{record.diagnosis}</td>
+                            </tr>
+                          ))
+                      ) : (
+                        <tr>
+                          <td colSpan="7">No completed appointments found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
 
           {activePanel === "services" && (
             <div className="panel-c services-panel-c">
