@@ -15,12 +15,13 @@ html, body {
     height: 120vh;
     background: url('/public/images/dog-with-a-vet-.jpg') no-repeat center center/cover;
     position: relative;
-    z-index: 1002;
+    z-index: 99;
 }
 
 /* Right side content wrapper */
 .right-content {
     position: absolute;
+    top: 90px;
     right: 10%;
     display: flex;
     flex-direction: column;
@@ -165,7 +166,7 @@ html, body {
 /* Modal Styles */
 .modal-overlay {
     position: fixed;
-    top: 0;
+    top: 40px;
     left: 0;
     right: 0;
     bottom: 0;
@@ -373,17 +374,6 @@ html, body {
     margin-top: 8px;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .modal-container {
-        width: 95%;
-        padding: 20px;
-    }
-    
-    .mapClinic-container {
-        height: 250px;
-    }
-}
 .cpassword-toggle {
     position: absolute;
     right: 10px;
@@ -396,3 +386,126 @@ html, body {
     width: 20px;
     height: 20px;
   }
+
+@media (max-width: 768px) {
+
+    .modal-container {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .mapClinic-container {
+        height: 250px;
+    }
+
+    .CS_container {
+        position: absolute;
+        height: auto;
+        min-height: 120vh;
+        width: 100%;
+        padding: 15px;
+        justify-content: flex-start;
+        background: url('/public/images/dog-with-a-vet-.jpg') no-repeat 15% center/1200px auto;
+    }
+
+    .right-content {
+        position: relative;
+        top: 60px;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        align-items: center;
+    }
+
+    .CS_box {
+        width: 100%;
+        max-width: 350px;
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    .clinic_header {
+        width: 100%;
+        max-width: 350px;
+        margin-bottom: 15px;
+        /* text-align: center; */
+    }
+
+    .clinic_header h2 {
+        font-size: 18px;
+    }
+
+    .clinic_header p {
+        font-size: 12px;
+    }
+
+    .CS_header {
+        /* flex-direction: column; */
+        align-items: center;
+    }
+
+    .logo {
+        height: 80px;
+        margin: 10px 0;
+    }
+
+    .CS_input-container {
+        padding: 6px;
+        margin: 4px 0;
+    }
+
+    .CS_input-container input {
+        padding: 6px;
+        font-size: 13px;
+    }
+
+    .icon {
+        font-size: 16px;
+        margin-right: 6px;
+    }
+
+    .country-code {
+        font-size: 13px;
+        margin-right: 6px;
+    }
+
+    .get-started {
+        padding: 8px;
+        font-size: 16px;
+        margin-top: 15px;
+    }
+
+    .paw-icon {
+        font-size: 18px;
+    }
+
+    .modal-container {
+        width: 95%;
+        padding: 20px;
+        max-height: 85vh;
+    }
+
+    .mapClinic-container {
+        height: 250px;
+    }
+
+    .modal-header-CS h2 {
+        font-size: 20px;
+    }
+
+    .modal-header-CS p {
+        font-size: 13px;
+    }
+
+    .step {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+    }
+
+    .step-label {
+        font-size: 11px;
+        top: 32px;
+    }
+}
