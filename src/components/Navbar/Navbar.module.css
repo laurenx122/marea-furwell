@@ -11,7 +11,7 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 80px;
+  height: 70px;
   background-color: #CDEDF6;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -44,7 +44,7 @@
 
 .hamburger span {
   width: 40px;
-  height: 6px;
+  height: 4px;
   background-color: #3E6680;
   border-radius: 14px;
   margin: 4px 0;
@@ -52,7 +52,7 @@
 }
 
 .hamburger.active span:nth-child(1) {
-  transform: rotate(45deg) translate(10px, 10px);
+  transform: rotate(45deg) translate(8px, 10px);
 }
 
 .hamburger.active span:nth-child(2) {
@@ -60,7 +60,7 @@
 }
 
 .hamburger.active span:nth-child(3) {
-  transform: rotate(-45deg) translate(10px, -10px);
+  transform: rotate(-45deg) translate(8px, -10px);
 }
 
 /* Logo */
@@ -70,7 +70,7 @@
 }
 
 .logo {
-  height: 120px; 
+  height: 110px; 
   cursor: url('../../images/pawCursorPoint.png'), auto;
   width: auto;
 }
@@ -186,7 +186,7 @@
 /* Scroll Progress Bar */
 .scrollProgressBar {
   position: fixed;
-  top: 80px;
+  top: 70px;
   left: 0;
   width: 0;
   height: 10px;
@@ -355,13 +355,13 @@
   padding: 20px;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
   transition: left 0.3s ease;
-  z-index: 100;
+  z-index: 99;
 }
 
 .mobileMenu.active {
   top: 80px;
   left: 0; 
-  z-index: 101;
+  z-index: 100;
 }
 
 .mobileMenuOverlay {
@@ -463,6 +463,7 @@
     padding: 0;
     margin-left: 0;
     justify-content: left;
+    height: 60px;
   }
 
   .hamburger {
@@ -482,11 +483,28 @@
   .hamburger {
     z-index: 101;
   }
+
+  .mobileMenu.active {
+    top: 60px;
+    height: calc(100vh - 40px);
+    width:130px;
+  }
+
+  .scrollProgressBar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 0;
+    height: 10px;
+    background-color: #3E6680;
+    transition: width 0.2s ease-in-out;
+    z-index: 105;
+  }
 }
 
 @media screen and (max-width: 768px) { /* Mobile Phones (360x800) */
   .navbar {
-    height: 60px;
+    height: 50px;
   }
 
   .logo {
@@ -516,20 +534,20 @@
   }
 
   .mobileMenu.active {
-    top: 60px;
+    top: 50px;
     height: calc(100vh - 40px);
     width:130px;
   }
 
   .scrollProgressBar {
     position: fixed;
-    top: 60px;
+    top: 50px;
     left: 0;
     width: 0;
     height: 10px;
     background-color: #3E6680;
     transition: width 0.2s ease-in-out;
-    z-index: 100;
+    z-index: 105;
   }
   .mobileMenuLink,
   .mobileLogoutButton {
