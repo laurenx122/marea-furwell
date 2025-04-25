@@ -156,7 +156,7 @@ const AdminHome = () => {
                 )}
               </div>
             </div>
-            <div className="modal-section-contact">
+            <div className="modal-section-contact-a">
               <h3>Contact Information</h3>
               <div className="contact-info">
                 <div className="contact-item">

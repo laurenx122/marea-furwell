@@ -321,43 +321,40 @@ const Navbar = () => {
                                         Contact Us
                                     </Link>
                                 </li>
-                                {/* <li className={styles.navbarItem}>
-                                    <Link to="/maps" className={styles.navbarLink}>Maps</Link>
-                                </li> */}
                             </>
                         )}
                     </ul>
 
                     <div className={styles.rightSection}>
-                        {isLoggedIn ? (
-                            <div className={styles.userMenu}>
-                                {userDetails.profileImageURL && (
-                                    <Link to="/PetOwnerHome" onClick={() => setIsMenuOpen(false)}>
-                                        <img
-                                            src={userDetails.profileImageURL}
-                                            alt="Profile"
-                                            className={styles.profileImage}
-                                            style={{ cursor: 'pointer', width: '30px', height: '30px', borderRadius: '50%', marginRight: '10px' }}
-                                        />
+                            {isLoggedIn ? (
+                                <div className={styles.userMenu}>
+                                    {userDetails.profileImageURL && (
+                                        <Link to={getUserHomeRoute()} onClick={() => setIsMenuOpen(false)}>
+                                            <img
+                                                src={userDetails.profileImageURL}
+                                                alt="Profile"
+                                                className={styles.profileImage}
+                                                style={{ cursor: 'pointer', width: '30px', height: '30px', borderRadius: '50%', marginRight: '10px' }}
+                                            />
+                                        </Link>
+                                    )}
+                                    <Link to={getUserHomeRoute()} onClick={() => setIsMenuOpen(false)}>
+                                        <span
+                                            className={styles.username}
+                                            style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                        >
+                                            {userDetails.firstName}
+                                        </span>
                                     </Link>
-                                )}
-                                <Link to="/PetOwnerHome" onClick={() => setIsMenuOpen(false)}>
-                                    <span
-                                        className={styles.username}
-                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                    >
-                                        {userDetails.firstName}
-                                    </span>
-                                </Link>
-                                <button onClick={handleSignOut} className={styles.logoutButton}>Sign Out</button>
-                            </div>
-                        ) : (
-                            <>
-                                <button onClick={handleLoginClick} className={styles.loginButton}>Login</button>
-                                <button onClick={handleSignUpClick} className={styles.signupButton}>Sign Up</button>
-                            </>
-                        )}
-                    </div>
+                                    <button onClick={handleSignOut} className={styles.logoutButton}>Sign Out</button>
+                                </div>
+                            ) : (
+                                <>
+                                    <button onClick={handleLoginClick} className={styles.loginButton}>Login</button>
+                                    <button onClick={handleSignUpClick} className={styles.signupButton}>Sign Up</button>
+                                </>
+                            )}
+                        </div>
                 </div>
             </nav>
 

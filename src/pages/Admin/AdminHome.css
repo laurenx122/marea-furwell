@@ -106,8 +106,10 @@ body {
 .clinics-grid-admin {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 40px;
+  gap: 20px;
   justify-items: center;
+  max-width: 100%;
+  margin: 0px 20px;
 }
 
 /* Scrollbar styling */
@@ -260,16 +262,17 @@ body {
   text-align: justify;
 }
 
-.modal-section-contact {
+.modal-section-contact-a {
   margin-bottom: 20px;
   text-align: left;
+  padding: 0px;
 }
 .modal-section-admin{
   margin-bottom: 20px;
   text-align: left;
 }
 
-.modal-section-contact h3 {
+.modal-section-contact-a h3 {
   font-size: 16px;
   color: #1b7fd1;
   margin-bottom: 10px;
@@ -371,15 +374,14 @@ body {
   object-fit: cover;
   border-radius: 8px;
 }
-.modal-section-contact {
+.modal-section-contact-a {
   margin-top: 20px;
-  padding: 15px;
 }
 
-.modal-section-contact h3 {
-  font-size: 1.25rem;
+.modal-section-contact-a h3 {
+  font-size: 16px;
   margin-bottom: 10px;
-  color: #333;
+  color: #1b7fd1;
 }
 
 .contact-info {
@@ -426,6 +428,7 @@ body {
   .clinics-grid-admin {
     overflow-x: auto; 
     grid-template-columns: repeat(4, 1fr);
+    margin: 0px 20px;
   }
 }
 
@@ -433,6 +436,7 @@ body {
   .clinics-grid-admin {
     overflow-x: auto; 
     grid-template-columns: repeat(1, 1fr);
+    margin: 0px 20px;
   }
   .search-input {
     width: 50%;
@@ -453,7 +457,7 @@ body {
     max-width: 300px; 
   }
   .search-input {
-    width: 50%; 
+    width: 70%; 
     margin-left: 0; 
   }
   .search-icon {
@@ -462,12 +466,10 @@ body {
   .admin-home-container {
     margin-top: -40px;
   }
-  .modal-section-contact {
-    padding: 10px; 
-  }
 
-  .modal-section-contact h3 {
-    font-size: 1.1rem; 
+  .modal-section-contact-a h3 {
+    font-size: 16px; 
+    color:#1b7fd1;
   }
 
   .contact-info {
