@@ -194,7 +194,8 @@
 
 /* Location Section */
 #location {
-    background-image: url('https://i.pinimg.com/736x/a2/2b/de/a22bded100a0aac14963f3fe2093e03c.jpg');
+    /*background-image: url('https://i.pinimg.com/736x/a2/2b/de/a22bded100a0aac14963f3fe2093e03c.jpg');*/
+    background-image: url('https://blog-imgs-91.fc2.com/k/a/g/kagonekoshiro/f16071808.jpg');
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
@@ -267,7 +268,7 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    max-width: 650px;
+    max-width: 800px;
     margin: 0 auto; 
     padding: 0 15px; 
     transition: transform 0.5s ease, opacity 0.5s ease;
@@ -281,15 +282,15 @@
 .location-search-wrapper {
     display: flex;
     align-items: center;
-    width: 70%; 
-    max-width: 1500px; 
+    width: 600px;
+    max-width: none;
     position: relative;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 50px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
     transition: all 0.4s ease;
     overflow: hidden;
-    margin-left: -50px;;
+    margin: 0 auto;
     
 }
 
@@ -304,8 +305,8 @@
 }
 
 .location-search {
-    padding: 10px 25px;
-    width: 100%;
+    padding: 15px 20px;
+    width: 500px;;
     border: none;
     border-radius: 50px;
     font-size: 1.1rem;
@@ -320,7 +321,8 @@
 }
 
 .search-button {
-    padding: 9px 25px;
+    display: none;
+    /*padding: 9px 25px;
     background-color: #3E6680;
     color: rgb(196, 227, 250);
     border: none;
@@ -335,10 +337,10 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-shrink: 0;
+    flex-shrink: 0;*/
 }
 
-.search-button:hover {
+/*.search-button:hover {
     background-color: #2a4b61;
     transform: translateY(-5px) scale(1.05);
     box-shadow: 0 10px 25px rgba(42,75,97,0.45);
@@ -347,13 +349,31 @@
 .search-button:active {
     transform: translateY(0);
     box-shadow: 0 4px 15px rgba(42,75,97,0.3);
+}*/
+
+.location-search-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 20px;
+    width: 20px;
+    height: 20px;
+    background: url('https://cdn-icons-png.flaticon.com/512/151/151773.png') no-repeat center center;
+    background-size: contain;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.location-search-wrapper:hover::after {
+    opacity: 1;
+    transform: scale(1.1);
 }
 
 .locate-me-icon {
     width: 26px;
     height: 26px;
     position: absolute;
-    right: 20px;
+    right: 60px;
     cursor: url('../../images/pawCursorPoint.png'), auto;
     transition: all 0.4s ease;
     opacity: 0.75;
@@ -415,6 +435,7 @@
     
     .home-content {
         justify-content: center;
+        margin-right: 0;
     }
     
     .rightSide {
@@ -427,30 +448,44 @@
     .buttons-container {
         top: 85vh; 
         gap: 30px;
+        padding: 0 15px;
     }
     
     .service-button {
         width: 160px;
-        height: 85px;
+        height: 75px;
+        font-size: 0.9rem;
     }
     
     .search-container {
         flex-direction: row;
-        width: 95%;
+        width: 90%;
     }
     
     .location-search-wrapper {
-        width: 65%;
+        width: 90%;
+    }
+
+    .location-search {
+        font-size: 1rem;
+    }
+    
+    .locate-me-icon {
+        right: 50px;
+    }
+    
+    .location-search-wrapper::after {
+        right: 15px; 
     }
 }
 
 @media (max-width: 576px) {
     #home h1 {
-        font-size: 2.2rem;
+        font-size: 1.8rem;
     }
     
     #home p {
-        font-size: clamp(1rem, 1.5vw, 1.5rem);
+        font-size: 0.95rem;
     }
     
     .buttons-container {
@@ -460,37 +495,94 @@
     }
     
     .service-button {
-        width: 200px;
-        height: 80px;
-        font-size: 0.95rem;
+        width: 160px; 
+        height: 60px; 
+        font-size: 0.85rem;
+        padding: 10px;
+    }
+
+    .service-button img {
+        width: 25px; 
+        height: 25px;
     }
     
     #location h2 {
-        font-size: 2.2rem;
+        font-size: 1.8rem;
     }
     
     #location p {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
+        margin-bottom: 25px;
     }
     
     .search-container {
-        flex-direction: column;
-        gap: 10px;
+        width: 90%;
     }
     
     .location-search-wrapper {
         width: 100%;
+        border-radius: 25px;
     }
     
     .location-search {
-        padding: 14px 20px;
-        font-size: 1rem;
+        padding: 12px 45px 12px 20px;
+        font-size: 0.9rem;
+        width: 350px;
     }
     
-    .search-button {
+    .locate-me-icon {
+        width: 20px;
+        height: 20px;
+        right: 15px;
+    }
+    
+    .location-search-wrapper::after {
+        width: 16px;
+        height: 16px;
+        right: 45px;
+    }
+
+    /*.search-button {
         width: 120px;
         height: 50px;
         padding: 14px 25px;
+    }*/
+}
+
+@media (max-width: 360px) {
+    .service-button {
+        width: 140px;
+        height: 50px;
+        font-size: 0.8rem;
+    }
+    
+    .service-button img {
+        width: 20px;
+        height: 20px;
+    }
+    
+    #location h2 {
+        font-size: 1.5rem;
+    }
+    
+    .location-search {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+        width: auto;
+    }
+
+    .search-container {
+        width: 100%;
+        padding: 0 10px;
+    }
+    
+    .location-search-wrapper {
+        border-radius: 25px;
+    }
+    
+    .location-search {
+        padding: 12px 45px 12px 15px;
+        font-size: 0.9rem;
     }
 }
 

@@ -1,11 +1,10 @@
-/* Footer.css */
 .footer {
     background-color: #D9D9D9;
     color: #113B57;
     padding: 20px;
     text-align: center;
-    height: 175px;
-    cursor: url('../../images/pawCursorAny.png'), auto;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .email-link {
@@ -16,7 +15,6 @@
 
 .email-link:hover {
     text-decoration: underline;
-    cursor: url('../../images/pawCursorPoint.png'), auto;
 }
 
 .footer-content {
@@ -25,19 +23,20 @@
     align-items: center;
     max-width: 1000px;
     margin: 0 auto;
+    flex-wrap: wrap;
 }
 
 /* Style for Contact Items */
-.contact-item,
+.contact-itemf,
 .newsletter-item {
     display: flex;
     align-items: center;
-    gap: 10px; /* Space between icon and text */
+    gap: 10px;
     margin: 5px 0;
 }
 
 .contact-icon {
-    width: 30px;  /* Adjust size as needed */
+    width: 30px;
     height: 30px;
     border-radius: 50%;
 }
@@ -46,6 +45,7 @@
 .newsletter-input {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
 .newsletter-input input {
@@ -53,6 +53,7 @@
     width: 200px;
     border-radius: 30px;
     border: 1px solid #ccc;
+    box-sizing: border-box;
 }
 
 .newsletter-input button {
@@ -61,9 +62,158 @@
     color: white;
     border: 1px solid #3CC3DF;
     border-radius: 30px;
-    cursor: pointer;
 }
 
 .newsletter-input button:hover {
     background-color: #3CC3DF;
+}
+
+/* 768px Breakpoint (Tablets) */
+@media (max-width: 760px) {
+    .footer {
+        padding: 15px;
+    }
+
+    .footer-content {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .contact-footer,
+    .newsletter-footer {
+        /*width: 100%;*/
+        text-align: center;
+    }
+
+    .newsletter-input {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .newsletter-input input {
+        width: 300px;
+        max-width: 350px;
+        font-size: 0.9rem;
+    }
+
+        
+    .newsletter-input button {
+        width: 300px;
+        max-width: 350px;
+        padding: 10px;
+        font-size: 0.9rem;
+        min-height: 44px;
+    }
+
+    .contact-icon {
+        width: 25px;
+        height: 25px;
+    }
+
+    h3 {
+        font-size: 1.2rem;
+        margin: 10px 0;
+    }
+
+    .contact-itemf p,
+    .newsletter-item p {
+        font-size: 0.9rem;
+    }
+}
+
+
+@media (max-width: 600px) {
+    .footer {
+        padding: 12px;
+    }
+
+    .footer-content {
+        gap: 15px;
+    }
+
+    .newsletter-input input {
+        max-width: 250px;
+        padding: 8px;
+        font-size: 0.85rem;
+    }
+
+    .newsletter-input button {
+        max-width: 250px;
+        padding: 8px;
+        font-size: 0.85rem;
+        min-height: 44px;
+    }
+
+    .contact-icon {
+        width: 22px;
+        height: 22px;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    .contact-itemf p,
+    .newsletter-item p {
+        font-size: 0.85rem;
+    }
+
+    .contact-itemf,
+    .newsletter-item {
+        gap: 8px;
+    }
+}
+
+
+@media (max-width: 480px) {
+    .footer {
+        padding: 10px;
+    }
+
+    .footer-content {
+        gap: 12px;
+    }
+
+    .newsletter-input input {
+        max-width: 90%;
+        padding: 8px;
+        font-size: 0.8rem;
+    }
+
+    .newsletter-input button {
+        max-width: 90%;
+        padding: 8px 15px;
+        font-size: 0.8rem;
+        min-height: 44px;
+    }
+
+    .contact-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    h3 {
+        font-size: 1rem;
+        margin: 8px 0;
+    }
+
+    .contact-itemf p,
+    .newsletter-item p {
+        font-size: 0.8rem;
+    }
+
+    .contact-itemf,
+    .newsletter-item {
+        gap: 6px;
+        margin: 6px 0;
+    }
+}
+
+
+@media (pointer: coarse) {
+    .footer,
+    .email-link:hover,
+    .newsletter-input button {
+        cursor: default;
+    }
 }
