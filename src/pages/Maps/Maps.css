@@ -133,7 +133,7 @@
   position: relative;
   display: flex;
   justify-content: center; 
-  padding-left: 180px;
+  /*padding-left: 180px;*/
 }
  
 .search-input {

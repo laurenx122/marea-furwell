@@ -10,7 +10,7 @@ const Footer = () => {
         {/* Contact Us Section */}
         <div className="contact-footer">
           <h3>Contact Us</h3>
-          <div className="contact-item">
+          <div className="contact-itemf">
             <img src='/images/mail.png' alt="Email Icon" className="contact-icon" />
             <p>
               <i className="fas fa-envelope"></i> 
@@ -24,7 +24,7 @@ const Footer = () => {
               </a>
             </p>
           </div>
-          <div className="contact-item">
+          <div className="contact-itemf">
             <img src='/images/phone.png' alt="Phone Icon" className="contact-icon" />
             <p><i className="fas fa-phone"></i> 123-456-789</p>
           </div>

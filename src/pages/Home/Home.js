@@ -16,6 +16,7 @@ const Home = () => {
     const [searchInputValue, setSearchInputValue] = useState('');
     const [locateMeVisible, setLocateMeVisible] = useState(true);
     const mapRef = useRef(null);
+    const searchInputRef = useRef(null);
 
     const navigate = useNavigate();
     const handleFindClinicClick = () => {
@@ -30,9 +31,19 @@ const Home = () => {
         window.scrollTo(0, 0);
         navigate('/ClinicSubscribe');
     };
-    const handleSearchClick = () => {
+
+   /* const handleSearchClick = () => {
         window.scrollTo(0, 0);
         navigate('/ClinicLocator', { state: { searchQuery: searchInputValue } });
+    };*/
+
+     // Handle search (now triggered by form submission or clicking search icon)
+     const handleSearch = (e) => {
+        if (e) e.preventDefault();
+        if (searchInputValue.trim()) {
+            window.scrollTo(0, 0);
+            navigate('/ClinicLocator', { state: { searchQuery: searchInputValue } });
+        }
     };
 
     // Scroll event listener to trigger animations when elements come into view
@@ -93,7 +104,11 @@ const Home = () => {
     };
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+    const handleSearchIconClick = () => {
+        handleSearch();
+    };
 
+    //chatbase script
     useEffect(() => {
         setLocateMeVisible(!searchInputValue);
     }, [searchInputValue]);
@@ -153,6 +168,8 @@ const Home = () => {
             console.error('Error initializing Chatbase:', error);
         }
     }, [isLoggedIn]);
+
+    //chatbase script end
    
     return (
         <div className="home-container">
@@ -189,24 +206,31 @@ const Home = () => {
                 <h2>Where pets get the care they deserve</h2>
                 <p>Specialty and emergency veterinary hospitals throughout Cebu</p>
                 <div className="search-container">
-                    <div className="location-search-wrapper">
-                        <input
-                            type="text"
-                            placeholder="Enter your Street and House no., Street, Postal Code"
-                            className="location-search"
-                            value={searchInputValue}
-                            onChange={(e) => setSearchInputValue(e.target.value)}
-                        />
-                        {locateMeVisible && (
-                            <img
-                                src="https://cdn-icons-png.flaticon.com/512/684/684908.png"
-                                alt="Locate Me"
-                                className="locate-me-icon"
-                                onClick={handleLocateMeClick}
+                    <form onSubmit={handleSearch} className="search-form">
+                        <div className="location-search-wrapper" onClick={handleSearchIconClick}>
+                            <input
+                                ref={searchInputRef}
+                                type="text"
+                                placeholder="Enter your location to find nearby clinics"
+                                className="location-search"
+                                value={searchInputValue}
+                                onChange={(e) => setSearchInputValue(e.target.value)}
                             />
-                        )}
-                    </div>
-                    <button className="search-button" onClick={handleSearchClick}>Search</button>
+                            {locateMeVisible && (
+                                <img
+                                    src="https://cdn-icons-png.flaticon.com/512/684/684908.png"
+                                    alt="Locate Me"
+                                    className="locate-me-icon"
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevent triggering search
+                                        handleLocateMeClick();
+                                    }}
+                                />
+                            )}
+                        </div>
+                        {/* Hidden submit button for form submission */}
+                        <button type="submit" className="search-button">Search</button>
+                    </form>
                 </div>
             </section>
 
@@ -216,3 +240,4 @@ const Home = () => {
 };
 
 export default Home;
+
