@@ -444,24 +444,63 @@ const ClinicHome = () => {
   const handleScheduleChange = (e) => {
     const { name, value } = e.target;
     let updatedValue = value;
-
+  
     if (name === "startTime" || name === "endTime") {
-      //  Ensure minutes are always "00"
+      // Ensure minutes are always "00"
       const [hours] = value.split(":");
       updatedValue = `${hours}:00`;
-
-      //  **New:** Forcefully set the input value to our formatted value
+  
+      // Forcefully set the input value to our formatted value
       e.target.value = updatedValue;
     }
-
+  
     setNewSchedule((prev) => ({ ...prev, [name]: updatedValue }));
+    setScheduleError(""); // Clear error on input change
   };
 
+  // const addSchedule = () => {
+  //   if (newSchedule.day && newSchedule.startTime && newSchedule.endTime) {
+  //     setVetSchedules((prev) => [...prev, newSchedule]);
+  //     setNewSchedule({ day: "", startTime: "", endTime: "" });
+  //   }
+  // };
+
+  // Get available days (exclude already selected days)
+  const allDays = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
+
+  const getAvailableDays = () => {
+    const usedDays = vetSchedules.map((schedule) => schedule.day);
+    return allDays.filter((day) => !usedDays.includes(day));
+  };
+
+  // Add a new schedule with validation
   const addSchedule = () => {
-    if (newSchedule.day && newSchedule.startTime && newSchedule.endTime) {
-      setVetSchedules((prev) => [...prev, newSchedule]);
-      setNewSchedule({ day: "", startTime: "", endTime: "" });
+    const { day, startTime, endTime } = newSchedule;
+
+    // Validate inputs
+    if (!day || !startTime || !endTime) {
+      setScheduleError("Please select a day, start time, and end time.");
+      return;
     }
+
+    // Validate that startTime and endTime are not the same
+    if (startTime === endTime) {
+      setScheduleError("Start time and end time cannot be the same.");
+      return;
+    }
+
+    // Add schedule to temporary list
+    setVetSchedules([...vetSchedules, { day, startTime, endTime }]);
+    setNewSchedule({ day: "", startTime: "", endTime: "" });
+    setScheduleError("");
   };
 
   const removeSchedule = (index) => {
@@ -1708,11 +1747,31 @@ const ClinicHome = () => {
   };
 
   // Add a new schedule to the editing vet schedules
+  // const addEditingSchedule = () => {
+  //   if (newSchedule.day && newSchedule.startTime && newSchedule.endTime) {
+  //     setEditingVetSchedules((prev) => [...prev, newSchedule]);
+  //     setNewSchedule({ day: "", startTime: "", endTime: "" });
+  //   }
+  // };
   const addEditingSchedule = () => {
-    if (newSchedule.day && newSchedule.startTime && newSchedule.endTime) {
-      setEditingVetSchedules((prev) => [...prev, newSchedule]);
-      setNewSchedule({ day: "", startTime: "", endTime: "" });
+    const { day, startTime, endTime } = newSchedule;
+  
+    // Validate inputs
+    if (!day || !startTime || !endTime) {
+      setScheduleError("Please select a day, start time, and end time.");
+      return;
     }
+  
+    // Validate that startTime and endTime are not the same
+    if (startTime === endTime) {
+      setScheduleError("Start time and end time cannot be the same.");
+      return;
+    }
+  
+    // Add schedule to temporary list
+    setEditingVetSchedules([...editingVetSchedules, { day, startTime, endTime }]);
+    setNewSchedule({ day: "", startTime: "", endTime: "" });
+    setScheduleError("");
   };
 
   // Remove a schedule from the editing vet schedules
@@ -2909,13 +2968,11 @@ const ClinicHome = () => {
                 <div className="schedule-inputs-c">
                   <select name="day" value={newSchedule.day} onChange={handleScheduleChange}>
                     <option value="">Select Day</option>
-                    <option value="Monday">Monday</option>
-                    <option value="Tuesday">Tuesday</option>
-                    <option value="Wednesday">Wednesday</option>
-                    <option value="Thursday">Thursday</option>
-                    <option value="Friday">Friday</option>
-                    <option value="Saturday">Saturday</option>
-                    <option value="Sunday">Sunday</option>
+                    {getAvailableDays().map((day) => (
+                      <option key={day} value={day}>
+                        {day}
+                      </option>
+                    ))}
                   </select>
                   <input
                     type="time"
@@ -2935,6 +2992,7 @@ const ClinicHome = () => {
                     Add
                   </button>
                 </div>
+                {scheduleError && <div className="error-message-c">{scheduleError}</div>}
                 {vetSchedules.length > 0 && (
                   <div className="schedule-list-c">
                     {vetSchedules.map((schedule, index) => (
@@ -3265,6 +3323,7 @@ const ClinicHome = () => {
                 setEditingVetSchedules([]);
                 setNewSchedule({ day: "", startTime: "", endTime: "" });
                 setVetAppointments([]);
+                setScheduleError("");
               }}
             >
               ×
@@ -3372,6 +3431,7 @@ const ClinicHome = () => {
                     <FaPlus /> Add
                   </button>
                 </div>
+                {scheduleError && <div className="error-message-c">{scheduleError}</div>}
               </div>
             </div>
 
