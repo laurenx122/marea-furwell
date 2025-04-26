@@ -180,6 +180,9 @@ const ClinicHome = () => {
   const [editingVet, setEditingVet] = useState(null);
   const [vetAppointments, setVetAppointments] = useState([]);
 
+  const [scheduleError, setScheduleError] = useState(""); 
+  const [activeChart, setActiveChart] = useState(null);
+
   const [showConfirmDeleteScheduleModal, setShowConfirmDeleteScheduleModal] = useState(false);
   const [scheduleIndexToDelete, setScheduleIndexToDelete] = useState(null);
   const [showScheduleDeleteSuccess, setShowScheduleDeleteSuccess] = useState(false);
@@ -1814,6 +1817,125 @@ const ClinicHome = () => {
     }
   };
 
+  const isMobile = window.innerWidth <= 768;
+
+  const ServiceChart = () => (
+    <div
+      className="chart-section-c"
+      style={{
+        height: "450px",
+        width: "100%",
+        backgroundColor: "white",
+        padding: "20px",
+        borderRadius: "8px",
+        boxShadow: "0 8px 8px rgba(0, 0, 0, 0.1)",
+      }}
+    >
+      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+        Most Availed Service Types
+      </h2>
+      {serviceData.length > 0 ? (
+        <ResponsivePie
+          data={serviceData}
+          margin={{ top: 40, right: 40, bottom: 40, left: 40 }}
+          innerRadius={0.5}
+          padAngle={0.7}
+          cornerRadius={3}
+          activeOuterRadiusOffset={8}
+          colors={{ scheme: "pastel1" }}
+          borderWidth={1}
+          borderColor={{
+            from: "color",
+            modifiers: [["darker", 0.2]],
+          }}
+          arcLinkLabelsSkipAngle={10}
+          arcLinkLabelsTextColor="#333333"
+          arcLinkLabelsThickness={2}
+          arcLinkLabelsColor={{ from: "color" }}
+          arcLabelsSkipAngle={10}
+          arcLabelsTextColor={{
+            from: "color",
+            modifiers: [["darker", 2]],
+          }}
+          arcLabel={(d) => d.data.formattedValue}
+          tooltip={({ datum }) => (
+            <div
+              style={{
+                padding: "12px 16px",
+                color: "#333",
+                background: "#fff",
+                borderRadius: "2px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
+              }}
+            >
+              <strong>{datum.id}</strong>: {datum.value}
+            </div>
+          )}
+        />
+      ) : (
+        <p style={{ textAlign: "center" }}>No service data available</p>
+      )}
+    </div>
+  );
+
+  const DayChart = () => (
+    <div
+      className="chart-section-c"
+      style={{
+        height: "450px",
+        width: "100%",
+        backgroundColor: "white",
+        padding: "20px",
+        borderRadius: "8px",
+        boxShadow: "0 8px 8px rgba(0, 0, 0, 0.1)",
+      }}
+    >
+      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+        Days with Most Appointments
+      </h2>
+      {dayData.length > 0 ? (
+        <ResponsivePie
+          data={dayData}
+          margin={{ top: 40, right: 40, bottom: 40, left: 40 }}
+          innerRadius={0.5}
+          padAngle={0.7}
+          cornerRadius={3}
+          activeOuterRadiusOffset={8}
+          colors={{ scheme: "red_purple" }}
+          borderWidth={1}
+          borderColor={{
+            from: "color",
+            modifiers: [["darker", 0.2]],
+          }}
+          arcLinkLabelsSkipAngle={10}
+          arcLinkLabelsTextColor="#333333"
+          arcLinkLabelsThickness={2}
+          arcLinkLabelsColor={{ from: "color" }}
+          arcLabelsSkipAngle={10}
+          arcLabelsTextColor={{
+            from: "color",
+            modifiers: [["darker", 2]],
+          }}
+          arcLabel={(d) => d.data.formattedValue}
+          tooltip={({ datum }) => (
+            <div
+              style={{
+                padding: "12px 16px",
+                color: "#333",
+                background: "#fff",
+                borderRadius: "2px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
+              }}
+            >
+              <strong>{datum.id}</strong>: {datum.value}
+            </div>
+          )}
+        />
+      ) : (
+        <p style={{ textAlign: "center" }}>No appointment data available</p>
+      )}
+    </div>
+  );
 
 
   if (loading) {
@@ -2308,13 +2430,64 @@ const ClinicHome = () => {
             </div>
           )}
           {activePanel === "analytics" && (
+        <div className="panel-c analytics-panel-c">
+          <h3>Clinic Analytics</h3>
+          {loading ? (
+            <p>Loading analytics...</p>
+          ) : (
+            <>
+              {isMobile ? (
+                <>
+                  <div className="chart-buttons-c">
+                    <button
+                      className={`chart-btn-c ${activeChart === "services" ? "active" : ""}`}
+                      onClick={() => setActiveChart("services")}
+                    >
+                      Service Types
+                    </button>
+                    <button
+                      className={`chart-btn-c ${activeChart === "days" ? "active" : ""}`}
+                      onClick={() => setActiveChart("days")}
+                    >
+                      Appointment Days
+                    </button>
+                  </div>
+                  <div className="chart-container-mobile-c">
+                    {activeChart === "services" && <ServiceChart />}
+                    {activeChart === "days" && <DayChart />}
+                    {activeChart === null && (
+                      <p style={{ textAlign: "center", marginTop: "20px" }}>
+                        Select a chart to view analytics.
+                      </p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between", width: "100%" }}
+                >
+                  <div style={{ width: "48%" }}>
+                    <ServiceChart />
+                  </div>
+                  <div style={{ width: "48%" }}>
+                    <DayChart />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+          {/* {activePanel === "analytics" && (
             <div className="panel-c analytics-panel-c">
               <h3>Clinic Analytics</h3>
               {loading ? (
                 <p>Loading analytics...</p>
               ) : (
+
+                
                 <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-                  {/* Most Availed Service Type Pie Chart */}
+                  
                   <div style={{ width: "48%", height: "450px" }}>
                     <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
                       Most Availed Service Types
@@ -2322,12 +2495,12 @@ const ClinicHome = () => {
                     {serviceData.length > 0 ? (
                       <ResponsivePie
                         data={serviceData}
-                        margin={{ top: 40, right: 40, bottom: 40, left: 40 }} // Adjusted margins since no legend
+                        margin={{ top: 40, right: 40, bottom: 40, left: 40 }} 
                         innerRadius={0.5}
                         padAngle={0.7}
                         cornerRadius={3}
                         activeOuterRadiusOffset={8}
-                        colors={{ scheme: "pastel1" }} // Vibrant color scheme
+                        colors={{ scheme: "pastel1" }} 
                         borderWidth={1}
                         borderColor={{
                           from: "color",
@@ -2356,14 +2529,15 @@ const ClinicHome = () => {
                             <strong>{datum.id}</strong>: {datum.value}
                           </div>
                         )}
-                      // Removed legends prop
+                      
                       />
                     ) : (
                       <p style={{ textAlign: "center" }}>No service data available</p>
                     )}
                   </div>
 
-                  {/* Days with Most Appointments Pie Chart */}
+
+                  
                   <div style={{ width: "48%", height: "450px" }}>
                     <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
                       Days with Most Appointments
@@ -2371,7 +2545,7 @@ const ClinicHome = () => {
                     {dayData.length > 0 ? (
                       <ResponsivePie
                         data={dayData}
-                        margin={{ top: 40, right: 40, bottom: 40, left: 40 }} // Adjusted margins since no legend
+                        margin={{ top: 40, right: 40, bottom: 40, left: 40 }} 
                         innerRadius={0.5}
                         padAngle={0.7}
                         cornerRadius={3}
@@ -2405,16 +2579,20 @@ const ClinicHome = () => {
                             <strong>{datum.id}</strong>: {datum.value}
                           </div>
                         )}
-                      // Removed legends prop
+                      
                       />
                     ) : (
                       <p style={{ textAlign: "center" }}>No appointment data available</p>
                     )}
                   </div>
                 </div>
+                
               )}
+
             </div>
-          )}
+
+
+          )} */}
         </div>
       </div>
 
