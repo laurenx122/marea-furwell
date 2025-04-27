@@ -179,7 +179,7 @@ const ClinicHome = () => {
   const [editingVetSchedules, setEditingVetSchedules] = useState([]);
   const [editingVet, setEditingVet] = useState(null);
   const [vetAppointments, setVetAppointments] = useState([]);
-
+  const [processing, setProcessing] = useState(false);
   const [scheduleError, setScheduleError] = useState(""); 
   const [activeChart, setActiveChart] = useState(null);
 
@@ -187,36 +187,6 @@ const ClinicHome = () => {
   const [scheduleIndexToDelete, setScheduleIndexToDelete] = useState(null);
   const [showScheduleDeleteSuccess, setShowScheduleDeleteSuccess] = useState(false);
 
-  // Combined useEffect for authentication and data initialization
-  /*useEffect(() => {
-    const initializeComponent = async () => {
-      const unsubscribe = auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          setLoading(true);
-          try {
-            await Promise.all([
-              fetchUserFirstName(),
-              fetchClinicInfo(),
-              fetchPatients(),
-              fetchAppointments(),
-              fetchVeterinarians(),
-              fetchChartData(),
-              fetchPendingAppointments(),
-            ]);
-          } catch (error) {
-            console.error("Error initializing data:", error);
-          } finally {
-            setLoading(false);
-          }
-        } else {
-          navigate("/Home");
-        }
-      });
-      return () => unsubscribe();
-    };
-
-    initializeComponent();
-  }, [navigate]);*/
 
   useEffect(() => {
     emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -671,6 +641,8 @@ const ClinicHome = () => {
 
   //Action confirmation modal
   const handleActionConfirm = async (action) => {
+    if (processing) return;
+    setProcessing(true);
     const { appointmentId } = showConfirmModal;
     try {
       const appointmentRef = doc(db, "appointments", appointmentId);
@@ -761,8 +733,10 @@ const ClinicHome = () => {
             time: time,
             location: location,
             vet_name: appointmentData.veterinarian || "N/A",
+            message: `Your appointment for ${appointmentData.petName} has been accepted by ${clinicInfo?.clinicName}.`,
             email: ownerEmail,
             logo: LOGO_URL,
+            status: "Accepted",
           };
 
           console.log("Email Params:", emailParams);
@@ -1226,6 +1200,7 @@ const ClinicHome = () => {
             email: ownerEmail,
             logo: LOGO_URL,
             message: `Your cancellation request for ${petData.petName}'s appointment on ${date} at ${time} has been approved.`,
+            status: "Cancelled",
           };
           try {
             await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, emailParams);
@@ -1314,7 +1289,7 @@ const ClinicHome = () => {
             email: ownerEmail,
             logo: LOGO_URL,
             message: `Your reschedule request for ${petData.petName}'s appointment has been approved. New time: ${newDate} at ${newTime}.`,
-          };
+            status: "Rescheduled",};
           try {
             await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, emailParams);
             setSentEmails((prev) => ({ ...prev, [emailKey]: true }));
@@ -1413,6 +1388,7 @@ const ClinicHome = () => {
           email: ownerEmail,
           logo: LOGO_URL,
           message: `Your ${requestType} request for ${petData.petName}'s appointment on ${date} at ${time} was declined.`,
+          status: "Declined",
         };
         try {
           await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, emailParams);
