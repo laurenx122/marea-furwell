@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./PetOwnerHome.css";
 import { db, auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
@@ -96,7 +96,7 @@ const PetOwnerHome = () => {
     Weight: "",
     dateofBirth: "",
   });
-
+  const [sentEmails, setSentEmails] = useState({});
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSignOutConfirmOpen, setIsSignOutConfirmOpen] = useState(false);
@@ -154,13 +154,22 @@ const PetOwnerHome = () => {
     Others: []
   };
 
-  // FOR RELOADD FIX
+  // Initialize EmailJS
   useEffect(() => {
-    let unsubscribe;
+    emailjs.init("6M4Xlw1XjSDBaIr4t");
+  }, []);
+
+  const sendingEmails = useRef({});
+
+  //fetch notif and send email
+  useEffect(() => {
+    let unsubscribeAuth;
+    let unsubscribeNotifications;
+    let notificationInterval;
   
     const initializeComponent = async () => {
-      setLoading(true); // Set loading to true initially
-      unsubscribe = auth.onAuthStateChanged(async (user) => {
+      setLoading(true);
+      unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
         if (user) {
           try {
             await Promise.all([
@@ -172,39 +181,157 @@ const PetOwnerHome = () => {
           } catch (error) {
             console.error("Error initializing data:", error);
           } finally {
-            setLoading(false); // Done loading, user is authenticated
+            setLoading(false);
           }
         } else {
-          // No user is logged in, redirect to login
-          setLoading(false); // Done loading, no user
+          setLoading(false);
           navigate("/Home");
         }
       });
+  
+      // Set up real-time notification listener
+      const q = query(
+        collection(db, "notifications"),
+        where("ownerId", "==", `users/${auth.currentUser?.uid}`),
+        where("type", "in", [
+          "appointment_accepted",
+          "appointment_reminder",
+          "appointment_day_of",
+          "cancellation_approved",
+          "cancellation_declined",
+          "reschedule_approved",
+          "reschedule_declined",
+        ]),
+        where("removeViewPetOwner", "==", false)
+      );
+  
+      unsubscribeNotifications = onSnapshot(
+        q,
+        async (snapshot) => {
+          try {
+            const notificationsList = await Promise.all(
+              snapshot.docs.map(async (docSnap) => {
+                const data = docSnap.data();
+                try {
+                  const clinicDoc = await getDoc(doc(db, "clinics", data.clinicId));
+                  const appointmentDoc = await getDoc(doc(db, "appointments", data.appointmentId));
+                  const notification = {
+                    id: docSnap.id,
+                    clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+                    clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
+                    dateofAppointment: appointmentDoc.exists() ? appointmentDoc.data().dateofAppointment.toDate() : null,
+                    hasPetOwnerOpened: data.hasPetOwnerOpened || false,
+                    message: data.message,
+                    dateCreated: data.dateCreated ? data.dateCreated.toDate() : new Date(),
+                    type: data.type,
+                    hasEmailSent: data.hasEmailSent || false,
+                  };
+  
+                  // Send email for new appointment_day_of notifications
+                  if (notification.type === "appointment_day_of" && !notification.hasEmailSent && !sentEmails[notification.id]) {
+                    await sendDayOfEmail(notification, appointmentDoc.data(), clinicDoc.data());
+                  }
+  
+                  return notification;
+                } catch (error) {
+                  console.error(`Error processing notification ${docSnap.id}:`, error);
+                  return null;
+                }
+              })
+            );
+  
+            const filteredNotifications = notificationsList
+              .filter((n) => n !== null)
+              .sort((a, b) => b.dateCreated - a.dateCreated);
+  
+            setNotifications(filteredNotifications);
+            setUnreadNotifications(filteredNotifications.some((n) => !n.hasPetOwnerOpened));
+          } catch (error) {
+            console.error("Error processing notifications snapshot:", error);
+            setNotifications([]);
+            setUnreadNotifications(false);
+          }
+        },
+        (error) => {
+          console.error("Error listening to notifications:", error);
+          setNotifications([]);
+          setUnreadNotifications(false);
+        }
+      );
+  
+      notificationInterval = setInterval(fetchNotifications, 300000);
     };
   
     initializeComponent();
   
-    // Set up interval for notifications
-    const notificationInterval = setInterval(fetchNotifications, 300000); // 5 minutes
-  
     return () => {
-      if (unsubscribe) unsubscribe();
-      clearInterval(notificationInterval);
+      if (unsubscribeAuth) unsubscribeAuth();
+      if (unsubscribeNotifications) unsubscribeNotifications();
+      if (notificationInterval) clearInterval(notificationInterval);
     };
-  }, [navigate]);
+  }, [navigate, sentEmails, auth.currentUser]);
 
-  useEffect(() => {
-    fetchOwnerInfo();
-    fetchPets();
-    fetchAppointments();
-    fetchNotifications();
-  
-    const notificationInterval = setInterval(fetchNotifications, 300000);
-  
-    return () => {
-      clearInterval(notificationInterval);
+  // send email for day of apptmnt notif
+const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
+  const notifId = notification.id;
+
+  // If already sending or already sent, skip 
+  if (sendingEmails.current[notifId] || sentEmails[notifId]) {
+    console.log("Already sending email for:", notifId);
+    return;
+  }
+
+  sendingEmails.current[notifId] = true;
+
+  try {
+    const apptDate = appointmentData.dateofAppointment?.toDate();
+    if (!apptDate) return;
+
+    const ownerRef = appointmentData.owner;
+    const ownerDoc = await getDoc(ownerRef);
+    if (!ownerDoc.exists()) return;
+    const ownerData = ownerDoc.data();
+    const email = ownerData.email;
+    if (!email || !email.includes("@")) return;
+
+    const location = [
+      clinicData.streetAddress || "",
+      clinicData.province || "",
+      clinicData.city || ""
+    ].filter(Boolean).join(", ") || "N/A";
+
+    const emailParams = {
+      email: email,
+      message: notification.message,
+      clinic: clinicData.clinicName || "Unknown Clinic",
+      service: appointmentData.serviceType || "N/A",
+      date: apptDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+      time: apptDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+      location: location,
+      veterinarian: appointmentData.veterinarian || "N/A",
+      pet_name: appointmentData.petName || "N/A",
     };
-  }, []);
+
+    console.log("Sending day-of email:", emailParams);
+
+    await emailjs.send(
+      "service_Furwell",
+      "template_s8stabo",
+      emailParams,
+      "6M4Xlw1XjSDBaIr4t"
+    );
+
+    // Mark notification as email sent
+    await updateDoc(doc(db, "notifications", notifId), { hasEmailSent: true });
+    setSentEmails((prev) => ({ ...prev, [notifId]: true }));
+  } catch (error) {
+    console.error("Error sending day-of email for notification", notifId, ":", error);
+  } finally {
+    sendingEmails.current[notifId] = false; 
+  }
+};
+
+  
   
   //outside click
   useEffect(() => {
@@ -297,197 +424,104 @@ const PetOwnerHome = () => {
   };
 
   const fetchNotifications = async () => {
-    try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        console.log("No current user, skipping notification fetch.");
-        return;
-      }
-  
-      // Fetch notifications
-      const notificationsQuery = query(
-        collection(db, "notifications"),
-        where("ownerId", "==", `users/${currentUser.uid}`),
-        where("type", "in", [
-          "appointment_accepted",
-          "appointment_reminder",
-          "appointment_day_of",
-          "cancellation_approved",
-          "cancellation_declined",
-          "reschedule_approved",
-          "reschedule_declined",
-        ]),
-        where("removeViewPetOwner", "==", false)
-      );
-  
-      const querySnapshot = await getDocs(notificationsQuery);
-      const notificationsList = await Promise.all(
-        querySnapshot.docs.map(async (docSnap) => {
-          const data = docSnap.data();
-          try {
-            const clinicDoc = await getDoc(doc(db, "clinics", data.clinicId));
-            const appointmentDoc = await getDoc(doc(db, "appointments", data.appointmentId));
-            return {
-              id: docSnap.id,
-              clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
-              clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic",
-              dateofAppointment: appointmentDoc.exists() ? appointmentDoc.data().dateofAppointment.toDate() : null,
-              hasPetOwnerOpened: data.hasPetOwnerOpened || false,
-              message: data.message,
-              dateCreated: data.dateCreated ? data.dateCreated.toDate() : new Date(),
-              type: data.type,
-            };
-          } catch (error) {
-            console.error(`Error processing notification ${docSnap.id}:`, error);
-            return null;
-          }
-        })
-      );
-  
-      // Filter out null entries and sort by dateCreated
-      const filteredNotifications = notificationsList
-        .filter((n) => n !== null)
-        .sort((a, b) => b.dateCreated - a.dateCreated);
-  
-      // Check for one-day-before and day-of reminders
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-  
-      const appointmentsQuery = query(
-        collection(db, "appointments"),
-        where("owner", "==", doc(db, "users", currentUser.uid)),
-        where("status", "==", "Accepted")
-      );
-      const apptSnapshot = await getDocs(appointmentsQuery);
-  
-      const reminderNotifications = await Promise.all(
-        apptSnapshot.docs.map(async (docSnap) => {
-          const apptData = docSnap.data();
-          const apptDate = apptData.dateofAppointment.toDate();
-          const apptDay = new Date(apptDate);
-          apptDay.setHours(0, 0, 0, 0);
-  
-          const clinicDoc = await getDoc(apptData.clinic);
-          const clinicName = clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic";
-          const clinicProfileImageURL = clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE;
-  
-          // One-day-before reminder
-          if (apptDay.toDateString() === tomorrow.toDateString()) {
-            const existingNotificationQuery = query(
-              collection(db, "notifications"),
-              where("appointmentId", "==", docSnap.id),
-              where("type", "==", "appointment_reminder"),
-              where("ownerId", "==", `users/${currentUser.uid}`),
-              where("removeViewPetOwner", "==", false)
-            );
-            const existingSnapshot = await getDocs(existingNotificationQuery);
-  
-            if (existingSnapshot.empty) {
-              const notificationRef = await addDoc(collection(db, "notifications"), {
-                ownerId: `users/${currentUser.uid}`,
-                appointmentId: docSnap.id,
-                clinicId: apptData.clinic.id,
-                type: "appointment_reminder",
-                message: `Reminder: Your appointment for ${apptData.petName} at ${clinicName} is tomorrow!`,
-                hasPetOwnerOpened: false,
-                removeViewPetOwner: false,
-                dateCreated: serverTimestamp(),
-              });
-  
-              return {
-                id: notificationRef.id,
-                clinicProfileImageURL,
-                clinicName,
-                dateofAppointment: apptDate,
-                hasPetOwnerOpened: false,
-                message: `Reminder: Your appointment for ${apptData.petName} at ${clinicName} is tomorrow!`,
-                dateCreated: new Date(),
-                type: "appointment_reminder",
-              };
-            } else {
-              const existingNotif = existingSnapshot.docs[0];
-              const existingData = existingNotif.data();
-              return {
-                id: existingNotif.id,
-                clinicProfileImageURL,
-                clinicName,
-                dateofAppointment: apptDate,
-                hasPetOwnerOpened: existingData.hasPetOwnerOpened,
-                message: existingData.message,
-                dateCreated: existingData.dateCreated ? existingData.dateCreated.toDate() : new Date(),
-                type: existingData.type,
-              };
-            }
-          }
-  
-          // Day-of reminder
-          if (apptDay.toDateString() === today.toDateString()) {
-            const existingNotificationQuery = query(
-              collection(db, "notifications"),
-              where("appointmentId", "==", docSnap.id),
-              where("type", "==", "appointment_day_of"),
-              where("ownerId", "==", `users/${currentUser.uid}`),
-              where("removeViewPetOwner", "==", false)
-            );
-            const existingSnapshot = await getDocs(existingNotificationQuery);
-  
-            if (existingSnapshot.empty) {
-              const notificationRef = await addDoc(collection(db, "notifications"), {
-                ownerId: `users/${currentUser.uid}`,
-                appointmentId: docSnap.id,
-                clinicId: apptData.clinic.id,
-                type: "appointment_day_of",
-                message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicName} is scheduled for ${formatDate(apptDate)}.`,
-                hasPetOwnerOpened: false,
-                removeViewPetOwner: false,
-                dateCreated: serverTimestamp(),
-              });
-  
-              return {
-                id: notificationRef.id,
-                clinicProfileImageURL,
-                clinicName,
-                dateofAppointment: apptDate,
-                hasPetOwnerOpened: false,
-                message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicName} is scheduled for ${formatDate(apptDate)}.`,
-                dateCreated: new Date(),
-                type: "appointment_day_of",
-              };
-            } else {
-              const existingNotif = existingSnapshot.docs[0];
-              const existingData = existingNotif.data();
-              return {
-                id: existingNotif.id,
-                clinicProfileImageURL,
-                clinicName,
-                dateofAppointment: apptDate,
-                hasPetOwnerOpened: existingData.hasPetOwnerOpened,
-                message: existingData.message,
-                dateCreated: existingData.dateCreated ? existingData.dateCreated.toDate() : new Date(),
-                type: existingData.type,
-              };
-            }
-          }
-  
-          return null;
-        })
-      );
-  
-      const allNotifications = [
-        ...filteredNotifications,
-        ...reminderNotifications.filter((n) => n !== null),
-      ].sort((a, b) => b.dateCreated - a.dateCreated);
-  
-      setNotifications(allNotifications);
-      setUnreadNotifications(allNotifications.some((n) => !n.hasPetOwnerOpened));
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-      setNotifications([]);
-      setUnreadNotifications(false);
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      console.log("No current user, skipping notification fetch.");
+      return;
     }
-  };
+
+    // Fetch existing notifications to check for duplicates
+    const notificationsQuery = query(
+      collection(db, "notifications"),
+      where("ownerId", "==", `users/${currentUser.uid}`),
+      where("type", "in", [
+        "appointment_accepted",
+        "appointment_reminder",
+        "appointment_day_of",
+        "cancellation_approved",
+        "cancellation_declined",
+        "reschedule_approved",
+        "reschedule_declined",
+      ]),
+      where("removeViewPetOwner", "==", false)
+    );
+
+    const querySnapshot = await getDocs(notificationsQuery);
+    const existingNotifications = querySnapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    }));
+
+    // Check for one-day-before and day-of reminders
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const appointmentsQuery = query(
+      collection(db, "appointments"),
+      where("owner", "==", doc(db, "users", currentUser.uid)),
+      where("status", "==", "Accepted")
+    );
+    const apptSnapshot = await getDocs(appointmentsQuery);
+
+    for (const docSnap of apptSnapshot.docs) {
+      const apptData = docSnap.data();
+      const apptDate = apptData.dateofAppointment.toDate();
+      const apptDay = new Date(apptDate);
+      apptDay.setHours(0, 0, 0, 0);
+
+      const clinicDoc = await getDoc(apptData.clinic);
+      const clinicName = clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic";
+      const clinicProfileImageURL = clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE;
+
+      // One-day-before reminder
+      if (apptDay.toDateString() === tomorrow.toDateString()) {
+        const existingReminder = existingNotifications.find(
+          (n) => n.appointmentId === docSnap.id && n.type === "appointment_reminder"
+        );
+
+        if (!existingReminder) {
+          await addDoc(collection(db, "notifications"), {
+            ownerId: `users/${currentUser.uid}`,
+            appointmentId: docSnap.id,
+            clinicId: apptData.clinic.id,
+            type: "appointment_reminder",
+            message: `Reminder: Your appointment for ${apptData.petName} at ${clinicName} is tomorrow!`,
+            hasPetOwnerOpened: false,
+            removeViewPetOwner: false,
+            dateCreated: serverTimestamp(),
+          });
+          console.log(`Created appointment_reminder for appointment ${docSnap.id}`);
+        }
+      }
+
+      // Day-of reminder
+      if (apptDay.toDateString() === today.toDateString()) {
+        const existingDayOf = existingNotifications.find(
+          (n) => n.appointmentId === docSnap.id && n.type === "appointment_day_of"
+        );
+
+        if (!existingDayOf) {
+          await addDoc(collection(db, "notifications"), {
+            ownerId: `users/${currentUser.uid}`,
+            appointmentId: docSnap.id,
+            clinicId: apptData.clinic.id,
+            type: "appointment_day_of",
+            message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicName} is scheduled for ${formatDate(apptDate)}.`,
+            hasPetOwnerOpened: false,
+            removeViewPetOwner: false,
+            dateCreated: serverTimestamp(),
+          });
+          console.log(`Created appointment_day_of for appointment ${docSnap.id}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error in fetchNotifications:", error);
+  }
+};
             
   const NOTIFICATION_TYPES = {
     APPOINTMENT_ACCEPTED: "appointment_accepted",
@@ -1071,87 +1105,6 @@ const PetOwnerHome = () => {
     }
   };
 
-//UNSURE
-  const sendReminderEmails = async (notificationsList) => {
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-  
-      for (const notification of notificationsList) {
-        if (notification.type !== "appointment_reminder" || notification.hasEmailSent) continue;
-  
-        const appointmentRef = doc(db, "appointments", notification.appointmentId);
-        const appointmentDoc = await getDoc(appointmentRef);
-        if (!appointmentDoc.exists()) continue;
-  
-        const appointmentData = appointmentDoc.data();
-        const apptDate = appointmentData.dateofAppointment?.toDate();
-        if (!apptDate) continue;
-  
-        const apptDay = new Date(apptDate);
-        apptDay.setHours(0, 0, 0, 0);
-  
-        if (apptDay.toDateString() !== today.toDateString() && apptDay.toDateString() !== tomorrow.toDateString()) continue;
-  
-        const ownerRef = appointmentData.owner;
-        if (!ownerRef) continue;
-  
-        const ownerDoc = await getDoc(ownerRef);
-        if (!ownerDoc.exists()) continue;
-        const ownerData = ownerDoc.data();
-        const email = ownerData.email;
-        if (!email || typeof email !== "string" || !email.includes("@")) continue;
-  
-        const clinicRef = doc(db, "clinics", appointmentData.clinicId);
-        const clinicDoc = await getDoc(clinicRef);
-        const clinicData = clinicDoc.exists() ? clinicDoc.data() : {};
-  
-        // Construct location from streetAddress, province, and city
-        const location = [
-          clinicData.streetAddress || "",
-          clinicData.province || "",
-          clinicData.city || ""
-        ].filter(Boolean).join(", ") || "N/A";
-  
-        const emailParams = {
-          email: email,
-          message: notification.message || "Reminder: Your appointment is coming up!",
-          clinic: appointmentData.clinicName || clinicData.clinicName || "Unknown Clinic",
-          service: appointmentData.serviceType || "N/A",
-          date: apptDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) || "N/A",
-          time: apptDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) || "N/A",
-          location: location,
-          veterinarian: appointmentData.veterinarian || "N/A",
-        };
-  
-        // Validate emailParams
-        const invalidFields = Object.entries(emailParams).filter(
-          ([key, value]) => value === undefined || value === null || typeof value !== "string"
-        );
-        if (invalidFields.length > 0) {
-          console.error("Invalid emailParams fields for appointment", notification.appointmentId, invalidFields);
-          continue;
-        }
-  
-        // Debug log to inspect emailParams
-        console.log("emailParams for appointment", notification.appointmentId, emailParams);
-  
-        await emailjs.send(
-          "service_Furwell",
-          "template_pel70fc",
-          emailParams,
-          "qaihwjIbl1RK4Aj5R"
-        );
-  
-        // Mark notification as sent
-        await updateDoc(doc(db, "notifications", notification.id), { hasEmailSent: true });
-      }
-    } catch (error) {
-      console.error("Error sending reminder emails:", error);
-    }
-  };
 
   const handleEventClick = (args) => {
     args.cancel = true; // Prevent default edit popup
