@@ -35,7 +35,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  left: 20px;
+  /*left: 20px;*/
   cursor: url('../../images/pawCursorPoint.png'), auto;
   padding: 10px;
   position: relative;
@@ -43,11 +43,11 @@
 }
 
 .hamburger span {
-  width: 40px;
+  width: 30px;
   height: 4px;
   background-color: #3E6680;
   border-radius: 14px;
-  margin: 4px 0;
+  margin: 3px 0;
   transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease;
 }
 

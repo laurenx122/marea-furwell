@@ -46,6 +46,13 @@ const Home = () => {
         }
     };
 
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            setIsLoggedIn(!!user); // Set isLoggedIn to true if user exists, false otherwise
+        });
+        return () => unsubscribe(); // Cleanup subscription on unmount
+    }, []);
+    
     // Scroll event listener to trigger animations when elements come into view
     useEffect(() => {
         const handleScroll = () => {
@@ -195,10 +202,12 @@ const Home = () => {
                     <img src="https://cdn-icons-png.freepik.com/256/12641/12641101.png" alt="Find Clinic" />
                     Find Clinic
                 </button>
-                <button className="service-button" onClick={handleClinicSignUpClick}>
-                    <img src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQwly9ieoqBhPisnyYoY9619JiA1gFq8nmmwVUTkWlJMOUG4fgX" alt="Set Appointment" />
-                    Grow with Us
-                </button>
+                {!isLoggedIn && (
+                    <button className="service-button" onClick={handleClinicSignUpClick}>
+                        <img src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQwly9ieoqBhPisnyYoY9619JiA1gFq8nmmwVUTkWlJMOUG4fgX" alt="Set Appointment" />
+                        Grow with Us
+                    </button>
+                )}
             </div>
 
             {/* Location Section */}
