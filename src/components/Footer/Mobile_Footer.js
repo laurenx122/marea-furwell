@@ -78,10 +78,12 @@ const Mobile_Footer = ({ onNotificationClick, onAccountClick, activePanel, unrea
               </button>
             )}
             {!isVetClinic && (
-              <button className="footer-btn-p" onClick={handleNotificationClickWrapper}>
-                <FaBell />
+              <button className="footer-btn-notif" onClick={handleNotificationClickWrapper}>
+                <div className="notification-icon-container-mf">
+                  <FaBell />
+                  {unreadNotifications && <span className="notification-dot-mf"></span>}
+                </div>
                 <p>Notifications</p>
-                {unreadNotifications && <span className="notification-dot-p"></span>}
               </button>
             )}
             <button
