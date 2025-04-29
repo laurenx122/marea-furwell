@@ -139,7 +139,7 @@ const PetOwnerHome = () => {
   
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
-  const DEFAULT_OWNER_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
+  const DEFAULT_OWNER_IMAGE = "images/Pet Owner.jpg";
 
   const petTypes = {
     Dog: ["Labrador", "Golden Retriever", "German Shepherd", "Bulldog", "Poodle", "Beagle", "Boxer", "Dachshund", "Rottweiler", "Siberian Husky", "Others"],
