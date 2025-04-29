@@ -46,7 +46,7 @@
 .sidebar-btn-p {
   width: 100%;
   padding: 12px;
-  font-size: 16px;
+  font-size: 14px;
   border: none;
   cursor: pointer;
   background-color: #EDBFC6;
@@ -185,10 +185,6 @@
   width: 100%;
 }
 
-.footer-btn-p p {
-  font-size: 10px; 
-  margin: 0;
-}
 
 /* Signout button */
 .signout-btn-p {
@@ -296,33 +292,6 @@
 .tab-icon-p {
   font-size: 1.2rem;
 }
-
-/* Footer */
-.footer-p {
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  background-color: #EDBFC6;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  z-index: 10;
-}
-
-.footer-btn-p {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #ff4081;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-.footer-btn-p:hover {
-  color: #f50057;
-}
-
-
 
 .content-p {
   flex: 1;
@@ -1212,6 +1181,7 @@ form {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   padding: 15px;
+  border-radius: 10px;
 }
 
 .profile-modal-content-p {

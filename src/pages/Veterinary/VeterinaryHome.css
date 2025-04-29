@@ -708,13 +708,9 @@ th {
 
 .profile-modal-name-v {
   margin: 0;
-  font-size: 19px; 
+  font-size: 19px;
   font-weight: 500;
   color: #333;
-}
-
-.profile-modal-name-v:hover {
-  color: #505050; 
 }
 
 .signout-btn-modal-v {
