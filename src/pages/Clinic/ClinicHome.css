@@ -945,8 +945,9 @@ tr:hover {
 
 .form-actions-c {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px;
+  margin-top: 20px;
 }
 
 .cancel-btn-c {
@@ -957,6 +958,8 @@ tr:hover {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
+  width: 100%;
+  padding: 10px;
 }
 
 .cancel-btn-c:hover {
@@ -971,6 +974,8 @@ tr:hover {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
+  width: 100%;
+  padding: 10px;
 }
 
 .submit-btn-c:hover {
@@ -1916,11 +1921,6 @@ tr:hover {
   .form-group-c textarea {
     font-size: 14px;
     padding: 8px;
-  }
-
-  .form-actions-c {
-    flex-direction: column;
-    gap: 8px;
   }
 
   .submit-btn-c,

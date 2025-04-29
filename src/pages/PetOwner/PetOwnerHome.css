@@ -443,7 +443,7 @@ tr:hover {
 }
 
 .form-group-p input {
-  width: 95%;
+  width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
@@ -475,6 +475,7 @@ tr:hover {
   display: flex;
   justify-content: center;
   gap: 10px;
+  margin-top: 20px;
 }
 
 form {
@@ -550,11 +551,12 @@ form {
 .submit-btn-p {
   background-color: #ff4081;
   color: white;
-  padding: 10px 20px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
+  width: 100%;
+  padding: 10px;
 }
 
 .submit-btn-p:hover {
@@ -569,7 +571,8 @@ form {
 .cancel-btn-p {
   background-color: #999;
   color: white;
-  padding: 10px 20px;
+  width: 100%;
+  padding: 10px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -618,7 +621,7 @@ form {
 .modal-content-p h2 {
   font-size: 24px;
   color: #ff4081;
-  margin-bottom: 20px;
+  margin-top: 20px;
 }
 
 .pet-info-grid-p {
