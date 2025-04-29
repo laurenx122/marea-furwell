@@ -585,7 +585,9 @@ const FindClinicWithFooter = () => {
   return (
     <div className="page-container">
       <FindClinic />
+      <div className="findclinic-container">
       <Footer />
+      </div>
     </div>
   );
 };

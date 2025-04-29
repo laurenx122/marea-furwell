@@ -921,6 +921,10 @@
   .clinic-info-section h2 {
     font-size: 1.4rem;
   }
+
+  .clinicdetails-footer{
+    display: none;
+  }
 }
 
 @media (max-width: 576px) {
