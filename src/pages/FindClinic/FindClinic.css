@@ -515,6 +515,10 @@ input[type="checkbox"], input[type="radio"] {
     width: 100%;
     max-width: 500px;
   }
+
+  .findclinic-container{
+    display: none;
+  }
 }
 
 @media (max-width: 576px) {

@@ -970,8 +970,9 @@ const ClinicDetails = () => {
         setActivePanel={setActivePanel}
         isVeterinarian={isVeterinarian}
       />
-
-      <Footer />
+      <div className ="clinicdetails-footer">
+        <Footer />
+      </div>
     </div>
   );
 };

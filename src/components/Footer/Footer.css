@@ -17,6 +17,18 @@
     text-decoration: underline;
 }
 
+.facebook-link{
+    color: #3E6680;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.ig-link{
+    color: #3E6680;
+    text-decoration: none;
+    font-weight: bold;
+}
+
 .footer-content {
     display: flex;
     justify-content: space-between;
@@ -28,12 +40,14 @@
 
 /* Style for Contact Items */
 .contact-itemf,
+.ig,
 .newsletter-item {
     display: flex;
     align-items: center;
     gap: 10px;
     margin: 5px 0;
 }
+
 
 .contact-icon {
     width: 30px;
@@ -116,6 +130,7 @@
     }
 
     .contact-itemf p,
+    .ig p,
     .newsletter-item p {
         font-size: 0.9rem;
     }
@@ -154,12 +169,16 @@
     }
 
     .contact-itemf p,
+    .ig p,
     .newsletter-item p {
         font-size: 0.85rem;
     }
 
     .contact-itemf,
+    .ig p,
+    
     .newsletter-item {
+    
         gap: 8px;
     }
 }
@@ -198,11 +217,13 @@
     }
 
     .contact-itemf p,
+    .ig p,
     .newsletter-item p {
         font-size: 0.8rem;
     }
 
     .contact-itemf,
+    .ig p,
     .newsletter-item {
         gap: 6px;
         margin: 6px 0;
