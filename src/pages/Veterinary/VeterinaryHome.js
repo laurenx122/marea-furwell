@@ -511,10 +511,18 @@ const VeterinaryHome = () => {
           treatment: treatment || "No treatment",
           completionRemark: completionRemark || "No completion remark",
         });
-  
+        
+        await fetchAppointments();
+
         setAppointments(appointments.map(appt => 
           appt.Id === selectedAppointment.Id 
-            ? { ...appt, status: "Completed", completionRemark: completionRemark || "No completion remark" }
+            ? { 
+              ...appt,
+              status: "Completed",
+              diagnosis: diagnosis || "No diagnosis",
+              treatment: treatment || "No treatment",
+              completionRemark: completionRemark || "No completion remark"
+            }
             : appt
         ));
   
