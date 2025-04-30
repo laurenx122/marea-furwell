@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import './Signup.css'; 
 import { FaTimes, FaPaw, FaCamera } from "react-icons/fa";
 import { FiUser, FiLock, FiMail, FiPhone } from "react-icons/fi";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { auth, db } from '../../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
@@ -27,6 +27,7 @@ const Signup = ({ onClose, onSwitchToLogin }) => {
   const [otp, setOtp] = useState("");
   const [generatedOTP, setGeneratedOTP] = useState("");
   const [userCredentialTemp, setUserCredentialTemp] = useState(null);
+  const otpModalRef = useRef(null);
 
   const UPLOAD_PRESET = "furwell";
 
@@ -34,11 +35,28 @@ const Signup = ({ onClose, onSwitchToLogin }) => {
     emailjs.init("59--iStzN3U4AfD9O"); // Your EmailJS public key
   }, []);
 
+  useEffect(() => {
+    if (showOTPModal) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [showOTPModal]);
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setProfileImage(file);
       setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleOutsideClick = (e) => {
+    if (otpModalRef.current && !otpModalRef.current.contains(e.target)) {
+      setShowOTPModal(false);
+      setOtp("");
+      setGeneratedOTP("");
     }
   };
 
@@ -307,7 +325,7 @@ const Signup = ({ onClose, onSwitchToLogin }) => {
 
       {showOTPModal && (
         <div className="modal-overlay">
-          <div className="otp-modal">
+          <div className="otp-modal" ref={otpModalRef}>
             <h2>Verify Your Email</h2>
             <p>We’ve sent a 6-digit OTP to {email}. Please enter it below:</p>
             <form onSubmit={handleOTPVerification}>
