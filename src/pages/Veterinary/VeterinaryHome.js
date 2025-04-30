@@ -72,6 +72,7 @@ const VeterinaryHome = () => {
   const [treatment, setTreatment] = useState("");
   const [appointmentDetails, setAppointmentDetails] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [isAppointmentCompletedOpen, setIsAppointmentCompletedOpen] = useState(false);
 
   const [notifications, setNotifications] = useState([]);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
@@ -88,6 +89,7 @@ const VeterinaryHome = () => {
   const DEFAULT_VET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const scheduleObj = useRef(null);
 
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     let unsubscribe;
@@ -101,7 +103,7 @@ const VeterinaryHome = () => {
           } catch (error) {
             console.error("Error fetching vet info:", error);
           }
-        } else {
+        } else if (!isSigningOut){
           navigate("/Home");
           setLoading(false);
         }
@@ -113,7 +115,7 @@ const VeterinaryHome = () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, isSigningOut]);
   
   //useEffect for OutsideClicks
   useEffect(() => {
@@ -485,16 +487,19 @@ const VeterinaryHome = () => {
 
   const confirmSignOut = async () => {
     try {
+      setIsSigningOut(true);
       await signOut(getAuth());
       setIsSignOutConfirmOpen(false);
-      setIsSignOutSuccessOpen(true);
+      setIsSignOutSuccessOpen(true); 
       setTimeout(() => {
         setIsSignOutSuccessOpen(false);
+        setIsSigningOut(false); 
         navigate("/Home");
       }, 2000);
     } catch (error) {
       console.error("Error signing out:", error);
       setIsSignOutConfirmOpen(false);
+      setIsSigningOut(false); 
     }
   };
 
@@ -529,8 +534,13 @@ const VeterinaryHome = () => {
         setShowRemarksModal(false);
         setShowDetailsModal(false);
         setCompletionRemark("");
+        setDiagnosis("");
+        setTreatment("");
         setSelectedAppointment(null);
-        alert("Appointment completed successfully!");
+        setIsAppointmentCompletedOpen(true);
+        setTimeout(()=>{
+          setIsAppointmentCompletedOpen(false);
+        },2000);
       } catch (error) {
         console.error("Error completing appointment:", error);
         alert("Failed to complete the appointment. Please try again.");
@@ -736,7 +746,9 @@ const VeterinaryHome = () => {
                     },
                   }}
                   readOnly={true}
+                  eventClick={onEventClick}
                   cellClick={onCellClick}
+                  popupOpen={(args) => args.cancel = true}
                 >
                   <ViewsDirective>
                     <ViewDirective option="Month" />
@@ -1023,6 +1035,21 @@ const VeterinaryHome = () => {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isAppointmentCompletedOpen && (
+        <div className="modal-overlay-v">
+          <div className="modal-content-v appointment-completed-modal-v">
+            <div className="success-content-v">
+              <img
+                src="/images/check.gif"
+                alt="Success Checkmark"
+                className="success-image-v"
+              />
+              <p>Appointment Completed</p>
             </div>
           </div>
         </div>

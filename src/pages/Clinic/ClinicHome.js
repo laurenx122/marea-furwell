@@ -187,6 +187,7 @@ const ClinicHome = () => {
   const [scheduleIndexToDelete, setScheduleIndexToDelete] = useState(null);
   const [showScheduleDeleteSuccess, setShowScheduleDeleteSuccess] = useState(false);
 
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -210,7 +211,7 @@ const ClinicHome = () => {
           } finally {
             setLoading(false);
           }
-        } else {
+        } else if(!isSigningOut){
           navigate("/Home");
         }
       });
@@ -218,7 +219,7 @@ const ClinicHome = () => {
     };
 
     initializeComponent();
-  }, [navigate]);
+  }, [navigate, isSigningOut]);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -946,16 +947,19 @@ const ClinicHome = () => {
 
   const confirmSignOut = async () => {
     try {
+      setIsSigningOut(true);
       await signOut(getAuth());
       setIsSignOutConfirmOpen(false);
-      setIsSignOutSuccessOpen(true);
+      setIsSignOutSuccessOpen(true); 
       setTimeout(() => {
         setIsSignOutSuccessOpen(false);
+        setIsSigningOut(false); 
         navigate("/Home");
       }, 2000);
     } catch (error) {
       console.error("Error signing out:", error);
       setIsSignOutConfirmOpen(false);
+      setIsSigningOut(false); 
     }
   };
 
@@ -3054,7 +3058,7 @@ const ClinicHome = () => {
 
       {isSignOutSuccessOpen && (
         <div className="modal-overlay-c">
-          <div className="modal-content-c signout-success-modal-c">
+          <div className="modal-content-c-signout signout-success-modal-c">
             <div className="success-content-c">
               <img
                 src="/images/check.gif"

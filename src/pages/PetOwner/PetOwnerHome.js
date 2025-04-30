@@ -141,6 +141,8 @@ const PetOwnerHome = () => {
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const DEFAULT_OWNER_IMAGE = "images/Pet Owner.jpg";
 
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
   const petTypes = {
     Dog: ["Labrador", "Golden Retriever", "German Shepherd", "Bulldog", "Poodle", "Beagle", "Boxer", "Dachshund", "Rottweiler", "Siberian Husky", "Others"],
     Cat: ["Persian", "Siamese", "Maine Coon", "Calico", "Bengal", "Ragdoll", "British Shorthair", "Abyssinian", "Sphynx", "Scottish Fold", "Others"],
@@ -183,7 +185,7 @@ const PetOwnerHome = () => {
           } finally {
             setLoading(false);
           }
-        } else {
+        } else if(!isSigningOut) {
           setLoading(false);
           navigate("/Home");
         }
@@ -269,7 +271,7 @@ const PetOwnerHome = () => {
       if (unsubscribeNotifications) unsubscribeNotifications();
       if (notificationInterval) clearInterval(notificationInterval);
     };
-  }, [navigate, sentEmails, auth.currentUser]);
+  }, [navigate, sentEmails, auth.currentUser, isSigningOut]);
 
   // send email for day of apptmnt notif
 const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
@@ -1311,16 +1313,19 @@ const handleSignOut = () => {
 
   const confirmSignOut = async () => {
     try {
+      setIsSigningOut(true);
       await signOut(getAuth());
       setIsSignOutConfirmOpen(false);
-      setIsSignOutSuccessOpen(true);
+      setIsSignOutSuccessOpen(true); 
       setTimeout(() => {
         setIsSignOutSuccessOpen(false);
+        setIsSigningOut(false); 
         navigate("/Home");
       }, 2000);
     } catch (error) {
       console.error("Error signing out:", error);
       setIsSignOutConfirmOpen(false);
+      setIsSigningOut(false); 
     }
   };
 
@@ -2269,7 +2274,7 @@ const handleSignOut = () => {
 
       {isSignOutSuccessOpen && (
         <div className="modal-overlay-p">
-          <div className="modal-content-p signout-success-modal-p">
+          <div className="modal-content-p-signout signout-success-modal-p">
             <div className="success-content-p">
               <img
                 src="/images/check.gif"

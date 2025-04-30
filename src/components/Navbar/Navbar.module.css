@@ -52,7 +52,7 @@
 }
 
 .hamburger.active span:nth-child(1) {
-  transform: rotate(45deg) translate(8px, 10px);
+  transform: rotate(45deg) translate(8px, 8px);
 }
 
 .hamburger.active span:nth-child(2) {
@@ -60,7 +60,7 @@
 }
 
 .hamburger.active span:nth-child(3) {
-  transform: rotate(-45deg) translate(8px, -10px);
+  transform: rotate(-45deg) translate(8px, -8px);
 }
 
 /* Logo */
@@ -346,22 +346,23 @@
 }
 
 .mobileMenu {
+  display:flex;
+  flex-direction: column;
   position: fixed;
+  justify-content: flex-start;
+  transform: translateX(-100%);
   top: 80px;
-  left: -250px; 
-  width: 25%; 
-  height: calc(100vh - 80px);
+  left: 0;
+  height: 100vh;
   background-color: #CDEDF6;
   padding: 20px;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-  transition: left 0.3s ease;
+  transition: transform 0.3s ease-in-out;
   z-index: 99;
 }
 
 .mobileMenu.active {
-  top: 80px;
-  left: 0; 
-  z-index: 100;
+  transform:translateX(0);
 }
 
 .mobileMenuOverlay {
@@ -487,7 +488,8 @@
   .mobileMenu.active {
     top: 60px;
     height: calc(100vh - 40px);
-    width:130px;
+    width: 60%;
+    max-width: 100vw;
   }
 
   .scrollProgressBar {
@@ -536,7 +538,8 @@
   .mobileMenu.active {
     top: 50px;
     height: calc(100vh - 40px);
-    width:130px;
+    width: 60%;
+    max-width: 100vw;
   }
 
   .scrollProgressBar {
