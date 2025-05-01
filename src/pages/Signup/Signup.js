@@ -28,8 +28,26 @@ const Signup = ({ onClose, onSwitchToLogin }) => {
   const [generatedOTP, setGeneratedOTP] = useState("");
   const [userCredentialTemp, setUserCredentialTemp] = useState(null);
   const otpModalRef = useRef(null);
-
   const UPLOAD_PRESET = "furwell";
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const termsModalRef = useRef(null);
+
+   const handleOutsideClick = (e) => {
+    if (otpModalRef.current && !otpModalRef.current.contains(e.target)) {
+      setShowOTPModal(false);
+      setOtp("");
+      setGeneratedOTP("");
+    }
+    if (termsModalRef.current && !termsModalRef.current.contains(e.target)) {
+      setShowTermsModal(false);
+    }
+  };
+
+  // Add handler for opening terms modal
+  const openTermsModal = (e) => {
+    e.preventDefault();
+    setShowTermsModal(true);
+  };
 
   useEffect(() => {
     emailjs.init("59--iStzN3U4AfD9O"); // Your EmailJS public key
@@ -49,14 +67,6 @@ const Signup = ({ onClose, onSwitchToLogin }) => {
     if (file) {
       setProfileImage(file);
       setImagePreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleOutsideClick = (e) => {
-    if (otpModalRef.current && !otpModalRef.current.contains(e.target)) {
-      setShowOTPModal(false);
-      setOtp("");
-      setGeneratedOTP("");
     }
   };
 
@@ -306,8 +316,39 @@ const Signup = ({ onClose, onSwitchToLogin }) => {
 
           <div className="terms">
             <input type="checkbox" required />
-            <span>I agree to the <a href="/">Terms and Conditions</a></span>
+            <span>I agree to the <a href="#" onClick={openTermsModal}>Terms and Conditions</a></span>
           </div>
+          {showTermsModal && (
+          <div className="modal-overlay">
+            <div className="terms-modal" ref={termsModalRef}>
+              <button 
+                className="modal-close-btn"
+                onClick={() => setShowTermsModal(false)}
+              >
+                <FaTimes />
+              </button>
+        <h2>Terms and Conditions</h2>
+        <div className="terms-content">
+          <p>Welcome to FurWell! By signing up and using our services, you agree to the following terms and conditions. Please read them carefully.</p>
+          <h3>1. Acceptance of Terms</h3>
+          <p>By accessing or using FurWell’s services, you agree to be bound by these Terms and Conditions, our Privacy Policy, and any additional guidelines or rules provided by FurWell.</p>
+          <h3>2. Account Responsibilities</h3>
+          <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You must provide accurate and complete information during signup.</p>
+          <h3>3. Use of Services</h3>
+          <p>FurWell provides a platform for pet owners to book veterinary appointments. You agree to use our services only for lawful purposes and in a manner that does not infringe on the rights of others.</p>
+          <h3>4. Intellectual Property</h3>
+          <p>All content on FurWell, including logos, text, and images, is the property of FurWell or its licensors. You may not reproduce or distribute this content without permission.</p>
+          <h3>5. Termination</h3>
+          <p>FurWell reserves the right to suspend or terminate your account if you violate these terms or engage in prohibited activities.</p>
+          <h3>6. Limitation of Liability</h3>
+          <p>FurWell is not liable for any indirect, incidental, or consequential damages arising from your use of our services.</p>
+          <h3>7. Contact Us</h3>
+          <p>If you have questions about these Terms, contact us at <a href="mailto:mareafurwell@gmail.com">mareafurwell@gmail.com</a>.</p>
+          <p>By clicking “I agree” during signup, you acknowledge that you have read, understood, and agree to these Terms and Conditions.</p>
+        </div>
+      </div>
+    </div>
+  )}
 
           <button type="submit" className="create-account" disabled={isLoading}>
             {isLoading ? 'Creating Account...' : (

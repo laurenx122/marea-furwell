@@ -18,6 +18,28 @@ const ClinicSubscribe = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const modalRef = useRef(null);
+
+  const handleClickOutside = (e) => {
+    if (modalRef.current && !modalRef.current.contains(e.target)) {
+      closeModal();
+    }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+  };
+
+  // click outside to close modal
+  useEffect(() => {
+    if (showModal) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showModal]);
+
   // to show password
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -185,19 +207,19 @@ const ClinicSubscribe = () => {
         lat: clinicInfo.lat,
         lng: clinicInfo.lng,
         servicePrices: servicePrices,
-        verificationDocs, // Attach uploaded documents
-        status: "pending", // Pending approval
+        verificationDocs, 
+        status: "pending", 
         createdAt: new Date(),
       };
   
       console.log("🔥 Storing user data in Firestore:", userData);
       
-      // ✅ Store user data in Firestore
+      // Store user data in Firestore
       await setDoc(doc(db, "registersClinics", user.uid), userData);
   
       console.log("✅ Firestore Document Created for:", user.uid);
   
-      // ✅ Show success message and navigate
+      // Show success message and navigate
       alert("Clinic registration successful. Please wait for approval.");
       setTimeout(() => {
         navigate("/Home");
@@ -249,75 +271,6 @@ const ClinicSubscribe = () => {
     }
   };
   
-  //  const nextStep = async () => {
-  //   if (currentStep < 4) {
-  //     if (currentStep === 1 && selectedServices.length === 0) return alert("Please select at least one service.");
-  //     if (currentStep === 2 && !selectedServices.every(service => service === "Others" || servicePrices[service])) 
-  //       return alert("Please set prices for all selected services.");
-  //     if (currentStep === 3 && Object.values(clinicInfo).some(val => !val))
-  //       return alert("Please fill in all required fields.");
-  
-  //     setCurrentStep(currentStep + 1);
-  //   } else {
-  //     try {
-  //       // ✅ Ensure required documents are uploaded
-  //       if (!verificationDocs?.birDoc || !verificationDocs?.businessPermit) {
-  //         alert("Please upload the required documents.");
-  //         return;
-  //       }
-  
-  //       // ✅ Create user in Firebase Authentication
-  //       const userCredential = await createUserWithEmailAndPassword(auth, clinicInfo.email, clinicInfo.password);
-  //       const user = userCredential.user;
-  
-  //       console.log("✅ Firebase Auth User Created:", user.uid);
-  
-  //       // ✅ Store clinic data in Firestore
-  //       const userData = {
-  //         clinicName: clinicInfo.clinicName,
-  //         FirstName: clinicInfo.ownerFirstName,
-  //         LastName: clinicInfo.ownerLastName,
-  //         email: clinicInfo.email,
-  //         contactNumber: clinicInfo.phone,
-  //         streetAddress: clinicInfo.streetAddress,
-  //         city: clinicInfo.city,
-  //         province: clinicInfo.province,
-  //         postalCode: clinicInfo.postalCode,
-  //         lat: clinicInfo.lat,
-  //         lng: clinicInfo.lng,
-  //         servicePrices: servicePrices,
-  //         verificationDocs, // Attach uploaded documents
-  //         status: "pending", // Pending approval
-  //         createdAt: new Date(),
-  //       };
-  
-  //       console.log("🔥 Storing user data in Firestore:", userData);
-  
-  //       // ✅ Store user data in Firestore with the generated user ID
-  //       await setDoc(doc(db, "registersClinics", user.uid), userData);
-  
-  //       console.log("✅ Firestore Document Created for:", user.uid);
-  
-  //       // ✅ Show success modal instead of alert
-  //       window.alert("Clinic registration successful. Please wait for approval.");
-  //      console.log("✅ Alert should have been triggered.");
-  //       // ✅ Navigate to Home after 3 seconds
-  //       setShowModal(false);
-  //       setTimeout(() => {
-  //         navigate("/Home");
-  //       }, 3000);
-  
-  //     } catch (error) {
-  //       console.error("❌ Error creating user or storing data:", error);
-  //       if (error.code === "auth/email-already-in-use") {
-  //         alert("This email is already registered. Please use a different email.");
-  //       } else {
-  //         alert(`Error: ${error.message}`);
-  //       }
-  //     }
-  //   }
-  // };
-  // Get progress bar width based on current step
   const getProgressWidth = () => {
     if (currentStep === 1) return '0%';
     if (currentStep === 2) return '35%';
@@ -650,7 +603,10 @@ const ClinicSubscribe = () => {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-container">
+          <div className="modal-container" ref={modalRef}>
+          <button className="modal-close-btn" onClick={closeModal}>
+            <FaTimes />
+          </button>
             <div className="modal-header-CS">
               <h2>Business Verification</h2>
               <p>Please provide the necessary documents to verify your clinic.</p>
@@ -679,7 +635,7 @@ const ClinicSubscribe = () => {
 
             {/* Step 1: Offered Services */}
             {currentStep === 1 && (
-              <div>
+              <div className='modal-div'>
                 <h3>Select Services</h3>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                   {[...services, "Others"].map((service) => (
@@ -761,7 +717,7 @@ const ClinicSubscribe = () => {
             )}
 
             {currentStep === 2 && (
-              <div>
+              <div className='modal-div'>
                 <h3>Set Prices for Selected Services</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {selectedServices
@@ -788,7 +744,7 @@ const ClinicSubscribe = () => {
 
             {/* Step 3: Address */}
             {currentStep === 3 && (
-              <div>
+              <div className='modal-div'>
                 <h3>Business Address</h3>
                 <div className="form-group-CS">
                   <label>Street Address <span className="required">*</span></label>
@@ -851,10 +807,9 @@ const ClinicSubscribe = () => {
 
             {/* Step 4: Business Verification */}
             {currentStep === 4 && (
-              <div>
+              <div className='modal-div'>
                 <h3>Business Verification</h3>
 
-                {/* Read-only clinic name */}
                 <div className="form-group-CS">
                   <label>Clinic Name</label>
                   <input
@@ -893,23 +848,11 @@ const ClinicSubscribe = () => {
                     />
                   </div>
                 </div>
-
-                {/* <div className="form-group">
-                  <label>Other Supporting Documents (optional)</label>
-                  <div className="file-upload-container">
-                    <FiUpload className="upload-icon" />
-                    <input
-                      type="file"
-                      name="otherDocs"
-                      onChange={handleFileChange}
-                    />
-                  </div>
-                </div> */}
               </div>
             )}
 
 
-            <div className="modal-actions">
+            <div className="modal-actions-CS">
               <button
                 className="btn btn-cancel"
                 onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : setShowModal(false)}
