@@ -2605,12 +2605,14 @@ const handleSignOut = () => {
   </div>
   )}
       <Mobile_Footer
-        onNotificationClick={handleNotificationClick}
-        onAccountClick={handleAccountClick}
-        activePanel={activePanel} 
-        unreadNotifications={unreadNotifications}
-        setActivePanel={setActivePanel}
-        isVeterinarian={isVeterinarian}
+      onNotificationClick={handleNotificationClick}
+      onAccountClick={handleAccountClick}
+      activePanel={activePanel}
+      unreadNotifications={unreadNotifications}
+      setActivePanel={setActivePanel}
+      isVeterinarian={false}
+      isVetClinic={false}
+      isPetOwner={true} 
       />
     </div>
   );
