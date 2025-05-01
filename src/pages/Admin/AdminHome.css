@@ -62,7 +62,6 @@ body {
 
 /* Search Bar */
 .search-container-a {
-  /* margin: 20px 0; */
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -88,19 +87,19 @@ body {
   margin-top: 70px;
 }
 
-/* Clinic Grid */
+
 .clinics-grid-con {
-  display: flex; /* Use flexbox for horizontal scrolling */
-  flex-wrap: nowrap; /* Prevent wrapping */
-  overflow-x: auto; /* Enable horizontal scrolling */
-  gap: 10px; /* Space between cards */
+  display: flex;
+  flex-wrap: nowrap; 
+  overflow-x: auto; 
+  gap: 10px; 
   margin-left: 80px;
   padding: 20px;
-  scroll-snap-type: x mandatory; /* Optional: Smooth scrolling behavior */
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  justify-content: flex-start; /* Start from the left for scrolling */
-  width: 100%; /* Ensure the grid takes the full width */
-  box-sizing: border-box; /* Include padding in width */
+  scroll-snap-type: x mandatory; 
+  -webkit-overflow-scrolling: touch;
+  justify-content: flex-start; 
+  width: 100%; 
+  box-sizing: border-box; 
 }
 
 .clinics-grid-admin {
@@ -112,9 +111,9 @@ body {
   margin: 0px 20px;
 }
 
-/* Scrollbar styling */
+
 .clinics-grid-admin::-webkit-scrollbar {
-  height: 8px; /* Scrollbar height */
+  height: 8px; 
 }
 
 .clinics-grid-admin::-webkit-scrollbar-track {
@@ -132,30 +131,30 @@ body {
 }
 
 .clinics-card-con {
-  background: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
+  background: rgba(255, 255, 255, 0.9); 
   padding: 20px;
   border-radius: 12px;
   text-align: center;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  width: 350px; /* Fixed width for horizontal scrolling */
-  flex: 0 0 auto; /* Prevent cards from shrinking */
-  scroll-snap-align: start; /* Optional: Snap cards into view */
+  width: 350px; 
+  flex: 0 0 auto; 
+  scroll-snap-align: start; 
   position: relative;
-  cursor: pointer; /* Indicate the card is clickable */
+  cursor: pointer;
 }
 
 .clinic-image {
   width: 100%;
-  height: 300px; /* Adjusted image height */
-  object-fit: cover; /* Replace background-size: cover */
-  object-position: center; /* Replace background-position: center */
+  height: 300px; 
+  object-fit: cover; 
+  object-position: center;
   border-radius: 10px;
   margin-bottom: 10px;
 }
 
 .modal-profile-image {
   width: 100%;
-  height: 300px; /* Adjusted image height */
+  height: 300px; 
   background-size: cover;
   background-position: center;
   border-radius: 10px;
@@ -370,7 +369,7 @@ body {
 
 .clinic-image-admin {
   width: 100%;
-  height: 120px; /* Adjust based on your design */
+  height: 120px; 
   object-fit: cover;
   border-radius: 8px;
 }
@@ -386,7 +385,6 @@ body {
 
 .contact-info {
   display: flex;
-  flex-direction: column;
   gap: 15px;
 }
 
@@ -432,10 +430,10 @@ body {
   }
 }
 
-@media (max-width: 1024px) {
+@media(min-width: 577px) and (max-width: 992px){
   .clinics-grid-admin {
     overflow-x: auto; 
-    grid-template-columns: repeat(1, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     margin: 0px 20px;
   }
   .search-input {
@@ -448,9 +446,9 @@ body {
 
 @media (max-width: 768px) {
   .clinics-grid-admin {
-    flex-direction: column; 
-    overflow-x: hidden; 
-    align-items: center; 
+    overflow-x: auto; 
+    grid-template-columns: repeat(1, 1fr);
+    margin: 0px 20px;
   }
   .clinics-card-con {
     width: 90%; 
@@ -474,6 +472,7 @@ body {
 
   .contact-info {
     gap: 12px;
+    flex-direction: column;
   }
 
   .contact-item {
