@@ -7,8 +7,10 @@ import { FaTimes } from "react-icons/fa";
 
 const AdminHome = () => {
   const [clinics, setClinics] = useState([]);
+  const [filteredClinics, setFilteredClinics] = useState([]); // State for filtered clinics
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(""); // State for search term
 
   useEffect(() => {
     const fetchClinicsAndUsers = async () => {
@@ -25,17 +27,17 @@ const AdminHome = () => {
               }))
             : [];
           return {
-            uid: doc.id, // Use Firestore document ID as the clinic's uid
-            ...data, // Spread clinic data (e.g., clinicName, province, servicePrices)
-            services: servicesArray, // Add transformed services array
+            uid: doc.id,
+            ...data,
+            services: servicesArray,
           };
         });
 
         // Fetch users
         const usersSnapshot = await getDocs(collection(db, "users"));
         const userList = usersSnapshot.docs.map((doc) => ({
-          id: doc.id, // User document ID (not used for linking, but included)
-          ...doc.data(), // Spread user data (e.g., email, clinicRegistered, contactNumber)
+          id: doc.id,
+          ...doc.data(),
         }));
 
         // Log userList to debug clinicRegistered values
@@ -43,24 +45,18 @@ const AdminHome = () => {
 
         // Combine clinic and user data
         const combinedData = clinicList.map((clinic) => {
-          // Find the user whose clinicRegistered matches the clinic's uid
           const associatedUser = userList.find((user) => {
-            // Handle cases where clinicRegistered might be a Firestore reference or not a string
             let clinicId;
             if (user.clinicRegistered && typeof user.clinicRegistered === "string") {
-              // If it's a string, normalize by removing "/clinics/" prefix
               clinicId = user.clinicRegistered.split("/clinics/")[1] || user.clinicRegistered;
             } else if (user.clinicRegistered && user.clinicRegistered.id) {
-              // If it's a Firestore DocumentReference, use the id property
               clinicId = user.clinicRegistered.id;
             } else {
-              // If clinicRegistered is undefined, null, or invalid, skip
               return false;
             }
             return clinicId === clinic.uid;
           });
 
-          // Return combined object with clinic and user details
           return {
             ...clinic,
             email: associatedUser ? associatedUser.email : "Not provided",
@@ -69,6 +65,7 @@ const AdminHome = () => {
         });
 
         setClinics(combinedData);
+        setFilteredClinics(combinedData); // Initialize filteredClinics with all clinics
       } catch (error) {
         console.error("Error fetching clinics and users:", error);
       }
@@ -77,6 +74,37 @@ const AdminHome = () => {
     fetchClinicsAndUsers();
   }, []);
 
+  // Handle search input changes and filter clinics
+  const handleSearchChange = (e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+
+    if (!term.trim()) {
+      setFilteredClinics(clinics); // If search term is empty, show all clinics
+      return;
+    }
+
+    const lowerCaseTerm = term.toLowerCase();
+    const filtered = clinics.filter((clinic) => {
+      // Construct the full address from streetAddress, city, and province
+      const fullAddress = [
+        clinic.streetAddress,
+        clinic.city,
+        clinic.province,
+      ]
+        .filter(Boolean) // Remove undefined/null values
+        .join(", ")
+        .toLowerCase();
+
+      // Check if the search term matches the clinic name or address
+      return (
+        clinic.clinicName?.toLowerCase().includes(lowerCaseTerm) ||
+        fullAddress.includes(lowerCaseTerm)
+      );
+    });
+
+    setFilteredClinics(filtered);
+  };
 
   // Function to open the modal with the selected clinic's details
   const openModal = (clinic) => {
@@ -94,29 +122,39 @@ const AdminHome = () => {
     <div className="admin-home-container">
       {/* Search Bar */}
       <div className="search-container-a">
-        <input type="text" placeholder="Search" className="search-input" />
+        <input
+          type="text"
+          placeholder="Search by clinic name or address"
+          className="search-input"
+          value={searchTerm}
+          onChange={handleSearchChange}
+        />
         {/* <Search className="search-icon" /> */}
       </div>
 
       {/* Clinic Grid */}
       <div className="clinics-grid-admin">
-        {clinics.map((clinic) => (
-          <div
-            key={clinic.uid} // Use uid (Firestore document ID) as the key
-            className="clinics-card-con"
-            onClick={() => openModal(clinic)}
-          >
-            <img
-              src={clinic.profileImageURL || "images/veterinarian.jpg"}
-              alt={`${clinic.clinicName} image`}
-              className="clinic-image"
-            />
-            <p className="clinic-name">{clinic.clinicName}</p>
-            <p className="clinic-location">
-              {clinic.province || "Location not provided"}
-            </p>
-          </div>
-        ))}
+        {filteredClinics.length > 0 ? (
+          filteredClinics.map((clinic) => (
+            <div
+              key={clinic.uid}
+              className="clinics-card-con"
+              onClick={() => openModal(clinic)}
+            >
+              <img
+                src={clinic.profileImageURL || "images/veterinarian.jpg"}
+                alt={`${clinic.clinicName} image`}
+                className="clinic-image"
+              />
+              <p className="clinic-name">{clinic.clinicName}</p>
+              <p className="clinic-location">
+                {clinic.province || "Location not provided"}
+              </p>
+            </div>
+          ))
+        ) : (
+          <p>No clinics found matching your search.</p>
+        )}
       </div>
 
       {/* Modal */}
