@@ -213,8 +213,9 @@
 }
 
 .loginModalOverlay {
-  background: rgba(17, 17, 17, 0.271);
+  background: rgba(0, 0, 0, 0.271);
   z-index: 1000;
+  backdrop-filter: blur(3px);
 }
 
 .modalContent {
