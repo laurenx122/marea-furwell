@@ -67,32 +67,40 @@
   gap: 10px;
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* Changed from "wrap" to "nowrap" to prevent wrapping */
   max-width: 100%;
 }
 
+/* Ensure the "Actions" column has enough space */
+.clinic-table th:last-child,
+.clinic-table td:last-child {
+  min-width: 120px; /* Adjust as needed to fit both buttons */
+}
+
 .A-actions .icon-buttoncheck {
-  background-color: rgb(247, 0, 152);
-  border-color: rgb(247, 0, 152);
+  background-color: rgb(88, 217, 249);
+  border-color: rgb(88, 217, 249);
+  color: white;
+  border-radius: 10px;
+  padding: 7px;
+}
+
+.A-actions .icon-buttondelete {
+  background-color: rgb(235, 1, 56);
+  border-color: rgb(235, 1, 56);
   color: white;
   border-radius: 10px;
   padding: 8px;
 }
-
-.A-actions .icon-buttondelete  {
-  background-color: rgb(247, 0, 152);
-  border-color: rgb(247, 0, 152);
-  color: white;
+.A-actions .icon-buttondelete:hover {
+  color: rgb(251, 7, 7);
   border-radius: 10px;
   padding: 8px;
 }
-
-.A-actions .icon-buttondelete-unsubscribe {
-  background-color: rgb(247, 0, 152);
-  border-color: rgb(247, 0, 152);
-  color: white;
+.A-actions .icon-buttoncheck:hover {
+  color: #166286;
   border-radius: 10px;
-  padding: 8px;
+  padding: 7px;
 }
 
 .button-container {
@@ -129,6 +137,8 @@
   background-color: #166286;
 }
 
+
+/* confirmation modal */
 .adminClinicApprovalModal-overlay,
 .adminClinicRegistrationSuccessModal-overlay {
   position: fixed;
@@ -141,10 +151,6 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  margin: auto; /* Center the modal */
 }
 
 .adminClinicApprovalModal,
@@ -157,88 +163,104 @@
   min-width: 300px;
 }
 
-.adminClinicApprovalModal button,
-.adminClinicRegistrationSuccessModal button {
-  margin: 10px;
-  padding: 8px 16px;
+.adminClinicApprovalModal .yes-admin,
+.adminClinicRegistrationSuccessModal .yes-admin {
+  background-color: #ff4081;
+  color: white;
+  
+}
+.adminClinicApprovalModal .cancel-lang,
+.adminClinicRegistrationSuccessModal .cancel-lang {
+  background-color: #999;
+  color: white;
+}
+.adminClinicApprovalModal,
+.adminClinicRegistrationSuccessModal {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Button container */
+.adminClinicApprovalModal-buttons{
+  display: flex;
+  flex-direction: row;
+  gap: 10px; /* Space between buttons */
+  justify-content: center;
+  margin-top: 15px;
+  width: 100%;
+}
+
+/* General button styles */
+.adminClinicApprovalModal-overlay button,
+.adminClinicRegistrationSuccessModal-overlay button {
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 16px;
+  border: none;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  text-align: center;
+  min-width: 100px;
+  width: auto;
 }
-
-.adminClinicApprovalModal button:hover,
-.adminClinicRegistrationSuccessModal button:hover {
-  background-color: #f0f0f0;
+.adminClinicApprovalModal-overlay .ok-admin ,
+.adminClinicRegistrationSuccessModal-overlay .ok-admin {
+  margin-top:12px;
+  background-color: #ff4081;
+  color: white;
 }
-
 @media (max-width: 600px) {
   .clinic-table {
-    overflow-x: auto; /* Enable horizontal scroll */
-    display: block; /* Ensure the table can scroll horizontally */
+    overflow-x: auto; 
+    display: block; 
     border-collapse: collapse;
   }
 
   .clinic-table th,
   .clinic-table td {
-    white-space: normal; /* Allow text to wrap */
-    overflow-wrap: break-word; /* Break long words to fit within the cell */
-    word-break: break-word; /* Additional support for breaking words */
-    max-width: 150px; /* Optional: Set a reasonable max-width for cells */
-    min-width: 80px; /* Optional: Ensure cells don’t collapse too small */
-  }
-  .icon-buttondelete-unsubscribe {
-    background-color: rgb(247, 0, 152);
-    border-color: rgb(247, 0, 152);
-    color: white;
-    border-radius: 10px;
-    padding: 5px;
-    font-size: 10px; /* Adjust font size for smaller screens */  
+    white-space: normal; 
+    overflow-wrap: break-word; 
+    word-break: break-word;
+    max-width: 150px;
+    min-width: 80px; 
   }
 }
 @media (max-width: 400px) {
   .clinic-table {
-    overflow-x: auto; /* Enable horizontal scroll */
-    display: block; /* Ensure the table can scroll horizontally */
+    overflow-x: auto; 
+    display: block; 
     border-collapse: collapse;
   }
 
   .clinic-table th,
   .clinic-table td {
-    white-space: normal; /* Allow text to wrap */
-    overflow-wrap: break-word; /* Break long words to fit within the cell */
-    word-break: break-word; /* Additional support for breaking words */
-    max-width: 150px; /* Optional: Set a reasonable max-width for cells */
-    min-width: 80px; /* Optional: Ensure cells don’t collapse too small */
-  }
-  .icon-buttondelete-unsubscribe {
-    background-color: rgb(247, 0, 152);
-    border-color: rgb(247, 0, 152);
-    color: white;
-    border-radius: 10px;
-    padding: 5px;
-    font-size: 10px; /* Adjust font size for smaller screens */  
+    white-space: normal; 
+    overflow-wrap: break-word; 
+    word-break: break-word; 
+    max-width: 150px;
+    min-width: 80px; 
   }
 }
 @media (max-width: 900px) {
   .clinic-table {
-    overflow-x: auto; /* Enable horizontal scroll */
-    display: block; /* Ensure the table can scroll horizontally */
+    overflow-x: auto;
+    display: block;
     border-collapse: collapse;
   }
 
   .clinic-table th,
   .clinic-table td {
-    white-space: normal; /* Allow text to wrap */
-    overflow-wrap: break-word; /* Break long words to fit within the cell */
-    word-break: break-word; /* Additional support for breaking words */
-    max-width: 150px; /* Optional: Set a reasonable max-width for cells */
-    min-width: 80px; /* Optional: Ensure cells don’t collapse too small */
-  }
-  .icon-buttondelete-unsubscribe {
-    background-color: rgb(247, 0, 152);
-    border-color: rgb(247, 0, 152);
-    color: white;
-    border-radius: 10px;
-    padding: 5px;
-    font-size: 10px; /* Adjust font size for smaller screens */  
+    white-space: normal; 
+    overflow-wrap: break-word;
+    word-break: break-word; 
+    max-width: 150px; 
+    min-width: 80px; 
   }
 }
