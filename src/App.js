@@ -36,6 +36,22 @@ const Layout = ({ children }) => {
   );
 };
 
+const ErrorBoundary = ({ children }) => {
+  try {
+    return children;
+  } catch (error) {
+    console.error('Error in component:', error);
+    return <div>Something went wrong.</div>;
+  }
+};
+<Route
+  path="/PetOwnerHome"
+  element={
+    <ErrorBoundary>
+      <PetOwnerHome />
+    </ErrorBoundary>
+  }
+/>
 function App() {
   console.log("App.jsx rendered");
 

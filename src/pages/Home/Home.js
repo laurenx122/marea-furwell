@@ -2,23 +2,37 @@ import React, { useState, useRef, useEffect } from 'react';
 import './Home.css';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../../components/Footer/Footer';
-
+import Mobile_Footer from '../../components/Footer/Mobile_Footer';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { auth } from '../../firebase';
+import { auth, db } from '../../firebase';
+import { doc, getDoc, collection, query, where, onSnapshot, updateDoc } from 'firebase/firestore';
+
 
 const Home = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [paragraphVisible, setParagraphVisible] = useState(false);
     const [buttonsVisible, setButtonsVisible] = useState(false);
     const [locationVisible, setLocationVisible] = useState(false);
-
     const [searchInputValue, setSearchInputValue] = useState('');
     const [locateMeVisible, setLocateMeVisible] = useState(true);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [userType, setUserType] = useState(null);
+    const [isLoadingUser, setIsLoadingUser] = useState(true); 
+    const [unreadNotifications, setUnreadNotifications] = useState(false);
+    const [activePanel, setActivePanel] = useState('home');
+    const [notifications, setNotifications] = useState([]);
+    const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+    const [isVeterinarian, setIsVeterinarian] = useState(false);
+
     const mapRef = useRef(null);
     const searchInputRef = useRef(null);
-
     const navigate = useNavigate();
+
+    const DEFAULT_OWNER_IMAGE = "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png";
+
+    
     const handleFindClinicClick = () => {
         window.scrollTo(0, 0);
         navigate('/FindClinic');
@@ -32,13 +46,8 @@ const Home = () => {
         navigate('/ClinicSubscribe');
     };
 
-   /* const handleSearchClick = () => {
-        window.scrollTo(0, 0);
-        navigate('/ClinicLocator', { state: { searchQuery: searchInputValue } });
-    };*/
-
-     // Handle search (now triggered by form submission or clicking search icon)
-     const handleSearch = (e) => {
+    
+    const handleSearch = (e) => {
         if (e) e.preventDefault();
         if (searchInputValue.trim()) {
             window.scrollTo(0, 0);
@@ -46,14 +55,42 @@ const Home = () => {
         }
     };
 
+   
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            setIsLoggedIn(!!user); // Set isLoggedIn to true if user exists, false otherwise
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
+            setIsLoggedIn(!!user);
+            if (user) {
+                try {
+                    const userDocRef = doc(db, 'users', user.uid);
+                    const userDoc = await getDoc(userDocRef);
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        setUserType(userData.Type || null);
+                        setIsVeterinarian(userData.Type === 'Veterinarian');
+                    } else {
+                        console.error('User document not found');
+                        setUserType(null);
+                    }
+                } catch (error) {
+                    console.error('Error fetching user type:', error);
+                    setUserType(null);
+                }
+            } else {
+                setUserType(null);
+            }
+            setIsLoadingUser(false);
         });
-        return () => unsubscribe(); // Cleanup subscription on unmount
+        return () => unsubscribe();
     }, []);
+
+   
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     
-    // Scroll event listener to trigger animations when elements come into view
     useEffect(() => {
         const handleScroll = () => {
             const homeText = document.getElementById('home-text');
@@ -80,7 +117,7 @@ const Home = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Locate me functionality
+   
     const handleLocateMeClick = () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -93,35 +130,156 @@ const Home = () => {
                             setSearchInputValue(data.display_name);
                             setLocateMeVisible(false);
                         } else {
-                            alert("Address not found.");
+                            alert('Address not found.');
                         }
                     } catch (error) {
-                        console.error("Error fetching address:", error);
-                        alert("Unable to retrieve address.");
+                        console.error('Error fetching address:', error);
+                        alert('Unable to retrieve address.');
                     }
                 },
                 (error) => {
-                    console.error("Error getting location:", error);
-                    alert("Unable to retrieve your location.");
+                    console.error('Error getting location:', error);
+                    alert('Unable to retrieve your location.');
                 }
             );
         } else {
-            alert("Geolocation is not supported by this browser.");
+            alert('Geolocation is not supported by this browser.');
         }
     };
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     const handleSearchIconClick = () => {
         handleSearch();
     };
 
-    //chatbase script
+ 
     useEffect(() => {
+        setLocateMeVisible(!searchInputValue);
+    }, [searchInputValue]);
+
+   
+    useEffect(() => {
+        if (!auth.currentUser || userType !== 'PetOwner') return;
+
+        const q = query(
+            collection(db, 'notifications'),
+            where('ownerId', '==', `users/${auth.currentUser.uid}`),
+            where('type', 'in', [
+                'appointment_accepted',
+                'appointment_reminder',
+                'appointment_day_of',
+                'cancellation_approved',
+                'cancellation_declined',
+                'reschedule_approved',
+                'reschedule_declined',
+            ]),
+            where('removeViewPetOwner', '==', false)
+        );
+
+        const unsubscribe = onSnapshot(
+            q,
+            async (snapshot) => {
+                try {
+                    const notificationsList = await Promise.all(
+                        snapshot.docs.map(async (docSnap) => {
+                            const data = docSnap.data();
+                            try {
+                                const clinicDoc = await getDoc(doc(db, 'clinics', data.clinicId));
+                                const appointmentDoc = await getDoc(doc(db, 'appointments', data.appointmentId));
+                                return {
+                                    id: docSnap.id,
+                                    clinicProfileImageURL: clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE,
+                                    clinicName: clinicDoc.exists() ? clinicDoc.data().clinicName : 'Unknown Clinic',
+                                    dateofAppointment: appointmentDoc.exists() ? appointmentDoc.data().dateofAppointment.toDate() : null,
+                                    hasPetOwnerOpened: data.hasPetOwnerOpened || false,
+                                    message: data.message,
+                                    dateCreated: data.dateCreated ? data.dateCreated.toDate() : new Date(),
+                                    type: data.type,
+                                };
+                            } catch (error) {
+                                console.error(`Error processing notification ${docSnap.id}:`, error);
+                                return null;
+                            }
+                        })
+                    );
+
+                    const filteredNotifications = notificationsList
+                        .filter((n) => n !== null)
+                        .sort((a, b) => b.dateCreated - a.dateCreated);
+
+                    setNotifications(filteredNotifications);
+                    setUnreadNotifications(filteredNotifications.some((n) => !n.hasPetOwnerOpened));
+                } catch (error) {
+                    console.error('Error fetching notifications:', error);
+                    setNotifications([]);
+                    setUnreadNotifications(false);
+                }
+            },
+            (error) => {
+                console.error('Error listening to notifications:', error);
+                setNotifications([]);
+                setUnreadNotifications(false);
+            }
+        );
+
+        return () => unsubscribe();
+    }, [auth.currentUser, userType]);
+
+    const markNotificationAsRead = async (notificationId) => {
+        try {
+            const notificationRef = doc(db, 'notifications', notificationId);
+            await updateDoc(notificationRef, {
+                hasPetOwnerOpened: true,
+                status: 'read',
+            });
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
+    };
+
+   
+    const handleNotificationClick = async () => {
+        try {
+            setShowNotificationsModal(true);
+            if (unreadNotifications) {
+                const unreadNotificationsList = notifications.filter((n) => !n.hasPetOwnerOpened);
+                for (const notification of unreadNotificationsList) {
+                    await markNotificationAsRead(notification.id);
+                }
+                setNotifications(notifications.map((n) => ({ ...n, hasPetOwnerOpened: true })));
+                setUnreadNotifications(false);
+            }
+        } catch (error) {
+            console.error('Error in handleNotificationClick:', error);
+        }
+    };
+
+    const handleAccountClick = () => {
+        console.log('Account icon clicked, navigating to PetOwnerHome with petDetails panel');
+        navigate('/PetOwnerHome', { state: { activePanel: 'petDetails' } });
+    };
+
+    
+    const formatDate = (dateValue) => {
+        if (!dateValue) return 'N/A';
+        let date = dateValue instanceof Date ? dateValue : dateValue.toDate();
+        return date.toLocaleString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+        }).replace(',', ',');
+    };
+
+
+     //chatbase script
+     useEffect(() => {
         setLocateMeVisible(!searchInputValue);
     }, [searchInputValue]);
     useEffect(() => {
         try {
-            if (!isLoggedIn &&!document.getElementById('cx9lMXi2OqAvrfn32yeTs')) { // Only load if not logged in
+            if (!isLoggedIn &&!document.getElementById('cx9lMXi2OqAvrfn32yeTs')) { 
                 const script = document.createElement('script');
                 script.src = 'https://www.chatbase.co/embed.min.js';
                 script.id = 'cx9lMXi2OqAvrfn32yeTs';
@@ -231,22 +389,120 @@ const Home = () => {
                                     alt="Locate Me"
                                     className="locate-me-icon"
                                     onClick={(e) => {
-                                        e.stopPropagation(); // Prevent triggering search
+                                        e.stopPropagation();
                                         handleLocateMeClick();
                                     }}
                                 />
                             )}
                         </div>
-                        {/* Hidden submit button for form submission */}
                         <button type="submit" className="search-button">Search</button>
                     </form>
                 </div>
             </section>
 
-            <Footer />
+            {/* Notifications Modal */}
+            {showNotificationsModal && (
+                <div className="modal-overlay-p">
+                    <div className="modal-content-p notifications-modal-p">
+                        <span className="close-button-p" onClick={() => setShowNotificationsModal(false)}>
+                            ×
+                        </span>
+                        <h2>Notifications</h2>
+                        {notifications.length > 0 ? (
+                            <div className="notifications-list-p">
+                                {notifications.map((notification) => (
+                                    <div
+                                        key={notification.id}
+                                        className={`notification-item-p ${notification.hasPetOwnerOpened ? 'read' : 'unread'}`}
+                                        onClick={() => !notification.hasPetOwnerOpened && markNotificationAsRead(notification.id)}
+                                    >
+                                        <img
+                                            src={notification.clinicProfileImageURL || DEFAULT_OWNER_IMAGE}
+                                            alt="Clinic"
+                                            className="notification-clinic-img-p"
+                                        />
+                                        <div className="notification-details-p">
+                                            <p>
+                                                {notification.type === 'appointment_accepted' && <strong>Appointment Accepted: </strong>}
+                                                {notification.type === 'appointment_reminder' && <strong>Appointment Reminder: </strong>}
+                                                {notification.type === 'appointment_day_of' && <strong>Day of Appointment: </strong>}
+                                                {notification.type === 'cancellation_approved' && <strong>Cancellation Approved: </strong>}
+                                                {notification.type === 'cancellation_declined' && <strong>Cancellation Declined: </strong>}
+                                                {notification.type === 'reschedule_approved' && <strong>Reschedule Approved: </strong>}
+                                                {notification.type === 'reschedule_declined' && <strong>Reschedule Declined: </strong>}
+                                                {notification.message}
+                                            </p>
+                                            <span className="notification-timestamp-p">
+                                                Notified on: {formatDate(notification.dateCreated)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p>No notifications available.</p>
+                        )}
+                        <div className="modal-actions-p">
+                            <button
+                                className="modal-close-btn-p"
+                                onClick={() => setShowNotificationsModal(false)}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Conditional Footer Rendering */}
+            {isLoggedIn && isMobile && !isLoadingUser ? (
+                userType === 'Clinic' ? (
+                    <Mobile_Footer
+                        onAccountClick={handleAccountClick}
+                        setActivePanel={setActivePanel}
+                        isVetClinic={true}
+                        isVeterinarian={false}
+                        isPetOwner={false}
+                    />
+                ) : userType === 'PetOwner' ? (
+                    <Mobile_Footer
+                        onNotificationClick={handleNotificationClick}
+                        onAccountClick={handleAccountClick}
+                        activePanel={activePanel}
+                        unreadNotifications={unreadNotifications}
+                        setActivePanel={setActivePanel}
+                        isVeterinarian={false}
+                        isVetClinic={false}
+                        isPetOwner={true}
+                    />
+                ) : userType === 'Veterinarian' ? (
+                    <Mobile_Footer
+                        onNotificationClick={handleNotificationClick}
+                        onAccountClick={handleAccountClick}
+                        activePanel={activePanel}
+                        unreadNotifications={unreadNotifications}
+                        isVeterinarian={true}
+                        isVetClinic={false}
+                        isPetOwner={false}
+                        setActivePanel={setActivePanel}
+                    />
+                ) : (
+                    <Mobile_Footer
+                        onNotificationClick={() => console.log('Default notification click handler')}
+                        onAccountClick={() => console.log('Default account click handler')}
+                        setActivePanel={setActivePanel}
+                        isVeterinarian={false}
+                        isVetClinic={false}
+                        isPetOwner={false}
+                        activePanel={activePanel}
+                        unreadNotifications={false}
+                    />
+                )
+            ) : (
+                <Footer />
+            )}
         </div>
     );
 };
 
 export default Home;
-
