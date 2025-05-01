@@ -350,30 +350,70 @@ const ClinicHome = () => {
   };
 
   const formatDOB = (dateValue) => {
-    if (!dateValue) return "N/A";
-    let dob;
-    if (dateValue && typeof dateValue.toDate === "function") {
-      dob = dateValue.toDate();
-    } else if (typeof dateValue === "string") {
-      dob = new Date(dateValue);
-    } else {
-      return "N/A";
-    }
+  // Return default if no dateValue is provided
+  if (!dateValue) return "N/A";
 
-    const formattedDate = dob.toLocaleString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+  let dob;
+  // Handle Firestore Timestamp
+  if (dateValue && typeof dateValue.toDate === "function") {
+    dob = dateValue.toDate();
+  }
+  // Handle string date
+  else if (typeof dateValue === "string") {
+    dob = new Date(dateValue);
+  }
+  // Handle invalid or unsupported types
+  else {
+    return "N/A";
+  }
 
-    const today = new Date("2025-03-23");
-    let age = today.getFullYear() - dob.getFullYear();
-    const monthDiff = today.getMonth() - dob.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-      age--;
-    }
+  // Check if the date is valid
+  if (isNaN(dob.getTime())) {
+    return "N/A";
+  }
 
-    return `${formattedDate} (${age})`;
+  // Format the date of birth
+  const formattedDate = dob.toLocaleString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  // Calculate age in decimal years
+  const today = new Date("2025-03-23"); 
+  const timeDiff = today.getTime() - dob.getTime(); 
+  const ageYears = timeDiff / (1000 * 60 * 60 * 24 * 365.25); // Convert to years, accounting for leap years
+
+  // Format age with one decimal place
+  const ageFormatted = Math.abs(ageYears).toFixed(1); 
+  const ageString = `${ageFormatted} ${ageFormatted === "1.0" ? "yr" : "yrs"}`;
+
+  return `${formattedDate} (${ageString})`;
+
+    // if (!dateValue) return "N/A";
+    // let dob;
+    // if (dateValue && typeof dateValue.toDate === "function") {
+    //   dob = dateValue.toDate();
+    // } else if (typeof dateValue === "string") {
+    //   dob = new Date(dateValue);
+    // } else {
+    //   return "N/A";
+    // }
+
+    // const formattedDate = dob.toLocaleString("en-US", {
+    //   month: "long",
+    //   day: "numeric",
+    //   year: "numeric",
+    // });
+
+    // const today = new Date("2025-03-23");
+    // let age = today.getFullYear() - dob.getFullYear();
+    // const monthDiff = today.getMonth() - dob.getMonth();
+    // if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    //   age--;
+    // }
+
+    // return `${formattedDate} (${age})`;
   };
 
   const handleImageChange = (e) => {
