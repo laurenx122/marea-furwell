@@ -16,6 +16,8 @@ const Mobile_Footer = ({
   const location = useLocation();
 
   const isFindClinicOrClinicDetails = location.pathname === '/FindClinic' || location.pathname === '/ClinicDetails';
+  const isHome = location.pathname === '/Home';
+
 
   console.log('Mobile_Footer rendered with props:', {
     onNotificationClick: typeof onNotificationClick,
@@ -87,6 +89,19 @@ const Mobile_Footer = ({
               <FaEnvelope />
               <p>Dashboard</p>
             </button>
+          </>
+        ) : isHome ? (
+          <>
+            {!isVeterinarian && !isVetClinic && (
+              <button className="footer-btn-p" onClick={handleBookNowClick}>
+                <FaPlus />
+              </button>
+            )}
+            <button className="footer-btn-p" onClick={handleDashboardClick}>
+              <FaEnvelope />
+              <p>Dashboard</p>
+            </button>
+
           </>
         ) : (
           <>
