@@ -82,7 +82,7 @@ const VeterinaryHome = () => {
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(""); 
+  const [searchQuery, setSearchQuery] = useState("");
 
   const navigate = useNavigate();
   const UPLOAD_PRESET = "furwell";
@@ -93,7 +93,7 @@ const VeterinaryHome = () => {
 
   useEffect(() => {
     let unsubscribe;
-  
+
     const initializeComponent = async () => {
       setLoading(true);
       unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -103,48 +103,48 @@ const VeterinaryHome = () => {
           } catch (error) {
             console.error("Error fetching vet info:", error);
           }
-        } else if (!isSigningOut){
+        } else if (!isSigningOut) {
           navigate("/Home");
           setLoading(false);
         }
       });
     };
-  
+
     initializeComponent();
-  
+
     return () => {
       if (unsubscribe) unsubscribe();
     };
   }, [navigate, isSigningOut]);
-  
+
   //useEffect for OutsideClicks
   useEffect(() => {
     const handleOutsideClick = (e) => {
       const sidebar = document.querySelector(".sidebar-v");
       const hamburgerButton = e.target.closest('.mobile-header-v button');
-      
+
       if (
         isSidebarOpen &&
         sidebar &&
         !sidebar.contains(e.target) &&
-        !hamburgerButton 
+        !hamburgerButton
       ) {
         setIsSidebarOpen(false);
       }
-  
+
       const profileModal = document.querySelector(".profile-modal-v");
       const headerProfileImg = e.target.closest(".profile-navbar-v");
-  
+
       if (
         isProfileModalOpen &&
         profileModal &&
         !profileModal.contains(e.target) &&
-        !headerProfileImg 
+        !headerProfileImg
       ) {
         setIsProfileModalOpen(false);
       }
     };
-  
+
     document.addEventListener('click', handleOutsideClick);
     return () => {
       document.removeEventListener('click', handleOutsideClick);
@@ -165,15 +165,15 @@ const VeterinaryHome = () => {
           setLoading(false);
         }
       };
-  
+
       fetchData();
-  
+
       // Set up interval for notifications
       const notificationInterval = setInterval(() => {
         console.log("Polling notifications for clinicId:", vetInfo.clinicId);
         fetchNotifications();
       }, 300000); // 5 minutes
-  
+
       return () => clearInterval(notificationInterval);
     }
   }, [vetInfo?.clinicId]);
@@ -194,13 +194,57 @@ const VeterinaryHome = () => {
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return "N/A";
-    const dob = dateOfBirth.toDate ? dateOfBirth.toDate() : new Date(dateOfBirth);
-    if (isNaN(dob.getTime())) return "N/A";
-    const today = new Date("2025-03-24");
-    let age = today.getFullYear() - dob.getFullYear();
-    const monthDiff = today.getMonth() - dob.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
-    return age >= 0 ? `${age}` : "N/A";
+
+    let dob;
+
+    if (dateOfBirth && typeof dateOfBirth.toDate === "function") {
+      dob = dateOfBirth.toDate();
+    } else if (typeof dateOfBirth === "string") {
+      dob = new Date(dateOfBirth);
+    } else if (dateOfBirth instanceof Date) {
+      dob = dateOfBirth;
+    } else {
+      return "N/A";
+    }
+
+    if (isNaN(dob.getTime())) {
+      return "N/A";
+    }
+
+    // Format the date of birth
+    const formattedDate = dob.toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    // Calculate age
+    const today = new Date("2025-03-23"); // Fixed date for calculation
+    const timeDiff = today.getTime() - dob.getTime();
+    const ageYears = timeDiff / (1000 * 60 * 60 * 24 * 365.25);
+
+    let ageFormatted;
+    let ageString;
+
+    if (Math.abs(ageYears) < 1) {
+      const monthsDiff = (today.getFullYear() - dob.getFullYear()) * 12 + (today.getMonth() - dob.getMonth());
+      ageFormatted = Math.abs(monthsDiff).toFixed(0);
+      ageString = `${ageFormatted} ${ageFormatted === "1" ? "month" : "months"}`;
+    } else {
+      ageFormatted = Math.abs(ageYears).toFixed(1);
+      ageString = `${ageFormatted} ${Math.abs(ageYears) === 1 ? "yr" : "yrs"}`; 
+    }
+
+    return `${formattedDate} (${ageString})`;
+
+    // if (!dateOfBirth) return "N/A";
+    // const dob = dateOfBirth.toDate ? dateOfBirth.toDate() : new Date(dateOfBirth);
+    // if (isNaN(dob.getTime())) return "N/A";
+    // const today = new Date("2025-03-24");
+    // let age = today.getFullYear() - dob.getFullYear();
+    // const monthDiff = today.getMonth() - dob.getMonth();
+    // if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+    // return age >= 0 ? `${age}` : "N/A";
   };
 
   const parseTime = (timeStr) => {
@@ -490,16 +534,16 @@ const VeterinaryHome = () => {
       setIsSigningOut(true);
       await signOut(getAuth());
       setIsSignOutConfirmOpen(false);
-      setIsSignOutSuccessOpen(true); 
+      setIsSignOutSuccessOpen(true);
       setTimeout(() => {
         setIsSignOutSuccessOpen(false);
-        setIsSigningOut(false); 
+        setIsSigningOut(false);
         navigate("/Home");
       }, 2000);
     } catch (error) {
       console.error("Error signing out:", error);
       setIsSignOutConfirmOpen(false);
-      setIsSigningOut(false); 
+      setIsSigningOut(false);
     }
   };
 
@@ -509,19 +553,19 @@ const VeterinaryHome = () => {
         const appointmentRef = doc(db, "appointments", selectedAppointment.Id);
         const appointmentDoc = await getDoc(appointmentRef);
         if (!appointmentDoc.exists()) throw new Error("Appointment not found");
-  
+
         await updateDoc(appointmentRef, {
           status: "Completed",
           diagnosis: diagnosis || "No diagnosis",
           treatment: treatment || "No treatment",
           completionRemark: completionRemark || "No completion remark",
         });
-        
+
         await fetchAppointments();
 
-        setAppointments(appointments.map(appt => 
-          appt.Id === selectedAppointment.Id 
-            ? { 
+        setAppointments(appointments.map(appt =>
+          appt.Id === selectedAppointment.Id
+            ? {
               ...appt,
               status: "Completed",
               diagnosis: diagnosis || "No diagnosis",
@@ -530,7 +574,7 @@ const VeterinaryHome = () => {
             }
             : appt
         ));
-  
+
         setShowRemarksModal(false);
         setShowDetailsModal(false);
         setCompletionRemark("");
@@ -538,9 +582,9 @@ const VeterinaryHome = () => {
         setTreatment("");
         setSelectedAppointment(null);
         setIsAppointmentCompletedOpen(true);
-        setTimeout(()=>{
+        setTimeout(() => {
           setIsAppointmentCompletedOpen(false);
-        },2000);
+        }, 2000);
       } catch (error) {
         console.error("Error completing appointment:", error);
         alert("Failed to complete the appointment. Please try again.");
@@ -570,102 +614,102 @@ const VeterinaryHome = () => {
   // }, [vetInfo?.clinicId]);
 
   return (
-      <div className="vet-container-v">
-        <div className="mobile-header-v">
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-            ☰ {/* Hamburger icon */}
-          </button>
-          {vetInfo && (
-            <div
-              className="profile-navbar-v"
-              onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
-            >
+    <div className="vet-container-v">
+      <div className="mobile-header-v">
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          ☰ {/* Hamburger icon */}
+        </button>
+        {vetInfo && (
+          <div
+            className="profile-navbar-v"
+            onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
+          >
+            <img
+              src={vetInfo.profileImageURL || DEFAULT_VET_IMAGE}
+              alt="Vet Profile"
+              className="navbar-profile-img-v"
+            />
+          </div>
+        )}
+      </div>
+      <div className={`sidebar-v ${isSidebarOpen ? "open" : ""}`}>
+        {vetInfo && (
+          <div className="vet-sidebar-panel-v">
+            <div className="vet-img-container-v">
               <img
                 src={vetInfo.profileImageURL || DEFAULT_VET_IMAGE}
                 alt="Vet Profile"
-                className="navbar-profile-img-v"
+                className="veterinarian-profile-image-v"
+              />
+              <label htmlFor="vet-image-upload-v" className="edit-icon-v">
+                <FaCamera />
+              </label>
+              <input
+                type="file"
+                id="vet-image-upload-v"
+                accept="image/jpeg, image/jpg, image/png"
+                onChange={handleVetImageChange}
+                style={{ display: "none" }}
               />
             </div>
-          )}
-        </div>
-        <div className={`sidebar-v ${isSidebarOpen ? "open" : ""}`}>
-          {vetInfo && (
-            <div className="vet-sidebar-panel-v">
-              <div className="vet-img-container-v">
-                <img
-                  src={vetInfo.profileImageURL || DEFAULT_VET_IMAGE}
-                  alt="Vet Profile"
-                  className="veterinarian-profile-image-v"
-                />
-                <label htmlFor="vet-image-upload-v" className="edit-icon-v">
-                  <FaCamera />
-                </label>
-                <input
-                  type="file"
-                  id="vet-image-upload-v"
-                  accept="image/jpeg, image/jpg, image/png"
-                  onChange={handleVetImageChange}
-                  style={{ display: "none" }}
-                />
-              </div>
-              <div className="vet-notification-wrapper">
-                <button
-                  className={`vet-button ${activePanel === "vetInfo" ? "active" : ""}`}
-                  onClick={() => {
-                    setActivePanel("vetInfo");
-                    setIsSidebarOpen(false);
-                  }}
-                >
-                  <FaUser className="sidebar-icon-v" />
-                  {vetInfo.FirstName} {vetInfo.LastName}
-                </button>
-                <button className="notification-btn-v" onClick={handleNotificationClick}>
-                  <div className="notification-icon-container-v">
-                    <FaBell className="bell-notif" />
-                    {unreadNotifications && <span className="notification-dot-v"></span>}
-                  </div>
-                </button>
-              </div>
+            <div className="vet-notification-wrapper">
+              <button
+                className={`vet-button ${activePanel === "vetInfo" ? "active" : ""}`}
+                onClick={() => {
+                  setActivePanel("vetInfo");
+                  setIsSidebarOpen(false);
+                }}
+              >
+                <FaUser className="sidebar-icon-v" />
+                {vetInfo.FirstName} {vetInfo.LastName}
+              </button>
+              <button className="notification-btn-v" onClick={handleNotificationClick}>
+                <div className="notification-icon-container-v">
+                  <FaBell className="bell-notif" />
+                  {unreadNotifications && <span className="notification-dot-v"></span>}
+                </div>
+              </button>
             </div>
-          )}
-          <div className="sidebar-buttons-v">
-            <button
-              className={`sidebar-btn-v ${activePanel === "appointments" ? "active" : ""}`}
-              onClick={() => {
-                setActivePanel("appointments");
-                setIsSidebarOpen(false);
-              }}
-            >
-              <FaCalendarAlt className="sidebar-icon-v" />
-              Upcoming Appointments
-            </button>
-            <button
-              className={`sidebar-btn-v ${activePanel === "schedule" ? "active" : ""}`}
-              onClick={() => {
-                setActivePanel("schedule");
-                setIsSidebarOpen(false);
-              }}
-            >
-              <FaClock className="sidebar-icon-v" />
-              Schedule
-            </button>
-            <button
-              className={`sidebar-btn-v ${activePanel === "healthRecords" ? "active" : ""}`}
-              onClick={() => {
-                setActivePanel("healthRecords");
-                setIsSidebarOpen(false);
-              }}
-            >
-              <FaFileMedical className="sidebar-icon-v" />
-              Health Records
-            </button>
           </div>
-          <button className="signout-btn-v" onClick={handleSignOut}>
-              <FaSignOutAlt className="sidebar-icon-v" />
-              Sign Out
-            </button>
+        )}
+        <div className="sidebar-buttons-v">
+          <button
+            className={`sidebar-btn-v ${activePanel === "appointments" ? "active" : ""}`}
+            onClick={() => {
+              setActivePanel("appointments");
+              setIsSidebarOpen(false);
+            }}
+          >
+            <FaCalendarAlt className="sidebar-icon-v" />
+            Upcoming Appointments
+          </button>
+          <button
+            className={`sidebar-btn-v ${activePanel === "schedule" ? "active" : ""}`}
+            onClick={() => {
+              setActivePanel("schedule");
+              setIsSidebarOpen(false);
+            }}
+          >
+            <FaClock className="sidebar-icon-v" />
+            Schedule
+          </button>
+          <button
+            className={`sidebar-btn-v ${activePanel === "healthRecords" ? "active" : ""}`}
+            onClick={() => {
+              setActivePanel("healthRecords");
+              setIsSidebarOpen(false);
+            }}
+          >
+            <FaFileMedical className="sidebar-icon-v" />
+            Health Records
+          </button>
         </div>
-    <div className="content-v">
+        <button className="signout-btn-v" onClick={handleSignOut}>
+          <FaSignOutAlt className="sidebar-icon-v" />
+          Sign Out
+        </button>
+      </div>
+      <div className="content-v">
         <div className="panel-container-v">
           {activePanel === "vetInfo" && vetInfo && (
             <div className="panel-v vet-info-panel-v">
@@ -763,14 +807,14 @@ const VeterinaryHome = () => {
           {activePanel === "healthRecords" && (
             <div className="panel-v health-records-panel-v">
               <h3>Health Records</h3>
-                <div className="search-bar-container-v">
-                  <input
-                    type="text"
-                    placeholder="Search records..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
+              <div className="search-bar-container-v">
+                <input
+                  type="text"
+                  placeholder="Search records..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
               {loading ? (
                 <p>Loading health records...</p>
               ) : (
@@ -1058,33 +1102,33 @@ const VeterinaryHome = () => {
       {isProfileModalOpen && vetInfo && (
         <div
           className="profile-modal-v"
-          onClick={() => setIsProfileModalOpen(false)} 
+          onClick={() => setIsProfileModalOpen(false)}
         >
           <div className="profile-modal-content-v">
-              <img
-                src={vetInfo.profileImageURL || DEFAULT_VET_IMAGE}
-                alt="Vet Profile"
-                className="profile-modal-img-v"
-              />
-              <div className="profile-modal-info-v">
-                <p
-                  className="profile-modal-name-v"
-                  onClick={() => {
-                    setActivePanel("vetInfo"); 
-                    setIsProfileModalOpen(false); 
-                    setIsSidebarOpen(false); 
-                  }}
-                  style={{ cursor: "pointer" }} 
-                >
-                  {vetInfo.FirstName} {vetInfo.LastName}
-                </p>
-                <button className="signout-btn-modal-v" onClick={handleSignOut}>
-                  <FaSignOutAlt className="sidebar-icon-v" />
-                  Sign Out
-                </button>
-              </div>
+            <img
+              src={vetInfo.profileImageURL || DEFAULT_VET_IMAGE}
+              alt="Vet Profile"
+              className="profile-modal-img-v"
+            />
+            <div className="profile-modal-info-v">
+              <p
+                className="profile-modal-name-v"
+                onClick={() => {
+                  setActivePanel("vetInfo");
+                  setIsProfileModalOpen(false);
+                  setIsSidebarOpen(false);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                {vetInfo.FirstName} {vetInfo.LastName}
+              </p>
+              <button className="signout-btn-modal-v" onClick={handleSignOut}>
+                <FaSignOutAlt className="sidebar-icon-v" />
+                Sign Out
+              </button>
             </div>
           </div>
+        </div>
       )}
 
       {showDetailsModal && appointmentDetails && (
@@ -1202,12 +1246,12 @@ const VeterinaryHome = () => {
       )}
 
       <Mobile_Footer
-          onNotificationClick={handleNotificationClick}
-          onAccountClick={handleAccountClick}
-          activePanel={activePanel}
-          unreadNotifications={unreadNotifications}
-          isVeterinarian={true}
-          setActivePanel={setActivePanel}
+        onNotificationClick={handleNotificationClick}
+        onAccountClick={handleAccountClick}
+        activePanel={activePanel}
+        unreadNotifications={unreadNotifications}
+        isVeterinarian={true}
+        setActivePanel={setActivePanel}
       />
     </div>
   );
