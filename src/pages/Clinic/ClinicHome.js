@@ -820,17 +820,6 @@ const ClinicHome = () => {
       setEmailError(`Failed to ${action} appointment or send email: ${error.message}`);
     }
   };
-
-  const calculateAge = (dateOfBirth) => {
-    if (!dateOfBirth) return "N/A";
-    const dob = dateOfBirth.toDate ? dateOfBirth.toDate() : new Date(dateOfBirth);
-    if (isNaN(dob.getTime())) return "N/A";
-    const today = new Date("2025-03-24");
-    let age = today.getFullYear() - dob.getFullYear();
-    const monthDiff = today.getMonth() - dob.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
-    return age >= 0 ? `${age}` : "N/A";
-  };
   const handleAction = (action, appointmentId) => {
     setShowConfirmModal({ open: true, action: action, appointmentId: appointmentId });
   };
@@ -1541,6 +1530,7 @@ const ClinicHome = () => {
       setShowAppointmentModal(true);
     }
   };
+  
 
   const closeAppointmentModal = () => {
     setShowAppointmentModal(false);
@@ -1555,7 +1545,41 @@ const ClinicHome = () => {
   const onCellClick = (args) => {
     args.cancel = true; // Prevent adding new events
   };
-
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return "N/A";
+  
+    const dob = dateOfBirth.toDate ? dateOfBirth.toDate() : new Date(dateOfBirth);
+    if (isNaN(dob.getTime())) return "N/A";
+  
+    const today = new Date();
+    let yearsDiff = today.getFullYear() - dob.getFullYear();
+    const monthsDiff = today.getMonth() - dob.getMonth();
+    const daysDiff = today.getDate() - dob.getDate();
+  
+    // Adjust the year difference if the current date is before the birthdate anniversary
+    if (monthsDiff < 0 || (monthsDiff === 0 && daysDiff < 0)) {
+      yearsDiff--;
+    }
+  
+    // If the age is less than 1 year, calculate in months, weeks, or days
+    if (yearsDiff === 0) {
+      const totalMonths = (today.getFullYear() - dob.getFullYear()) * 12 + (today.getMonth() - dob.getMonth());
+      if (totalMonths > 0) {
+        return `${totalMonths} ${totalMonths === 1 ? "month" : "months"}`;
+      } else {
+        const totalDays = Math.floor((today - dob) / (1000 * 60 * 60 * 24));
+        if (totalDays >= 7) {
+          const totalWeeks = Math.floor(totalDays / 7);
+          const remainingDays = totalDays % 7;
+          return `${totalWeeks} ${totalWeeks === 1 ? "week" : "weeks"}${remainingDays > 0 ? ` and ${remainingDays} ${remainingDays === 1 ? "day" : "days"}` : ""}`;
+        } else {
+          return `${totalDays} ${totalDays === 1 ? "day" : "days"}`;
+        }
+      }
+    }
+  
+    return `${yearsDiff} ${yearsDiff === 1 ? "year" : "years"}`;
+  };
   const fetchChartData = async () => {
     /*/try {
       setLoading(true);
