@@ -1507,9 +1507,32 @@ const ClinicHome = () => {
     setShowVetInfoModal(true);
   };
 
-  const handlePatientClick = (patient) => {
-    setSelectedPatient(patient);
-    setShowPatientModal(true);
+  // const handlePatientClick = (patient) => {
+  //   setSelectedPatient(patient);
+  //   setShowPatientModal(true);
+  // };
+  const handlePatientClick = async (patient) => {
+    try {
+      setSelectedPatient({ ...patient, ownerName: "Fetching..." }); // Set a placeholder while fetching
+  
+      if (patient.owner) {
+        const ownerDoc = await getDoc(patient.owner); // Fetch the owner's document
+        if (ownerDoc.exists()) {
+          const ownerData = ownerDoc.data();
+          const ownerName = `${ownerData.FirstName || "Unknown"} ${ownerData.LastName || "Owner"}`;
+          setSelectedPatient({ ...patient, ownerName }); // Update the state with the owner's name
+        } else {
+          setSelectedPatient({ ...patient, ownerName: "Unknown Owner" });
+        }
+      } else {
+        setSelectedPatient({ ...patient, ownerName: "No Owner Info" });
+      }
+  
+      setShowPatientModal(true); // Open the modal
+    } catch (error) {
+      console.error("Error fetching owner data:", error);
+      setSelectedPatient({ ...patient, ownerName: "Error Fetching Owner" });
+    }
   };
   const onEventClick = (args) => {
     const appointment = appointments.find((appt) => appt.Id === args.event.Id);
@@ -2567,121 +2590,6 @@ const ClinicHome = () => {
           )}
         </div>
       )}
-          {/* {activePanel === "analytics" && (
-            <div className="panel-c analytics-panel-c">
-              <h3>Clinic Analytics</h3>
-              {loading ? (
-                <p>Loading analytics...</p>
-              ) : (
-
-                
-                <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-                  
-                  <div style={{ width: "48%", height: "450px" }}>
-                    <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-                      Most Availed Service Types
-                    </h2>
-                    {serviceData.length > 0 ? (
-                      <ResponsivePie
-                        data={serviceData}
-                        margin={{ top: 40, right: 40, bottom: 40, left: 40 }} 
-                        innerRadius={0.5}
-                        padAngle={0.7}
-                        cornerRadius={3}
-                        activeOuterRadiusOffset={8}
-                        colors={{ scheme: "pastel1" }} 
-                        borderWidth={1}
-                        borderColor={{
-                          from: "color",
-                          modifiers: [["darker", 0.2]],
-                        }}
-                        arcLinkLabelsSkipAngle={10}
-                        arcLinkLabelsTextColor="#333333"
-                        arcLinkLabelsThickness={2}
-                        arcLinkLabelsColor={{ from: "color" }}
-                        arcLabelsSkipAngle={10}
-                        arcLabelsTextColor={{
-                          from: "color",
-                          modifiers: [["darker", 2]],
-                        }}
-                        arcLabel={(d) => d.data.formattedValue}
-                        tooltip={({ datum }) => (
-                          <div
-                            style={{
-                              padding: "12px 16px",
-                              color: "#333",
-                              background: "#fff",
-                              borderRadius: "2px",
-                              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
-                            }}
-                          >
-                            <strong>{datum.id}</strong>: {datum.value}
-                          </div>
-                        )}
-                      
-                      />
-                    ) : (
-                      <p style={{ textAlign: "center" }}>No service data available</p>
-                    )}
-                  </div>
-
-
-                  
-                  <div style={{ width: "48%", height: "450px" }}>
-                    <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-                      Days with Most Appointments
-                    </h2>
-                    {dayData.length > 0 ? (
-                      <ResponsivePie
-                        data={dayData}
-                        margin={{ top: 40, right: 40, bottom: 40, left: 40 }} 
-                        innerRadius={0.5}
-                        padAngle={0.7}
-                        cornerRadius={3}
-                        activeOuterRadiusOffset={8}
-                        colors={{ scheme: "red_purple" }}
-                        borderWidth={1}
-                        borderColor={{
-                          from: "color",
-                          modifiers: [["darker", 0.2]],
-                        }}
-                        arcLinkLabelsSkipAngle={10}
-                        arcLinkLabelsTextColor="#333333"
-                        arcLinkLabelsThickness={2}
-                        arcLinkLabelsColor={{ from: "color" }}
-                        arcLabelsSkipAngle={10}
-                        arcLabelsTextColor={{
-                          from: "color",
-                          modifiers: [["darker", 2]],
-                        }}
-                        arcLabel={(d) => d.data.formattedValue}
-                        tooltip={({ datum }) => (
-                          <div
-                            style={{
-                              padding: "12px 16px",
-                              color: "#333",
-                              background: "#fff",
-                              borderRadius: "2px",
-                              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
-                            }}
-                          >
-                            <strong>{datum.id}</strong>: {datum.value}
-                          </div>
-                        )}
-                      
-                      />
-                    ) : (
-                      <p style={{ textAlign: "center" }}>No appointment data available</p>
-                    )}
-                  </div>
-                </div>
-                
-              )}
-
-            </div>
-
-
-          )} */}
         </div>
       </div>
 
@@ -3199,6 +3107,12 @@ const ClinicHome = () => {
               <h2 className="modal-pet-name-c">{selectedPatient.petName}</h2>
               <div className="modal-pet-details-list-c">
                 {/* Using p tags for key-value pairs */}
+                <p className="modal-pet-detail-item-c">
+                  <span className="modal-pet-detail-label-c">Owner:</span>
+                  <span className="modal-pet-detail-value-c">
+                    {selectedPatient.ownerName || "Fetching..."}
+                  </span>
+                </p>
                 <p className="modal-pet-detail-item-c">
                   <span className="modal-pet-detail-label-c">Type:</span>
                   <span className="modal-pet-detail-value-c">{selectedPatient.Type || "N/A"}</span>
