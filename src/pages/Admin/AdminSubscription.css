@@ -152,7 +152,28 @@
   align-items: center;
   z-index: 1000;
 }
-
+.adminClinicApprovalModal-overlay button,
+.adminClinicRegistrationSuccessModal-overlay button {
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-align: center;
+  min-width: 100px;
+  width: auto;
+}
+.adminClinicApprovalModal-overlay .yess,
+.adminClinicRegistrationSuccessModal-overlay .yess {
+  background-color: #ff4081;
+  color: white;
+}
+.adminClinicApprovalModal-overlay .cancel-ad,
+.adminClinicRegistrationSuccessModal-overlay .cancel-ad {
+  background-color: #999;
+  color: white;
+}
 .adminClinicApprovalModal,
 .adminClinicRegistrationSuccessModal {
   background-color: white;
@@ -186,7 +207,14 @@
   flex-direction: column;
   align-items: center;
 }
-
+.adminClinicSubModal-buttons{
+  display: flex;
+  flex-direction: row;
+  gap: 10px; /* Space between buttons */
+  justify-content: center;
+  margin-top: 15px;
+  width: 100%;
+}
 /* Button container */
 .adminClinicApprovalModal-buttons{
   display: flex;

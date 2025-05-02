@@ -370,8 +370,11 @@ const ClinicDashboard = () => {
         <div className="adminClinicApprovalModal-overlay">
           <div className="adminClinicApprovalModal">
             <h2>Confirm Clinic Deletion</h2>
-            <button onClick={handleDeleteClinic}>Yes, Delete</button>
-            <button onClick={closeDeleteConfirmationModal}>Cancel</button>
+            <div className="adminClinicSubModal-buttons">
+            <button class="yess"onClick={handleDeleteClinic}>Yes, Delete</button>
+            <button class = "cancel-ad " onClick={closeDeleteConfirmationModal}>Cancel</button>
+          </div>
+
           </div>
         </div>
       )}
