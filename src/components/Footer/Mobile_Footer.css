@@ -9,20 +9,21 @@
     display: flex;
     padding: 0;
   }
-  
+
+
   .footer-mobile-p {
     display: flex;
     justify-content: space-around;
     align-items: center;
     padding: 10px 0;
     width: 100%;
-    background-color: #EDBFC6;
-    box-shadow: 4px 0 4px 0 #ff8c94;
-
+    background-color: #CDEDF6;
+    box-shadow: 0px 2px 2px 4px rgba(0, 0, 0, 0.1);
+  
   }
   
   .footer-btn-p {
-    color: #ff4081;
+    color: #3E6680;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -33,16 +34,16 @@
   }
   
   .footer-btn-p:hover {
-    color: #d81b60;
+    color: #19384c;
   }
-
+  
   .footer-btn-p p {
     font-size: 10px; 
     margin: 0;
   }
 
   .footer-btn-notif {
-    color: #ff4081;;
+    color: #3E6680;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -53,7 +54,7 @@
   }
   
   .footer-btn-notif:hover {
-    color: #f50057;
+    color: #19384c;
   }
 
   .footer-btn-notif p {
