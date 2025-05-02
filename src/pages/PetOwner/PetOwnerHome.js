@@ -7,7 +7,7 @@ import "react-calendar/dist/Calendar.css";
 import Calendar from "react-calendar";
 import { FaUser, FaCalendarAlt, FaFileMedical, FaHome, FaEnvelope, FaPlus, FaBell, FaSignOutAlt } from "react-icons/fa";
 import { MdPets } from "react-icons/md";
-import {getAuth, signOut} from "firebase/auth";
+import { getAuth, signOut } from "firebase/auth";
 
 import {
   collection,
@@ -19,7 +19,7 @@ import {
   serverTimestamp,
   getDoc,
   updateDoc,
-  deleteDoc,onSnapshot,
+  deleteDoc, onSnapshot,
 } from "firebase/firestore";
 import { FaCamera, FaTimes } from "react-icons/fa";
 import {
@@ -136,7 +136,7 @@ const PetOwnerHome = () => {
   const [unreadNotifications, setUnreadNotifications] = useState(false);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState(null);
-  
+
   const UPLOAD_PRESET = "furwell";
   const DEFAULT_PET_IMAGE = "https://images.vexels.com/content/235658/preview/dog-paw-icon-emblem-04b9f2.png";
   const DEFAULT_OWNER_IMAGE = "images/Pet Owner.jpg";
@@ -168,7 +168,7 @@ const PetOwnerHome = () => {
     let unsubscribeAuth;
     let unsubscribeNotifications;
     let notificationInterval;
-  
+
     const initializeComponent = async () => {
       setLoading(true);
       unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
@@ -185,12 +185,12 @@ const PetOwnerHome = () => {
           } finally {
             setLoading(false);
           }
-        } else if(!isSigningOut) {
+        } else if (!isSigningOut) {
           setLoading(false);
           navigate("/Home");
         }
       });
-  
+
       // Set up real-time notification listener
       const q = query(
         collection(db, "notifications"),
@@ -206,7 +206,7 @@ const PetOwnerHome = () => {
         ]),
         where("removeViewPetOwner", "==", false)
       );
-  
+
       unsubscribeNotifications = onSnapshot(
         q,
         async (snapshot) => {
@@ -228,12 +228,12 @@ const PetOwnerHome = () => {
                     type: data.type,
                     hasEmailSent: data.hasEmailSent || false,
                   };
-  
+
                   // Send email for new appointment_day_of notifications
                   if (notification.type === "appointment_day_of" && !notification.hasEmailSent && !sentEmails[notification.id]) {
                     await sendDayOfEmail(notification, appointmentDoc.data(), clinicDoc.data());
                   }
-  
+
                   return notification;
                 } catch (error) {
                   console.error(`Error processing notification ${docSnap.id}:`, error);
@@ -241,11 +241,11 @@ const PetOwnerHome = () => {
                 }
               })
             );
-  
+
             const filteredNotifications = notificationsList
               .filter((n) => n !== null)
               .sort((a, b) => b.dateCreated - a.dateCreated);
-  
+
             setNotifications(filteredNotifications);
             setUnreadNotifications(filteredNotifications.some((n) => !n.hasPetOwnerOpened));
           } catch (error) {
@@ -260,12 +260,12 @@ const PetOwnerHome = () => {
           setUnreadNotifications(false);
         }
       );
-  
+
       notificationInterval = setInterval(fetchNotifications, 300000);
     };
-  
+
     initializeComponent();
-  
+
     return () => {
       if (unsubscribeAuth) unsubscribeAuth();
       if (unsubscribeNotifications) unsubscribeNotifications();
@@ -274,95 +274,95 @@ const PetOwnerHome = () => {
   }, [navigate, sentEmails, auth.currentUser, isSigningOut]);
 
   // send email for day of apptmnt notif
-const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
-  const notifId = notification.id;
+  const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
+    const notifId = notification.id;
 
-  // If already sending or already sent, skip 
-  if (sendingEmails.current[notifId] || sentEmails[notifId]) {
-    console.log("Already sending email for:", notifId);
-    return;
-  }
+    // If already sending or already sent, skip 
+    if (sendingEmails.current[notifId] || sentEmails[notifId]) {
+      console.log("Already sending email for:", notifId);
+      return;
+    }
 
-  sendingEmails.current[notifId] = true;
+    sendingEmails.current[notifId] = true;
 
-  try {
-    const apptDate = appointmentData.dateofAppointment?.toDate();
-    if (!apptDate) return;
+    try {
+      const apptDate = appointmentData.dateofAppointment?.toDate();
+      if (!apptDate) return;
 
-    const ownerRef = appointmentData.owner;
-    const ownerDoc = await getDoc(ownerRef);
-    if (!ownerDoc.exists()) return;
-    const ownerData = ownerDoc.data();
-    const email = ownerData.email;
-    if (!email || !email.includes("@")) return;
+      const ownerRef = appointmentData.owner;
+      const ownerDoc = await getDoc(ownerRef);
+      if (!ownerDoc.exists()) return;
+      const ownerData = ownerDoc.data();
+      const email = ownerData.email;
+      if (!email || !email.includes("@")) return;
 
-    const location = [
-      clinicData.streetAddress || "",
-      clinicData.province || "",
-      clinicData.city || ""
-    ].filter(Boolean).join(", ") || "N/A";
+      const location = [
+        clinicData.streetAddress || "",
+        clinicData.province || "",
+        clinicData.city || ""
+      ].filter(Boolean).join(", ") || "N/A";
 
-    const emailParams = {
-      email: email,
-      message: notification.message,
-      clinic: clinicData.clinicName || "Unknown Clinic",
-      service: appointmentData.serviceType || "N/A",
-      date: apptDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
-      time: apptDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
-      location: location,
-      veterinarian: appointmentData.veterinarian || "N/A",
-      pet_name: appointmentData.petName || "N/A",
-    };
+      const emailParams = {
+        email: email,
+        message: notification.message,
+        clinic: clinicData.clinicName || "Unknown Clinic",
+        service: appointmentData.serviceType || "N/A",
+        date: apptDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+        time: apptDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+        location: location,
+        veterinarian: appointmentData.veterinarian || "N/A",
+        pet_name: appointmentData.petName || "N/A",
+      };
 
-    console.log("Sending day-of email:", emailParams);
+      console.log("Sending day-of email:", emailParams);
 
-    await emailjs.send(
-      "service_Furwell",
-      "template_s8stabo",
-      emailParams,
-      "6M4Xlw1XjSDBaIr4t"
-    );
+      await emailjs.send(
+        "service_Furwell",
+        "template_s8stabo",
+        emailParams,
+        "6M4Xlw1XjSDBaIr4t"
+      );
 
-    // Mark notification as email sent
-    await updateDoc(doc(db, "notifications", notifId), { hasEmailSent: true });
-    setSentEmails((prev) => ({ ...prev, [notifId]: true }));
-  } catch (error) {
-    console.error("Error sending day-of email for notification", notifId, ":", error);
-  } finally {
-    sendingEmails.current[notifId] = false; 
-  }
-};
+      // Mark notification as email sent
+      await updateDoc(doc(db, "notifications", notifId), { hasEmailSent: true });
+      setSentEmails((prev) => ({ ...prev, [notifId]: true }));
+    } catch (error) {
+      console.error("Error sending day-of email for notification", notifId, ":", error);
+    } finally {
+      sendingEmails.current[notifId] = false;
+    }
+  };
 
-  
-  
+
+
   //outside click
   useEffect(() => {
     const handleOutsideClick = (e) => {
       const sidebar = document.querySelector(".sidebar-p");
       const hamburgerButton = e.target.closest('.mobile-header-p button');
-      
+
       if (
         isSidebarOpen &&
         sidebar &&
         !sidebar.contains(e.target) &&
-        !hamburgerButton 
+        !hamburgerButton
       ) {
         setIsSidebarOpen(false);
       }
-  
+
       const profileModal = document.querySelector(".profile-modal-p");
       const headerProfileImg = e.target.closest(".mobile-header-profile-img-p");
-  
+
       if (
         isProfileModalOpen &&
         profileModal &&
         !profileModal.contains(e.target) &&
-        !headerProfileImg 
+        !headerProfileImg
       ) {
         setIsProfileModalOpen(false);
       }
     };
-  
+
     document.addEventListener('click', handleOutsideClick);
     return () => {
       document.removeEventListener('click', handleOutsideClick);
@@ -426,105 +426,105 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
   };
 
   const fetchNotifications = async () => {
-  try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      console.log("No current user, skipping notification fetch.");
-      return;
-    }
-
-    // Fetch existing notifications to check for duplicates
-    const notificationsQuery = query(
-      collection(db, "notifications"),
-      where("ownerId", "==", `users/${currentUser.uid}`),
-      where("type", "in", [
-        "appointment_accepted",
-        "appointment_reminder",
-        "appointment_day_of",
-        "cancellation_approved",
-        "cancellation_declined",
-        "reschedule_approved",
-        "reschedule_declined",
-      ]),
-      where("removeViewPetOwner", "==", false)
-    );
-
-    const querySnapshot = await getDocs(notificationsQuery);
-    const existingNotifications = querySnapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data(),
-    }));
-
-    // Check for one-day-before and day-of reminders
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    const appointmentsQuery = query(
-      collection(db, "appointments"),
-      where("owner", "==", doc(db, "users", currentUser.uid)),
-      where("status", "==", "Accepted")
-    );
-    const apptSnapshot = await getDocs(appointmentsQuery);
-
-    for (const docSnap of apptSnapshot.docs) {
-      const apptData = docSnap.data();
-      const apptDate = apptData.dateofAppointment.toDate();
-      const apptDay = new Date(apptDate);
-      apptDay.setHours(0, 0, 0, 0);
-
-      const clinicDoc = await getDoc(apptData.clinic);
-      const clinicName = clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic";
-      const clinicProfileImageURL = clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE;
-
-      // One-day-before reminder
-      if (apptDay.toDateString() === tomorrow.toDateString()) {
-        const existingReminder = existingNotifications.find(
-          (n) => n.appointmentId === docSnap.id && n.type === "appointment_reminder"
-        );
-
-        if (!existingReminder) {
-          await addDoc(collection(db, "notifications"), {
-            ownerId: `users/${currentUser.uid}`,
-            appointmentId: docSnap.id,
-            clinicId: apptData.clinic.id,
-            type: "appointment_reminder",
-            message: `Reminder: Your appointment for ${apptData.petName} at ${clinicName} is tomorrow!`,
-            hasPetOwnerOpened: false,
-            removeViewPetOwner: false,
-            dateCreated: serverTimestamp(),
-          });
-          console.log(`Created appointment_reminder for appointment ${docSnap.id}`);
-        }
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        console.log("No current user, skipping notification fetch.");
+        return;
       }
 
-      // Day-of reminder
-      if (apptDay.toDateString() === today.toDateString()) {
-        const existingDayOf = existingNotifications.find(
-          (n) => n.appointmentId === docSnap.id && n.type === "appointment_day_of"
-        );
+      // Fetch existing notifications to check for duplicates
+      const notificationsQuery = query(
+        collection(db, "notifications"),
+        where("ownerId", "==", `users/${currentUser.uid}`),
+        where("type", "in", [
+          "appointment_accepted",
+          "appointment_reminder",
+          "appointment_day_of",
+          "cancellation_approved",
+          "cancellation_declined",
+          "reschedule_approved",
+          "reschedule_declined",
+        ]),
+        where("removeViewPetOwner", "==", false)
+      );
 
-        if (!existingDayOf) {
-          await addDoc(collection(db, "notifications"), {
-            ownerId: `users/${currentUser.uid}`,
-            appointmentId: docSnap.id,
-            clinicId: apptData.clinic.id,
-            type: "appointment_day_of",
-            message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicName} is scheduled for ${formatDate(apptDate)}.`,
-            hasPetOwnerOpened: false,
-            removeViewPetOwner: false,
-            dateCreated: serverTimestamp(),
-          });
-          console.log(`Created appointment_day_of for appointment ${docSnap.id}`);
+      const querySnapshot = await getDocs(notificationsQuery);
+      const existingNotifications = querySnapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
+
+      // Check for one-day-before and day-of reminders
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        where("owner", "==", doc(db, "users", currentUser.uid)),
+        where("status", "==", "Accepted")
+      );
+      const apptSnapshot = await getDocs(appointmentsQuery);
+
+      for (const docSnap of apptSnapshot.docs) {
+        const apptData = docSnap.data();
+        const apptDate = apptData.dateofAppointment.toDate();
+        const apptDay = new Date(apptDate);
+        apptDay.setHours(0, 0, 0, 0);
+
+        const clinicDoc = await getDoc(apptData.clinic);
+        const clinicName = clinicDoc.exists() ? clinicDoc.data().clinicName : "Unknown Clinic";
+        const clinicProfileImageURL = clinicDoc.exists() ? clinicDoc.data().profileImageURL : DEFAULT_OWNER_IMAGE;
+
+        // One-day-before reminder
+        if (apptDay.toDateString() === tomorrow.toDateString()) {
+          const existingReminder = existingNotifications.find(
+            (n) => n.appointmentId === docSnap.id && n.type === "appointment_reminder"
+          );
+
+          if (!existingReminder) {
+            await addDoc(collection(db, "notifications"), {
+              ownerId: `users/${currentUser.uid}`,
+              appointmentId: docSnap.id,
+              clinicId: apptData.clinic.id,
+              type: "appointment_reminder",
+              message: `Reminder: Your appointment for ${apptData.petName} at ${clinicName} is tomorrow!`,
+              hasPetOwnerOpened: false,
+              removeViewPetOwner: false,
+              dateCreated: serverTimestamp(),
+            });
+            console.log(`Created appointment_reminder for appointment ${docSnap.id}`);
+          }
+        }
+
+        // Day-of reminder
+        if (apptDay.toDateString() === today.toDateString()) {
+          const existingDayOf = existingNotifications.find(
+            (n) => n.appointmentId === docSnap.id && n.type === "appointment_day_of"
+          );
+
+          if (!existingDayOf) {
+            await addDoc(collection(db, "notifications"), {
+              ownerId: `users/${currentUser.uid}`,
+              appointmentId: docSnap.id,
+              clinicId: apptData.clinic.id,
+              type: "appointment_day_of",
+              message: `Today is the day! Your appointment for ${apptData.petName} at ${clinicName} is scheduled for ${formatDate(apptDate)}.`,
+              hasPetOwnerOpened: false,
+              removeViewPetOwner: false,
+              dateCreated: serverTimestamp(),
+            });
+            console.log(`Created appointment_day_of for appointment ${docSnap.id}`);
+          }
         }
       }
+    } catch (error) {
+      console.error("Error in fetchNotifications:", error);
     }
-  } catch (error) {
-    console.error("Error in fetchNotifications:", error);
-  }
-};
-            
+  };
+
   const NOTIFICATION_TYPES = {
     APPOINTMENT_ACCEPTED: "appointment_accepted",
     APPOINTMENT_REMINDER: "appointment_reminder",
@@ -539,7 +539,7 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
     try {
       setShowNotificationsModal(true);
       console.log("Set showNotificationsModal to true");
-  
+
       if (unreadNotifications) {
         console.log("Processing unread notifications");
         const unreadNotificationsList = notifications.filter((n) => !n.hasPetOwnerOpened);
@@ -601,29 +601,74 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
 
   const formatDOB = (dateValue) => {
     if (!dateValue) return "N/A";
+
     let dob;
+
     if (dateValue && typeof dateValue.toDate === "function") {
       dob = dateValue.toDate();
-    } else if (typeof dateValue === "string") {
+    }
+
+    else if (typeof dateValue === "string") {
       dob = new Date(dateValue);
-    } else {
+    }
+    else {
       return "N/A";
     }
 
+    if (isNaN(dob.getTime())) {
+      return "N/A";
+    }
+
+    // Format the date of birth
     const formattedDate = dob.toLocaleString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
     });
 
-    const today = new Date(); // Current date as per context
-    let age = today.getFullYear() - dob.getFullYear();
-    const monthDiff = today.getMonth() - dob.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-      age--;
+    // Calculate age
+    const today = new Date("2025-03-23");
+    const timeDiff = today.getTime() - dob.getTime();
+    const ageYears = timeDiff / (1000 * 60 * 60 * 24 * 365.25);
+
+    let ageFormatted;
+    let ageString;
+
+    if (Math.abs(ageYears) < 1) {
+      const monthsDiff = (today.getFullYear() - dob.getFullYear()) * 12 + (today.getMonth() - dob.getMonth());
+      ageFormatted = Math.abs(monthsDiff).toFixed(0);
+      ageString = `${ageFormatted} ${ageFormatted === "1" ? "month" : "months"}`;
+    } else {
+      ageFormatted = Math.abs(ageYears).toFixed(1);
+      ageString = `${ageFormatted} ${ageFormatted === "1.0" ? "yr" : "yrs"}`;
     }
 
-    return `${formattedDate} (${age})`;
+    return `${formattedDate} (${ageString})`;
+
+    // if (!dateValue) return "N/A";
+    // let dob;
+    // if (dateValue && typeof dateValue.toDate === "function") {
+    //   dob = dateValue.toDate();
+    // } else if (typeof dateValue === "string") {
+    //   dob = new Date(dateValue);
+    // } else {
+    //   return "N/A";
+    // }
+
+    // const formattedDate = dob.toLocaleString("en-US", {
+    //   month: "long",
+    //   day: "numeric",
+    //   year: "numeric",
+    // });
+
+    // const today = new Date(); // Current date as per context
+    // let age = today.getFullYear() - dob.getFullYear();
+    // const monthDiff = today.getMonth() - dob.getMonth();
+    // if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    //   age--;
+    // }
+
+    // return `${formattedDate} (${age})`;
   };
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -892,12 +937,12 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
 
   useEffect(() => {
     if (!auth.currentUser) return;
-  
+
     const q = query(
       collection(db, "appointments"),
       where("owner", "==", doc(db, "users", auth.currentUser.uid))
     );
-  
+
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -908,7 +953,7 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
         console.error("Error listening to appointments:", error);
       }
     );
-  
+
     return () => unsubscribe();
   }, [auth.currentUser]);
 
@@ -918,25 +963,25 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
       const currentUser = auth.currentUser;
       if (currentUser) {
         console.log("Fetching appointments for user:", currentUser.uid);
-  
+
         const appointmentsQuery = query(
           collection(db, "appointments"),
           where("owner", "==", doc(db, "users", currentUser.uid))
         );
         const querySnapshot = await getDocs(appointmentsQuery);
         console.log("All appointments fetched:", querySnapshot.docs.length);
-  
+
         const currentAppointmentsList = [];
         const pastAppointmentsList = [];
         const today = new Date();
         console.log("Today’s date and time:", today.toISOString());
-  
+
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
           const clinicDoc = await getDoc(data.clinic);
           const startTime = data.dateofAppointment.toDate();
           const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-  
+
           const appointmentDetails = {
             Id: doc.id,
             Subject: `${data.petName || "Unknown Pet"} - ${data.serviceType || "N/A"}`,
@@ -956,13 +1001,13 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
             dateofAppointment: startTime,
             rescheduleDate: data.rescheduleDate ? data.rescheduleDate.toDate() : null,
           };
-  
+
           console.log(
             "Processing appointment - ID:", doc.id,
             "Date:", startTime.toISOString(),
             "Firestore Status:", data.status
           );
-  
+
           // Handle future/present appointments (including Cancelled if date is in the future)
           if (startTime >= today) {
             if (["Accepted", "Request Cancel", "Request Reschedule", "Cancelled"].includes(data.status)) {
@@ -972,10 +1017,10 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
                   data.status === "Request Cancel"
                     ? "Pending Cancellation"
                     : data.status === "Request Reschedule"
-                    ? "Pending Reschedule"
-                    : data.status === "Cancelled"
-                    ? "Cancelled"
-                    : "Accepted",
+                      ? "Pending Reschedule"
+                      : data.status === "Cancelled"
+                        ? "Cancelled"
+                        : "Accepted",
               });
               console.log(
                 "Added to currentAppointmentsList:",
@@ -986,14 +1031,14 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
                 data.status === "Request Cancel"
                   ? "Pending Cancellation"
                   : data.status === "Request Reschedule"
-                  ? "Pending Reschedule"
-                  : data.status === "Cancelled"
-                  ? "Cancelled"
-                  : "Accepted"
+                    ? "Pending Reschedule"
+                    : data.status === "Cancelled"
+                      ? "Cancelled"
+                      : "Accepted"
               );
             }
           }
-  
+
           // Handle past appointments
           if (startTime < today || (data.status === "Cancelled" && startTime < today)) {
             const isDuplicate = pastAppointmentsList.some((appt) => appt.Id === doc.id);
@@ -1004,10 +1049,10 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
                   data.status === "Request Cancel"
                     ? "Cancel Requested"
                     : data.status === "Request Reschedule"
-                    ? "Reschedule Requested"
-                    : data.status === "Cancelled"
-                    ? "Cancelled"
-                    : "Done",
+                      ? "Reschedule Requested"
+                      : data.status === "Cancelled"
+                        ? "Cancelled"
+                        : "Done",
               });
               console.log(
                 "Added to pastAppointmentsList:",
@@ -1018,18 +1063,18 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
                 data.status === "Request Cancel"
                   ? "Cancel Requested"
                   : data.status === "Request Reschedule"
-                  ? "Reschedule Requested"
-                  : data.status === "Cancelled"
-                  ? "Cancelled"
-                  : "Done"
+                    ? "Reschedule Requested"
+                    : data.status === "Cancelled"
+                      ? "Cancelled"
+                      : "Done"
               );
             }
           }
         }
-  
+
         console.log("Final Current Appointments:", currentAppointmentsList);
         console.log("Final Past Appointments (Health Records):", pastAppointmentsList);
-  
+
         setAppointments(currentAppointmentsList);
         setPastAppointments(pastAppointmentsList);
       } else {
@@ -1079,17 +1124,17 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
       // Reference to the original appointment
       const appointmentRef = doc(db, "appointments", appointmentId);
       const appointmentSnap = await getDoc(appointmentRef);
-  
+
       if (!appointmentSnap.exists()) {
         throw new Error("Appointment not found");
       }
-  
+
       // Update the appointment with status "Request Cancel" and a timestamp
       await updateDoc(appointmentRef, {
         status: "Request Cancel",
         cancelRequestedAt: serverTimestamp(), // Optional: Track when the request was made
       });
-  
+
       // Update local state to reflect the new status
       setAppointments(
         appointments.map((appt) =>
@@ -1098,7 +1143,7 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
             : appt
         )
       );
-  
+
       setShowAppointmentModal(false);
       alert("Cancellation request submitted successfully! Awaiting clinic approval.");
     } catch (error) {
@@ -1262,7 +1307,7 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
       alert("Please select a new time slot.");
       return;
     }
-  
+
     setIsRescheduling(true);
     try {
       const newDateTime = selectedRescheduleSlot.time; // Date object from the slot
@@ -1271,29 +1316,29 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
         "Requesting reschedule to time:",
         newDateTime.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
       );
-  
+
       // Reference to the appointment
       const appointmentRef = doc(db, "appointments", appointmentId);
-  
+
       // Update Firestore with "Request Reschedule" status and the proposed new time
       await updateDoc(appointmentRef, {
         status: "Request Reschedule",
         rescheduleDate: newDateTime, // Use rescheduleDate to match ClinicHome expectation
         rescheduleRequestedAt: serverTimestamp(), // Optional: Track request time
       });
-  
+
       // Update local state to reflect the pending reschedule
       setAppointments(
         appointments.map((appt) =>
           appt.Id === appointmentId
             ? {
-                ...appt,
-                status: "Pending Reschedule", // Reflect the pending status in UI
-              }
+              ...appt,
+              status: "Pending Reschedule", // Reflect the pending status in UI
+            }
             : appt
         )
       );
-  
+
       setShowAppointmentModal(false);
       setAvailableSlots([]);
       setSelectedRescheduleSlot(null);
@@ -1307,7 +1352,7 @@ const sendDayOfEmail = async (notification, appointmentData, clinicData) => {
     }
   };
 
-const handleSignOut = () => {
+  const handleSignOut = () => {
     setIsSignOutConfirmOpen(true);
   };
 
@@ -1316,16 +1361,16 @@ const handleSignOut = () => {
       setIsSigningOut(true);
       await signOut(getAuth());
       setIsSignOutConfirmOpen(false);
-      setIsSignOutSuccessOpen(true); 
+      setIsSignOutSuccessOpen(true);
       setTimeout(() => {
         setIsSignOutSuccessOpen(false);
-        setIsSigningOut(false); 
+        setIsSigningOut(false);
         navigate("/Home");
       }, 2000);
     } catch (error) {
       console.error("Error signing out:", error);
       setIsSignOutConfirmOpen(false);
-      setIsSigningOut(false); 
+      setIsSigningOut(false);
     }
   };
 
@@ -1340,7 +1385,7 @@ const handleSignOut = () => {
 
   useEffect(() => {
     if (!auth.currentUser) return;
-  
+
     const q = query(
       collection(db, "notifications"),
       where("ownerId", "==", `users/${auth.currentUser.uid}`),
@@ -1355,7 +1400,7 @@ const handleSignOut = () => {
       ]),
       where("removeViewPetOwner", "==", false)
     );
-  
+
     const unsubscribe = onSnapshot(
       q,
       async (snapshot) => {
@@ -1381,11 +1426,11 @@ const handleSignOut = () => {
             }
           })
         );
-  
+
         const filteredNotifications = notificationsList
           .filter((n) => n !== null)
           .sort((a, b) => b.dateCreated - a.dateCreated);
-  
+
         setNotifications(filteredNotifications);
         setUnreadNotifications(filteredNotifications.some((n) => !n.hasPetOwnerOpened));
       },
@@ -1395,7 +1440,7 @@ const handleSignOut = () => {
         setUnreadNotifications(false);
       }
     );
-  
+
     return () => unsubscribe();
   }, [auth.currentUser]);
 
@@ -1581,208 +1626,208 @@ const handleSignOut = () => {
         </div>
       )}
       <div className={`sidebar-p ${isSidebarOpen ? "open" : ""}`}>
-      {ownerInfo && (
-              <div className="owner-sidebar-panel-p">
-                <div className="owner-img-container-p">
-                  <img
-                    src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
-                    alt="Owner Profile"
-                    className="owner-profile-image-p"
-                  />
-                </div>
-                <div className="owner-notification-wrapper">
-                  <button
-                    className={`owner-button ${activePanel === "profile" ? "active" : ""}`}
-                    onClick={() => setActivePanel("profile")}
-                  >
-                    <FaUser className="sidebar-icon-p" />
-                    {ownerInfo.FirstName} {ownerInfo.LastName}
-                  </button>
-                  <button className="notification-btn-p" onClick={handleNotificationClick}>
-                    <div className="notification-icon-container-p">
-                      <FaBell className="bell-notif-p" />
-                      {unreadNotifications && <span className="notification-dot-p"></span>}
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
-            <div className="sidebar-buttons-p">
-              <button
-                className={`sidebar-btn-p ${activePanel === "petDetails" ? "active" : ""}`}
-                onClick={() => setActivePanel("petDetails")}
-              >
-                <MdPets className="sidebar-icon-p" />
-                Pet Details
-              </button>
-              <button
-                className={`sidebar-btn-p ${activePanel === "appointments" ? "active" : ""}`}
-                onClick={handleAppointmentsClick}
-              >
-                <FaCalendarAlt className="sidebar-icon-p" />
-                Appointments
-              </button>
-              <button
-                className={`sidebar-btn-p ${activePanel === "healthRecords" ? "active" : ""}`}
-                onClick={() => setActivePanel("healthRecords")}
-              >
-                <FaFileMedical className="sidebar-icon-p" />
-                Health Records
-              </button>
+        {ownerInfo && (
+          <div className="owner-sidebar-panel-p">
+            <div className="owner-img-container-p">
+              <img
+                src={ownerInfo.profileImageURL || DEFAULT_OWNER_IMAGE}
+                alt="Owner Profile"
+                className="owner-profile-image-p"
+              />
             </div>
-            <button className="signout-btn-p" onClick={handleSignOut}>
-              <FaSignOutAlt className="sidebar-icon-p" />
-              Sign Out
-            </button>
-      </div>
-
-          <div className="content-p">
-            <div className="panel-container-p">
-            {activePanel === "profile" && (
-              <div className="panel-p profile-panel-p">
-                <h3>Profile</h3>
-                {ownerInfo ? (
-                  <div className="owner-details-p">
-                    <img
-                      src={ownerInfo.profileImageURL || "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png"}
-                      alt="Owner"
-                      className="owner-info-img-p"
-                    />
-                    <p><strong>First Name:</strong> {ownerInfo.FirstName}</p>
-                    <p><strong>Last Name:</strong> {ownerInfo.LastName}</p>
-                    <p><strong>Contact Number:</strong> {ownerInfo.contactNumber || "N/A"}</p>
-                    <p><strong>Email:</strong> {ownerInfo.email}</p>
-                    <button className="edit-owner-btn-p" onClick={openEditOwnerModal}>
-                      Edit Profile
-                    </button>
-                  </div>
-                ) : (
-                  <p>Loading profile...</p>
-                )}
-              </div>
-            )}
-              {activePanel === "petDetails" && (
-                <div className="panel-p pet-details-panel-p">
-                  <div className="pet-details-header-p">
-                    <h3>Pet Details</h3>
-                    <button className="addpetbutt-p" onClick={openAddPetModal}>
-                      Add A Pet
-                    </button>
-                  </div>
-                  {loading ? (
-                    <p>Loading pet details...</p>
-                  ) : (
-                    <table>
-                      <thead>
-                        <tr><th>Pet Name</th></tr>
-                      </thead>
-                      <tbody>
-                        {pets.length > 0 ? (
-                          pets.map((pet) => (
-                            <tr key={pet.id}>
-                              <td>
-                                <a
-                                  href="#!"
-                                  onClick={(e) => { e.preventDefault(); handlePetClick(pet); }}
-                                  className="pet-name-link-p"
-                                >
-                                  {pet.petName}
-                                </a>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr><td>No pets found</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
-              {activePanel === "appointments" && (
-                <div className="panel-p appointments-panel-p">
-                  <div className="appointments-header-p">
-                    <h3>Appointments</h3>
-                    <button className="bookapptbutt-p" onClick={handleBookAppointment}>
-                      Book Appointment
-                    </button>
-                  </div>
-                  {loading ? (
-                    <p>Loading appointments...</p>
-                  ) : (
-                    <ScheduleComponent
-                width="100%"
-                height="650px"
-                currentView={currentView}
-                eventSettings={{ dataSource: appointments }}
-                eventClick={handleEventClick}
-                popupOpen={(args) => (args.cancel = true)}
+            <div className="owner-notification-wrapper">
+              <button
+                className={`owner-button ${activePanel === "profile" ? "active" : ""}`}
+                onClick={() => setActivePanel("profile")}
               >
-                <ViewsDirective>
-                  <ViewDirective option="Month" />
-                  <ViewDirective option="Agenda" />
-                </ViewsDirective>
-                <Inject services={[Month, Agenda]} />
-              </ScheduleComponent>
-                  )}
+                <FaUser className="sidebar-icon-p" />
+                {ownerInfo.FirstName} {ownerInfo.LastName}
+              </button>
+              <button className="notification-btn-p" onClick={handleNotificationClick}>
+                <div className="notification-icon-container-p">
+                  <FaBell className="bell-notif-p" />
+                  {unreadNotifications && <span className="notification-dot-p"></span>}
                 </div>
-              )}
-              {activePanel === "healthRecords" && (
-                <div className="panel-p health-records-panel-p">
-                  <h3>Health Records</h3>
-                  <form className="psearch-bar-container">
-                    <input
-                      type="text"
-                      placeholder="Search records..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </form>
-                  {loading ? (
-                    <p>Loading health records...</p>
-                  ) : (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th>Pet</th>
-                          <th>Clinic</th>
-                          <th>Service</th>
-                          <th>Notes</th>
-                          <th>Veterinarian</th>
-                          <th>Diagnosis</th>
-                          <th>Treatment</th>
-                          <th>Remarks</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredAppointments.length > 0 ? (
-                          filteredAppointments.map((record) => (
-                            <tr key={record.Id}>
-                              <td>{formatDate(record.dateofAppointment)}</td>
-                              <td>{record.petName}</td>
-                              <td>{record.clinicName}</td>
-                              <td>{record.serviceType}</td>
-                              <td>{record.notes}</td>
-                              <td>{record.veterinarian}</td>
-                              <td>{record.diagnosis}</td>
-                              <td>{record.treatment}</td>
-                              <td>{record.completionRemark}</td>
-                              <td>{record.status}</td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr><td colSpan="7">No records found</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
+              </button>
             </div>
           </div>
-      
+        )}
+        <div className="sidebar-buttons-p">
+          <button
+            className={`sidebar-btn-p ${activePanel === "petDetails" ? "active" : ""}`}
+            onClick={() => setActivePanel("petDetails")}
+          >
+            <MdPets className="sidebar-icon-p" />
+            Pet Details
+          </button>
+          <button
+            className={`sidebar-btn-p ${activePanel === "appointments" ? "active" : ""}`}
+            onClick={handleAppointmentsClick}
+          >
+            <FaCalendarAlt className="sidebar-icon-p" />
+            Appointments
+          </button>
+          <button
+            className={`sidebar-btn-p ${activePanel === "healthRecords" ? "active" : ""}`}
+            onClick={() => setActivePanel("healthRecords")}
+          >
+            <FaFileMedical className="sidebar-icon-p" />
+            Health Records
+          </button>
+        </div>
+        <button className="signout-btn-p" onClick={handleSignOut}>
+          <FaSignOutAlt className="sidebar-icon-p" />
+          Sign Out
+        </button>
+      </div>
+
+      <div className="content-p">
+        <div className="panel-container-p">
+          {activePanel === "profile" && (
+            <div className="panel-p profile-panel-p">
+              <h3>Profile</h3>
+              {ownerInfo ? (
+                <div className="owner-details-p">
+                  <img
+                    src={ownerInfo.profileImageURL || "https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png"}
+                    alt="Owner"
+                    className="owner-info-img-p"
+                  />
+                  <p><strong>First Name:</strong> {ownerInfo.FirstName}</p>
+                  <p><strong>Last Name:</strong> {ownerInfo.LastName}</p>
+                  <p><strong>Contact Number:</strong> {ownerInfo.contactNumber || "N/A"}</p>
+                  <p><strong>Email:</strong> {ownerInfo.email}</p>
+                  <button className="edit-owner-btn-p" onClick={openEditOwnerModal}>
+                    Edit Profile
+                  </button>
+                </div>
+              ) : (
+                <p>Loading profile...</p>
+              )}
+            </div>
+          )}
+          {activePanel === "petDetails" && (
+            <div className="panel-p pet-details-panel-p">
+              <div className="pet-details-header-p">
+                <h3>Pet Details</h3>
+                <button className="addpetbutt-p" onClick={openAddPetModal}>
+                  Add A Pet
+                </button>
+              </div>
+              {loading ? (
+                <p>Loading pet details...</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr><th>Pet Name</th></tr>
+                  </thead>
+                  <tbody>
+                    {pets.length > 0 ? (
+                      pets.map((pet) => (
+                        <tr key={pet.id}>
+                          <td>
+                            <a
+                              href="#!"
+                              onClick={(e) => { e.preventDefault(); handlePetClick(pet); }}
+                              className="pet-name-link-p"
+                            >
+                              {pet.petName}
+                            </a>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td>No pets found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+          {activePanel === "appointments" && (
+            <div className="panel-p appointments-panel-p">
+              <div className="appointments-header-p">
+                <h3>Appointments</h3>
+                <button className="bookapptbutt-p" onClick={handleBookAppointment}>
+                  Book Appointment
+                </button>
+              </div>
+              {loading ? (
+                <p>Loading appointments...</p>
+              ) : (
+                <ScheduleComponent
+                  width="100%"
+                  height="650px"
+                  currentView={currentView}
+                  eventSettings={{ dataSource: appointments }}
+                  eventClick={handleEventClick}
+                  popupOpen={(args) => (args.cancel = true)}
+                >
+                  <ViewsDirective>
+                    <ViewDirective option="Month" />
+                    <ViewDirective option="Agenda" />
+                  </ViewsDirective>
+                  <Inject services={[Month, Agenda]} />
+                </ScheduleComponent>
+              )}
+            </div>
+          )}
+          {activePanel === "healthRecords" && (
+            <div className="panel-p health-records-panel-p">
+              <h3>Health Records</h3>
+              <form className="psearch-bar-container">
+                <input
+                  type="text"
+                  placeholder="Search records..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </form>
+              {loading ? (
+                <p>Loading health records...</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Pet</th>
+                      <th>Clinic</th>
+                      <th>Service</th>
+                      <th>Notes</th>
+                      <th>Veterinarian</th>
+                      <th>Diagnosis</th>
+                      <th>Treatment</th>
+                      <th>Remarks</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAppointments.length > 0 ? (
+                      filteredAppointments.map((record) => (
+                        <tr key={record.Id}>
+                          <td>{formatDate(record.dateofAppointment)}</td>
+                          <td>{record.petName}</td>
+                          <td>{record.clinicName}</td>
+                          <td>{record.serviceType}</td>
+                          <td>{record.notes}</td>
+                          <td>{record.veterinarian}</td>
+                          <td>{record.diagnosis}</td>
+                          <td>{record.treatment}</td>
+                          <td>{record.completionRemark}</td>
+                          <td>{record.status}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan="7">No records found</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* <div className="sidebar-p">
     {ownerInfo && (
       <div className="owner-sidebar-panel-p">
@@ -2082,81 +2127,81 @@ const handleSignOut = () => {
             </div>
           </div>
         </div>
-  )}
-
-{showNotificationsModal && (
-  <div className="modal-overlay-p">
-    <div className="modal-content-p notifications-modal-p">
-      <span className="close-button-p" onClick={() => setShowNotificationsModal(false)}>
-        ×
-      </span>
-      <h2>Notifications</h2>
-      {notifications.length > 0 ? (
-        <div className="notifications-list-p">
-         {notifications.map((notification) => (
-  <div
-    key={notification.id}
-    className={`notification-item-p ${notification.hasPetOwnerOpened ? "read" : "unread"}`}
-    onClick={() => !notification.hasPetOwnerOpened && markNotificationAsRead(notification.id)}
-  >
-    <img
-      src={notification.clinicProfileImageURL || DEFAULT_OWNER_IMAGE}
-      alt="Clinic"
-      className="notification-clinic-img-p"
-    />
-    <div className="notification-details-p">
-      <p>
-        {notification.type === "appointment_accepted" && (
-          <strong>Appointment Accepted: </strong>
-        )}
-        {notification.type === "appointment_reminder" && (
-          <strong>Appointment Reminder: </strong>
-        )}
-        {notification.type === "appointment_day_of" && (
-          <strong>Day of Appointment: </strong>
-        )}
-        {notification.type === "cancellation_approved" && (
-          <strong>Cancellation Approved: </strong>
-        )}
-        {notification.type === "cancellation_declined" && (
-          <strong>Cancellation Declined: </strong>
-        )}
-        {notification.type === "reschedule_approved" && (
-          <strong>Reschedule Approved: </strong>
-        )}
-        {notification.type === "reschedule_declined" && (
-          <strong>Reschedule Declined: </strong>
-        )}
-        {notification.message}
-      </p>
-      <span className="notification-timestamp-p">
-        Notified on: {formatDate(notification.dateCreated)}
-      </span>
-    </div>
-    <FaTimes
-      className="delete-notification-icon-p"
-      onClick={(e) => {
-        e.stopPropagation();
-        handleDeleteNotificationClick(notification.id);
-      }}
-    />
-  </div>
-))}
-        </div>
-      ) : (
-        <p>No notifications available.</p>
       )}
-      <div className="modal-actions-p">
-        <button
-          className="modal-close-btn-p"
-          onClick={() => setShowNotificationsModal(false)}
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+
+      {showNotificationsModal && (
+        <div className="modal-overlay-p">
+          <div className="modal-content-p notifications-modal-p">
+            <span className="close-button-p" onClick={() => setShowNotificationsModal(false)}>
+              ×
+            </span>
+            <h2>Notifications</h2>
+            {notifications.length > 0 ? (
+              <div className="notifications-list-p">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`notification-item-p ${notification.hasPetOwnerOpened ? "read" : "unread"}`}
+                    onClick={() => !notification.hasPetOwnerOpened && markNotificationAsRead(notification.id)}
+                  >
+                    <img
+                      src={notification.clinicProfileImageURL || DEFAULT_OWNER_IMAGE}
+                      alt="Clinic"
+                      className="notification-clinic-img-p"
+                    />
+                    <div className="notification-details-p">
+                      <p>
+                        {notification.type === "appointment_accepted" && (
+                          <strong>Appointment Accepted: </strong>
+                        )}
+                        {notification.type === "appointment_reminder" && (
+                          <strong>Appointment Reminder: </strong>
+                        )}
+                        {notification.type === "appointment_day_of" && (
+                          <strong>Day of Appointment: </strong>
+                        )}
+                        {notification.type === "cancellation_approved" && (
+                          <strong>Cancellation Approved: </strong>
+                        )}
+                        {notification.type === "cancellation_declined" && (
+                          <strong>Cancellation Declined: </strong>
+                        )}
+                        {notification.type === "reschedule_approved" && (
+                          <strong>Reschedule Approved: </strong>
+                        )}
+                        {notification.type === "reschedule_declined" && (
+                          <strong>Reschedule Declined: </strong>
+                        )}
+                        {notification.message}
+                      </p>
+                      <span className="notification-timestamp-p">
+                        Notified on: {formatDate(notification.dateCreated)}
+                      </span>
+                    </div>
+                    <FaTimes
+                      className="delete-notification-icon-p"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNotificationClick(notification.id);
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No notifications available.</p>
+            )}
+            <div className="modal-actions-p">
+              <button
+                className="modal-close-btn-p"
+                onClick={() => setShowNotificationsModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showDeleteConfirmModal && (
         <div className="modal-overlay-p">
           <div className="modal-content-p delete-confirm-modal-p">
@@ -2253,7 +2298,7 @@ const handleSignOut = () => {
         </div>
       )}
 
-{isSignOutConfirmOpen && (
+      {isSignOutConfirmOpen && (
         <div className="modal-overlay-c">
           <div className="modal-content-c signout-confirm-modal-c">
             <p>Are you sure you want to sign out?</p>
@@ -2452,172 +2497,172 @@ const handleSignOut = () => {
         </div>
       )}
 
-  {showAppointmentModal && selectedAppointment && (
-  <div className="modal-overlay-p">
-    <div className="modal-content-p">
-      <span
-        className="close-button-p"
-        onClick={() => setShowAppointmentModal(false)}
-      >
-        ×
-      </span>
-      <h2>Appointment Details</h2>
-      <div className="pet-info-grid-p">
-        <div className="info-item-p">
-          <strong>Pet Name:</strong> {selectedAppointment.petName}
-        </div>
-        <div className="info-item-p">
-          <strong>Clinic:</strong> {selectedAppointment.clinicName}
-        </div>
-        <div className="info-item-p">
-          <strong>Service:</strong> {selectedAppointment.serviceType}
-        </div>
-        <div className="info-item-p">
-          <strong>Veterinarian:</strong> {selectedAppointment.veterinarian}
-        </div>
-        <div className="info-item-p">
-          <strong>Date:</strong> {formatDate(selectedAppointment.StartTime)}
-        </div>
-        <div className="info-item-p">
-          <strong>Status:</strong> {selectedAppointment.status}
-          </div>
-        {selectedAppointment.status === "Pending Reschedule" && selectedAppointment.rescheduleDate && (
-          <div className="info-item-p">
-            <strong>Requested Reschedule Date:</strong> {formatDate(selectedAppointment.rescheduleDate)}
-          </div>
-        )}
-      </div>
-      <div className="info-item-p">
-        <strong>Notes:</strong> {selectedAppointment.notes}
-      </div>
-
-      {!showReschedule ? (
-        <div className="modal-actions-p">
-          <button
-            className="submit-btn-p"
-            onClick={() => handleCancelAppointment(selectedAppointment.Id)}
-            disabled={
-              isRescheduling ||
-              selectedAppointment.status === "Pending Cancellation" ||
-              selectedAppointment.status === "Pending Reschedule" ||
-              selectedAppointment.status === "Cancelled"
-            }
-          >
-            Cancel Appointment
-          </button>
-          <button
-            className="submit-btn-p"
-            onClick={() => setShowReschedule(!showReschedule)}
-            disabled={
-              isRescheduling ||
-              selectedAppointment.status === "Pending Cancellation" ||
-              selectedAppointment.status === "Pending Reschedule" ||
-              selectedAppointment.status === "Cancelled"
-            }
-          >
-            Reschedule
-          </button>
-          <button
-            className="modal-close-btn-p"
-            onClick={() => setShowAppointmentModal(false)}
-            disabled={isRescheduling}
-          >
-            Close
-          </button>
-        </div>
-      ) : (
-        <>
-          <h3>Reschedule Appointment</h3>
-          <div className="reschedule-container-p">
-            <div className="calendar-container-p">
-              <Calendar
-                onClickDay={handleCalendarDateClick}
-                value={rescheduleDateTime || new Date()}
-                minDate={new Date()}
-                maxDate={(() => {
-                  const max = new Date();
-                  max.setMonth(max.getMonth() + 1);
-                  return max;
-                })()}  // Immediately invoke the function to return the date
-                tileClassName={tileClassName}
-                locale="en-US"
-              />
-            </div>
-            <div className="time-picker-container-p">
-              <label htmlFor="rescheduleTime">Select Time</label>
-              <select
-                id="rescheduleTime"
-                value={
-                  selectedRescheduleSlot ? selectedRescheduleSlot.time.toISOString() : ""
-                }
-                onChange={(e) => {
-                  const selectedTime = availableSlots.find(
-                    (slot) => slot.time.toISOString() === e.target.value
-                  );
-                  if (selectedTime) {
-                    setSelectedRescheduleSlot(selectedTime);
-                  }
-                }}
-                disabled={!rescheduleDateTime || isRescheduling || availableSlots.length === 0}
-              >
-                <option value="">Select a time</option>
-                {availableSlots.map((slot, index) => (
-                  <option key={index} value={slot.time.toISOString()}>
-                    {slot.display}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="modal-actions-p">
-            <button
-              className="submit-btn-p"
-              onClick={() => handleCancelAppointment(selectedAppointment.Id)}
-              disabled={
-                isRescheduling ||
-                selectedAppointment.status === "Pending Cancellation" ||
-                selectedAppointment.status === "Pending Reschedule" ||
-                selectedAppointment.status === "Cancelled"
-              }
-            >
-              Cancel Appointment
-            </button>
-            <button
-              className="submit-btn-p"
-              onClick={() => handleRescheduleAppointment(selectedAppointment.Id)}
-              disabled={isRescheduling || !selectedRescheduleSlot}
-            >
-              {isRescheduling ? "Rescheduling..." : "Save Reschedule"}
-            </button>
-            <button
-              className="submit-btn-p"
-              onClick={() => setShowReschedule(!showReschedule)}
-              disabled={isRescheduling}
-            >
-              Cancel Reschedule
-            </button>
-            <button
-              className="modal-close-btn-p"
+      {showAppointmentModal && selectedAppointment && (
+        <div className="modal-overlay-p">
+          <div className="modal-content-p">
+            <span
+              className="close-button-p"
               onClick={() => setShowAppointmentModal(false)}
-              disabled={isRescheduling}
             >
-              Close
-            </button>
+              ×
+            </span>
+            <h2>Appointment Details</h2>
+            <div className="pet-info-grid-p">
+              <div className="info-item-p">
+                <strong>Pet Name:</strong> {selectedAppointment.petName}
+              </div>
+              <div className="info-item-p">
+                <strong>Clinic:</strong> {selectedAppointment.clinicName}
+              </div>
+              <div className="info-item-p">
+                <strong>Service:</strong> {selectedAppointment.serviceType}
+              </div>
+              <div className="info-item-p">
+                <strong>Veterinarian:</strong> {selectedAppointment.veterinarian}
+              </div>
+              <div className="info-item-p">
+                <strong>Date:</strong> {formatDate(selectedAppointment.StartTime)}
+              </div>
+              <div className="info-item-p">
+                <strong>Status:</strong> {selectedAppointment.status}
+              </div>
+              {selectedAppointment.status === "Pending Reschedule" && selectedAppointment.rescheduleDate && (
+                <div className="info-item-p">
+                  <strong>Requested Reschedule Date:</strong> {formatDate(selectedAppointment.rescheduleDate)}
+                </div>
+              )}
+            </div>
+            <div className="info-item-p">
+              <strong>Notes:</strong> {selectedAppointment.notes}
+            </div>
+
+            {!showReschedule ? (
+              <div className="modal-actions-p">
+                <button
+                  className="submit-btn-p"
+                  onClick={() => handleCancelAppointment(selectedAppointment.Id)}
+                  disabled={
+                    isRescheduling ||
+                    selectedAppointment.status === "Pending Cancellation" ||
+                    selectedAppointment.status === "Pending Reschedule" ||
+                    selectedAppointment.status === "Cancelled"
+                  }
+                >
+                  Cancel Appointment
+                </button>
+                <button
+                  className="submit-btn-p"
+                  onClick={() => setShowReschedule(!showReschedule)}
+                  disabled={
+                    isRescheduling ||
+                    selectedAppointment.status === "Pending Cancellation" ||
+                    selectedAppointment.status === "Pending Reschedule" ||
+                    selectedAppointment.status === "Cancelled"
+                  }
+                >
+                  Reschedule
+                </button>
+                <button
+                  className="modal-close-btn-p"
+                  onClick={() => setShowAppointmentModal(false)}
+                  disabled={isRescheduling}
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3>Reschedule Appointment</h3>
+                <div className="reschedule-container-p">
+                  <div className="calendar-container-p">
+                    <Calendar
+                      onClickDay={handleCalendarDateClick}
+                      value={rescheduleDateTime || new Date()}
+                      minDate={new Date()}
+                      maxDate={(() => {
+                        const max = new Date();
+                        max.setMonth(max.getMonth() + 1);
+                        return max;
+                      })()}  // Immediately invoke the function to return the date
+                      tileClassName={tileClassName}
+                      locale="en-US"
+                    />
+                  </div>
+                  <div className="time-picker-container-p">
+                    <label htmlFor="rescheduleTime">Select Time</label>
+                    <select
+                      id="rescheduleTime"
+                      value={
+                        selectedRescheduleSlot ? selectedRescheduleSlot.time.toISOString() : ""
+                      }
+                      onChange={(e) => {
+                        const selectedTime = availableSlots.find(
+                          (slot) => slot.time.toISOString() === e.target.value
+                        );
+                        if (selectedTime) {
+                          setSelectedRescheduleSlot(selectedTime);
+                        }
+                      }}
+                      disabled={!rescheduleDateTime || isRescheduling || availableSlots.length === 0}
+                    >
+                      <option value="">Select a time</option>
+                      {availableSlots.map((slot, index) => (
+                        <option key={index} value={slot.time.toISOString()}>
+                          {slot.display}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-actions-p">
+                  <button
+                    className="submit-btn-p"
+                    onClick={() => handleCancelAppointment(selectedAppointment.Id)}
+                    disabled={
+                      isRescheduling ||
+                      selectedAppointment.status === "Pending Cancellation" ||
+                      selectedAppointment.status === "Pending Reschedule" ||
+                      selectedAppointment.status === "Cancelled"
+                    }
+                  >
+                    Cancel Appointment
+                  </button>
+                  <button
+                    className="submit-btn-p"
+                    onClick={() => handleRescheduleAppointment(selectedAppointment.Id)}
+                    disabled={isRescheduling || !selectedRescheduleSlot}
+                  >
+                    {isRescheduling ? "Rescheduling..." : "Save Reschedule"}
+                  </button>
+                  <button
+                    className="submit-btn-p"
+                    onClick={() => setShowReschedule(!showReschedule)}
+                    disabled={isRescheduling}
+                  >
+                    Cancel Reschedule
+                  </button>
+                  <button
+                    className="modal-close-btn-p"
+                    onClick={() => setShowAppointmentModal(false)}
+                    disabled={isRescheduling}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-        </>
+        </div>
       )}
-    </div>
-  </div>
-  )}
       <Mobile_Footer
-      onNotificationClick={handleNotificationClick}
-      onAccountClick={handleAccountClick}
-      activePanel={activePanel}
-      unreadNotifications={unreadNotifications}
-      setActivePanel={setActivePanel}
-      isVeterinarian={false}
-      isVetClinic={false}
-      isPetOwner={true} 
+        onNotificationClick={handleNotificationClick}
+        onAccountClick={handleAccountClick}
+        activePanel={activePanel}
+        unreadNotifications={unreadNotifications}
+        setActivePanel={setActivePanel}
+        isVeterinarian={false}
+        isVetClinic={false}
+        isPetOwner={true}
       />
     </div>
   );

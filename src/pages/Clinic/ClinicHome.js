@@ -379,14 +379,24 @@ const ClinicHome = () => {
     year: "numeric",
   });
 
-  // Calculate age in decimal years
-  const today = new Date("2025-03-23"); 
-  const timeDiff = today.getTime() - dob.getTime(); 
+  // Calculate age
+  const today = new Date("2025-03-23");
+  const timeDiff = today.getTime() - dob.getTime();
   const ageYears = timeDiff / (1000 * 60 * 60 * 24 * 365.25); // Convert to years, accounting for leap years
 
-  // Format age with one decimal place
-  const ageFormatted = Math.abs(ageYears).toFixed(1); 
-  const ageString = `${ageFormatted} ${ageFormatted === "1.0" ? "yr" : "yrs"}`;
+  let ageFormatted;
+  let ageString;
+
+  if (Math.abs(ageYears) < 1) {
+    // Calculate age in months for ages less than 1 year (positive or negative)
+    const monthsDiff = (today.getFullYear() - dob.getFullYear()) * 12 + (today.getMonth() - dob.getMonth());
+    ageFormatted = Math.abs(monthsDiff).toFixed(0); // Whole number for months
+    ageString = `${ageFormatted} ${ageFormatted === "1" ? "month" : "months"}`;
+  } else {
+    // Format age in years for ages 1 year or greater
+    ageFormatted = Math.abs(ageYears).toFixed(1);
+    ageString = `${ageFormatted} ${ageFormatted === "1.0" ? "yr" : "yrs"}`;
+  }
 
   return `${formattedDate} (${ageString})`;
 
